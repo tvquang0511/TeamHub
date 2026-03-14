@@ -1,0 +1,29 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: teamhub-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: teamhub
+      POSTGRES_PASSWORD: teamhub
+      POSTGRES_DB: teamhub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: teamhub-redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: teamhub-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+volumes:
+  postgres_data:

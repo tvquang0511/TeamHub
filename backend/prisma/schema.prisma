@@ -1,13 +1,338 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// TeamHub - Prisma schema (PostgreSQL)
+// Conventions:
+// - UUID primary keys
+// - snake_case column names via @map
+// - created_at / updated_at timestamps
+// - position stored as Decimal (Postgres numeric) for stable ordering
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum workspace_member_role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum reminder_job_status {
+  PENDING
+  SENT
+  CANCELED
+  FAILED
+}
+
+enum activity_type {
+  CARD_CREATED
+  CARD_MOVED
+  CARD_UPDATED
+  DUE_AT_CHANGED
+  COMMENT_ADDED
+  ASSIGNEE_ADDED
+  ASSIGNEE_REMOVED
+  LABEL_ADDED
+  LABEL_REMOVED
+}
+
+model users {
+  id            String  @id @default(uuid()) @db.Uuid
+  email         String  @unique
+  passwordHash  String  @map("password_hash")
+  displayName   String  @map("display_name")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  refreshTokens     refresh_tokens[]
+  workspaceMembers  workspace_members[]
+  workspaceMessages workspace_messages[] @relation("WorkspaceMessageSender")
+  cardComments      card_comments[]
+  cardAssignees     card_assignees[]
+  reminderJobs      reminder_jobs[]
+  activities        activities[]
+
+  @@map("users")
+}
+
+model refresh_tokens {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid @map("user_id")
+  tokenHash  String   @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_refresh_tokens_user_id")
+  @@index([expiresAt], map: "idx_refresh_tokens_expires_at")
+  @@map("refresh_tokens")
+}
+
+model workspaces {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members   workspace_members[]
+  invites   workspace_invites[]
+  messages  workspace_messages[]
+  boards    boards[]
+  labels    labels[]
+  activities activities[]
+
+  @@map("workspaces")
+}
+
+model workspace_members {
+  id          String @id @default(uuid()) @db.Uuid
+  workspaceId String @db.Uuid @map("workspace_id")
+  userId      String @db.Uuid @map("user_id")
+  role        workspace_member_role
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId], map: "uq_workspace_members_workspace_user")
+  @@index([userId], map: "idx_workspace_members_user_id")
+  @@map("workspace_members")
+}
+
+model workspace_invites {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid @map("workspace_id")
+
+  email       String
+  token       String   @unique
+  expiresAt   DateTime @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId], map: "idx_workspace_invites_workspace_id")
+  @@index([email], map: "idx_workspace_invites_email")
+  @@map("workspace_invites")
+}
+
+model workspace_messages {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid @map("workspace_id")
+  senderId    String   @db.Uuid @map("sender_id")
+
+  content     String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sender    users      @relation("WorkspaceMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt, id], map: "idx_workspace_messages_ws_created_id")
+  @@map("workspace_messages")
+}
+
+model boards {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid @map("workspace_id")
+
+  name        String
+  description String?
+  position    Decimal? @db.Decimal(65, 30)
+  archivedAt  DateTime? @map("archived_at")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lists     lists[]
+  activities activities[]
+
+  @@index([workspaceId], map: "idx_boards_workspace_id")
+  @@index([workspaceId, position], map: "idx_boards_workspace_position")
+  @@map("boards")
+}
+
+model lists {
+  id         String   @id @default(uuid()) @db.Uuid
+  boardId    String   @db.Uuid @map("board_id")
+
+  name       String
+  position   Decimal  @db.Decimal(65, 30)
+  archivedAt DateTime? @map("archived_at")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  board boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards cards[]
+
+  @@index([boardId, position], map: "idx_lists_board_position")
+  @@map("lists")
+}
+
+model cards {
+  id          String   @id @default(uuid()) @db.Uuid
+  listId      String   @db.Uuid @map("list_id")
+
+  title       String
+  description String?
+  dueAt       DateTime? @map("due_at")
+  position    Decimal  @db.Decimal(65, 30)
+  archivedAt  DateTime? @map("archived_at")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  list lists @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  comments    card_comments[]
+  assignees   card_assignees[]
+  cardLabels  card_labels[]
+  checklists  checklists[]
+  reminderJobs reminder_jobs[]
+  activities  activities[]
+
+  @@index([listId, position], map: "idx_cards_list_position")
+  @@map("cards")
+}
+
+model card_comments {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  authorId  String   @db.Uuid @map("author_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card   cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  author users @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt, id], map: "idx_card_comments_card_created_id")
+  @@map("card_comments")
+}
+
+model card_assignees {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  userId    String   @db.Uuid @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId], map: "uq_card_assignees_card_user")
+  @@index([userId], map: "idx_card_assignees_user_id")
+  @@map("card_assignees")
+}
+
+model labels {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid @map("workspace_id")
+
+  name        String
+  color       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  cardLabels card_labels[]
+
+  @@index([workspaceId], map: "idx_labels_workspace_id")
+  @@map("labels")
+}
+
+model card_labels {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  labelId   String   @db.Uuid @map("label_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card  cards  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label labels @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, labelId], map: "uq_card_labels_card_label")
+  @@index([labelId], map: "idx_card_labels_label_id")
+  @@map("card_labels")
+}
+
+model checklists {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+
+  title     String
+  position  Decimal  @db.Decimal(65, 30)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card  cards            @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  items checklist_items[]
+
+  @@index([cardId, position], map: "idx_checklists_card_position")
+  @@map("checklists")
+}
+
+model checklist_items {
+  id          String   @id @default(uuid()) @db.Uuid
+  checklistId String   @db.Uuid @map("checklist_id")
+
+  title       String
+  position    Decimal  @db.Decimal(65, 30)
+  isDone      Boolean  @default(false) @map("is_done")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  checklist checklists @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([checklistId, position], map: "idx_checklist_items_checklist_position")
+  @@map("checklist_items")
+}
+
+model reminder_jobs {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  userId    String   @db.Uuid @map("user_id")
+
+  remindAt  DateTime @map("remind_at")
+  status    reminder_job_status @default(PENDING)
+
+  attempts  Int      @default(0)
+  lastError String?  @map("last_error")
+  sentAt    DateTime? @map("sent_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId, remindAt], map: "uq_reminder_jobs_card_user_remind_at")
+  @@index([status, remindAt], map: "idx_reminder_jobs_status_remind_at")
+  @@index([userId], map: "idx_reminder_jobs_user_id")
+  @@map("reminder_jobs")
+}
+
+model activities {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorId     String   @db.Uuid @map("actor_id")
+
+  workspaceId String?  @db.Uuid @map("workspace_id")
+  boardId     String?  @db.Uuid @map("board_id")
+  cardId      String?  @db.Uuid @map("card_id")
+
+  type        activity_type
+  payload     Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  actor     users      @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  workspace workspaces? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  board     boards?    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  card      cards?     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt], map: "idx_activities_workspace_created_at")
+  @@index([boardId, createdAt], map: "idx_activities_board_created_at")
+  @@index([cardId, createdAt], map: "idx_activities_card_created_at")
+  @@index([actorId, createdAt], map: "idx_activities_actor_created_at")
+  @@map("activities")
 }

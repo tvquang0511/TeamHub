@@ -5,9 +5,11 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 
 import routes from "./routes";
+import errorHandler from './common/middlewares/errorHandler';
+import swaggerUi from 'swagger-ui-express';
+import { buildOpenApiDocument } from './docs/openapi';
 
 dotenv.config();
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 
 const app = express();
@@ -17,6 +19,11 @@ app.use(morgan("dev"));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// OpenAPI / Swagger
+const openApiDocument = buildOpenApiDocument();
+app.get('/openapi.json', (_req, res) => res.json(openApiDocument));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 // health check
 app.get("/health", (req, res) => {
@@ -29,6 +36,19 @@ app.get("/health", (req, res) => {
 
 // API routes
 app.use("/api", routes);
+
+// not found
+app.use((req, res) => {
+  res.status(404).json({
+    error: {
+      code: 'NOT_FOUND',
+      message: `Cannot ${req.method} ${req.path}`,
+      details: {},
+    },
+  });
+});
+
+app.use(errorHandler);
 
 // root
 app.get("/", (req, res) => {

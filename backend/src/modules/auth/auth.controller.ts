@@ -1,19 +1,42 @@
-import { Request, Response } from "express";
-import { authService } from "./auth.service";
-import { registerSchema, loginSchema } from "./auth.schemas";
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import { authService } from './auth.service';
+
+const registerBodySchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  displayName: z.string().min(1).max(100),
+});
+
+const loginBodySchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+const refreshBodySchema = z.object({
+  refreshToken: z.string().min(1),
+});
 
 export const register = async (req: Request, res: Response) => {
-  const input = registerSchema.parse(req.body);
-
-  const user = await authService.register(input);
-
-  res.json(user);
+  const input = registerBodySchema.parse(req.body);
+  const result = await authService.register(input);
+  return res.status(201).json(result);
 };
 
 export const login = async (req: Request, res: Response) => {
-  const input = loginSchema.parse(req.body);
+  const input = loginBodySchema.parse(req.body);
+  const result = await authService.login(input);
+  return res.json(result);
+};
 
-  const user = await authService.login(input.email, input.password);
+export const refresh = async (req: Request, res: Response) => {
+  const input = refreshBodySchema.parse(req.body);
+  const result = await authService.refresh(input);
+  return res.json(result);
+};
 
-  res.json(user);
+export const logout = async (req: Request, res: Response) => {
+  const input = refreshBodySchema.parse(req.body);
+  const result = await authService.logout(input);
+  return res.json(result);
 };

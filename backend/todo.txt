@@ -1,0 +1,23 @@
+3) Làm module Workspaces trước (xương sống authorization)
+Theo security.md, mọi thứ đều nằm trong workspace boundary. Nên làm Workspaces sớm để:
+
+Có workspace_members và rule “member mới được xem/đụng data”.
+Sau đó Boards/Lists/Cards chỉ việc check membership.
+Endpoints nên làm trước (đúng endpoints.md):
+
+POST /workspaces
+GET /workspaces
+GET /workspaces/:id
+GET /workspaces/:id/members
+4) Làm Invites (để có team flow hoàn chỉnh)
+POST /workspaces/:id/invites
+POST /invites/:token/accept
+5) Kanban core: Boards → Lists → Cards
+Làm theo chuỗi để frontend có data thật để render:
+
+Board create + get board one-shot payload
+List create + update
+Card create + move (position logic)
+6) Realtime / Chat / Reminder (phase sau)
+Chat cần workspace boundary + socket auth
+Reminder cần worker + queue/redis/rabbitmq (để sau)

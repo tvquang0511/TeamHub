@@ -1,0 +1,326 @@
+{
+  "info": {
+    "_postman_id": "52a2b3d6-2dd2-4b87-92b6-21cda71c2a6b",
+    "name": "TeamHub - API (Auth + Workspaces + Boards + Lists + Cards + Invites)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api" },
+    { "key": "email", "value": "user@mail.com" },
+    { "key": "password", "value": "password123" },
+    { "key": "displayName", "value": "Quang" },
+    { "key": "inviteEmail", "value": "invited@mail.com" },
+    { "key": "invitePassword", "value": "password123" },
+    { "key": "inviteDisplayName", "value": "Invited User" }
+  ],
+  "item": [
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"displayName\": \"{{displayName}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Login (captures tokens)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.accessToken) pm.collectionVariables.set('accessToken', json.accessToken);",
+              "if (json.refreshToken) pm.collectionVariables.set('refreshToken', json.refreshToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workspaces - Create (captures workspaceId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/workspaces", "host": ["{{baseUrl}}"], "path": ["workspaces"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"My Workspace\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.workspace && json.workspace.id) pm.collectionVariables.set('workspaceId', json.workspace.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workspaces - List mine",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/workspaces", "host": ["{{baseUrl}}"], "path": ["workspaces"] }
+      }
+    },
+    {
+      "name": "Workspaces - Detail",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/workspaces/{{workspaceId}}", "host": ["{{baseUrl}}"], "path": ["workspaces", "{{workspaceId}}"] }
+      }
+    },
+    {
+      "name": "Workspaces - Members",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members", "host": ["{{baseUrl}}"], "path": ["workspaces", "{{workspaceId}}", "members"] }
+      }
+    },
+
+    {
+      "name": "Boards - Create (captures boardId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/boards", "host": ["{{baseUrl}}"], "path": ["boards"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workspaceId\": \"{{workspaceId}}\",\n  \"name\": \"My Board\",\n  \"description\": \"Board for MVP\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.board && json.board.id) pm.collectionVariables.set('boardId', json.board.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Boards - List (by workspaceId)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/boards?workspaceId={{workspaceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards"],
+          "query": [{ "key": "workspaceId", "value": "{{workspaceId}}" }]
+        }
+      }
+    },
+    {
+      "name": "Lists - Create (captures listId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/lists", "host": ["{{baseUrl}}"], "path": ["lists"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"boardId\": \"{{boardId}}\",\n  \"name\": \"Todo\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.list && json.list.id) pm.collectionVariables.set('listId', json.list.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Lists - List (by boardId)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/lists?boardId={{boardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["lists"],
+          "query": [{ "key": "boardId", "value": "{{boardId}}" }]
+        }
+      }
+    },
+    {
+      "name": "Cards - Create (captures cardId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/cards", "host": ["{{baseUrl}}"], "path": ["cards"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"listId\": \"{{listId}}\",\n  \"title\": \"First card\",\n  \"description\": \"Hello from Postman\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.card && json.card.id) pm.collectionVariables.set('cardId', json.card.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cards - List (by listId)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/cards?listId={{listId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards"],
+          "query": [{ "key": "listId", "value": "{{listId}}" }]
+        }
+      }
+    },
+    {
+      "name": "Workspaces - Create invite (captures inviteToken)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/invites",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}", "invites"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"expiresInDays\": 7\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "// The API returns the raw token only at creation time (MVP/testing).",
+              "if (json.invite && json.invite.token) pm.collectionVariables.set('inviteToken', json.invite.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Register invite user (strict email match)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"password\": \"{{invitePassword}}\",\n  \"displayName\": \"{{inviteDisplayName}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Login invite user (captures inviteUser tokens)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"password\": \"{{invitePassword}}\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.accessToken) pm.collectionVariables.set('inviteAccessToken', json.accessToken);",
+              "if (json.refreshToken) pm.collectionVariables.set('inviteRefreshToken', json.refreshToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invites - Accept (strict) as invite user",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{inviteAccessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/invites/{{inviteToken}}/accept",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "{{inviteToken}}", "accept"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Logout",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] },
+        "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" }
+      }
+    }
+  ]
+}

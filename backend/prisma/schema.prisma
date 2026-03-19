@@ -19,6 +19,17 @@ enum workspace_member_role {
   MEMBER
 }
 
+enum board_visibility {
+  PRIVATE
+  WORKSPACE
+}
+
+enum board_member_role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 enum reminder_job_status {
   PENDING
   SENT
@@ -49,7 +60,8 @@ model users {
 
   refreshTokens     refresh_tokens[]
   workspaceMembers  workspace_members[]
-  workspaceMessages workspace_messages[] @relation("WorkspaceMessageSender")
+  boardMessages     board_messages[] @relation("BoardMessageSender")
+  boardMembers      board_members[]
   cardComments      card_comments[]
   cardAssignees     card_assignees[]
   reminderJobs      reminder_jobs[]
@@ -82,7 +94,6 @@ model workspaces {
 
   members   workspace_members[]
   invites   workspace_invites[]
-  messages  workspace_messages[]
   boards    boards[]
   labels    labels[]
   activities activities[]
@@ -124,19 +135,19 @@ model workspace_invites {
   @@map("workspace_invites")
 }
 
-model workspace_messages {
-  id          String   @id @default(uuid()) @db.Uuid
-  workspaceId String   @db.Uuid @map("workspace_id")
-  senderId    String   @db.Uuid @map("sender_id")
+model board_messages {
+  id        String   @id @default(uuid()) @db.Uuid
+  boardId   String   @db.Uuid @map("board_id")
+  senderId  String   @db.Uuid @map("sender_id")
 
-  content     String
-  createdAt   DateTime @default(now()) @map("created_at")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
 
-  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  sender    users      @relation("WorkspaceMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  board  boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  sender users  @relation("BoardMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
-  @@index([workspaceId, createdAt, id], map: "idx_workspace_messages_ws_created_id")
-  @@map("workspace_messages")
+  @@index([boardId, createdAt, id], map: "idx_board_messages_board_created_id")
+  @@map("board_messages")
 }
 
 model boards {
@@ -145,6 +156,7 @@ model boards {
 
   name        String
   description String?
+  visibility  board_visibility @default(PRIVATE)
   position    Decimal? @db.Decimal(65, 30)
   archivedAt  DateTime? @map("archived_at")
 
@@ -152,12 +164,29 @@ model boards {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members   board_members[]
   lists     lists[]
+  messages  board_messages[]
   activities activities[]
 
   @@index([workspaceId], map: "idx_boards_workspace_id")
   @@index([workspaceId, position], map: "idx_boards_workspace_position")
   @@map("boards")
+}
+
+model board_members {
+  id        String @id @default(uuid()) @db.Uuid
+  boardId   String @db.Uuid @map("board_id")
+  userId    String @db.Uuid @map("user_id")
+  role      board_member_role
+  createdAt DateTime @default(now()) @map("created_at")
+
+  board boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId], map: "uq_board_members_board_user")
+  @@index([userId], map: "idx_board_members_user_id")
+  @@map("board_members")
 }
 
 model lists {

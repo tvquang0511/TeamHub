@@ -243,7 +243,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"expiresInDays\": 7\n}"
+          "raw": "{\n  \"email\": \"{{inviteEmail}}\"\n}"
         }
       },
       "event": [
@@ -260,6 +260,43 @@
           }
         }
       ]
+    },
+    {
+      "name": "Invites - List workspace invites (OWNER/ADMIN)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/workspaces/{{workspaceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "workspaces", "{{workspaceId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.invites && json.invites.length) pm.collectionVariables.set('inviteId', json.invites[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invites - Revoke invite (OWNER/ADMIN)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/workspaces/{{workspaceId}}/{{inviteId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "workspaces", "{{workspaceId}}", "{{inviteId}}"]
+        }
+      }
     },
     {
       "name": "Auth - Register invite user (strict email match)",

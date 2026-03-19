@@ -1,6 +1,14 @@
 import { Request, Response } from "express";
+import { z } from "zod";
 
 import { cardsService, createCardInputSchema, updateCardInputSchema } from "./cards.service";
+
+const moveCardInputSchema = z.object({
+  // Destination listId optional: when omitted, reorder within current list
+  listId: z.string().uuid().optional(),
+  prevId: z.string().uuid().nullable().optional(),
+  nextId: z.string().uuid().nullable().optional(),
+});
 
 export class CardsController {
   create = async (req: Request, res: Response) => {
@@ -29,6 +37,14 @@ export class CardsController {
     const cardId = String(req.params.id);
     const input = updateCardInputSchema.parse(req.body);
     const result = await cardsService.update(userId, cardId, input);
+    res.status(200).json(result);
+  };
+
+  move = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const input = moveCardInputSchema.parse(req.body);
+    const result = await cardsService.move(userId, cardId, input);
     res.status(200).json(result);
   };
 }

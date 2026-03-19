@@ -131,6 +131,31 @@ export class CardsRepo {
       },
     });
   }
+
+  async findCardPosition(cardId: string) {
+    return prisma.cards.findUnique({
+      where: { id: cardId },
+      select: { id: true, listId: true, position: true, archivedAt: true },
+    });
+  }
+
+  async move(cardId: string, data: { listId?: string; position: Prisma.Decimal }) {
+    return prisma.cards.update({
+      where: { id: cardId },
+      data: { listId: data.listId, position: data.position },
+      select: {
+        id: true,
+        listId: true,
+        title: true,
+        description: true,
+        dueAt: true,
+        position: true,
+        archivedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
 }
 
 export const cardsRepo = new CardsRepo();

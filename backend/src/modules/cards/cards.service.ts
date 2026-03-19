@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
+import { computeBetweenPosition } from "../../common/utils/position";
 import { cardsRepo } from "./cards.repo";
 
 export const createCardInputSchema = z.object({
@@ -126,6 +127,52 @@ export class CardsService {
       listId: nextListId,
     });
 
+    return { card };
+  }
+
+  async move(
+    userId: string,
+    cardId: string,
+    input: { listId?: string; prevId?: string | null; nextId?: string | null },
+  ) {
+    const existing = await cardsRepo.findById(cardId);
+    if (!existing) throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+
+    const existingWorkspaceId = existing.list.board.workspaceId;
+    const membership = await cardsRepo.isWorkspaceMember(existingWorkspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    // Must be member of the source board.
+    const sourceBoardId = existing.list.board.id;
+    const sourceBoardMember = await cardsRepo.isBoardMember(sourceBoardId, userId);
+    if (!sourceBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    // Determine destination list/board
+    const destinationListId = input.listId ?? existing.listId;
+    const destinationList = await cardsRepo.findList(destinationListId);
+    if (!destinationList || destinationList.archivedAt || destinationList.board.archivedAt) {
+      throw new ApiError(404, "LIST_NOT_FOUND", "List not found");
+    }
+    if (destinationList.board.workspaceId !== existingWorkspaceId) {
+      throw new ApiError(400, "CARD_MOVE_INVALID", "Cannot move card to a different workspace");
+    }
+
+    // Must be member of destination board.
+    const destBoardMember = await cardsRepo.isBoardMember(destinationList.board.id, userId);
+    if (!destBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const prev = input.prevId ? await cardsRepo.findCardPosition(input.prevId) : null;
+    const next = input.nextId ? await cardsRepo.findCardPosition(input.nextId) : null;
+
+    if (prev && prev.listId !== destinationListId) {
+      throw new ApiError(400, "CARD_MOVE_INVALID", "prevId must belong to the destination list");
+    }
+    if (next && next.listId !== destinationListId) {
+      throw new ApiError(400, "CARD_MOVE_INVALID", "nextId must belong to the destination list");
+    }
+
+    const position = computeBetweenPosition(prev?.position, next?.position);
+    const card = await cardsRepo.move(cardId, { listId: destinationListId, position });
     return { card };
   }
 }

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
+import { computeBetweenPosition } from "../../common/utils/position";
 import { listsRepo } from "./lists.repo";
 
 export const createListInputSchema = z.object({
@@ -94,6 +95,38 @@ export class ListsService {
       archivedAt,
     });
 
+    return { list };
+  }
+
+  async move(
+    userId: string,
+    listId: string,
+    input: { prevId?: string | null; nextId?: string | null },
+  ) {
+    const existing = await listsRepo.findById(listId);
+    if (!existing) throw new ApiError(404, "LIST_NOT_FOUND", "List not found");
+
+    const board = await listsRepo.findBoard(existing.boardId);
+    if (!board || board.archivedAt) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const membership = await listsRepo.isWorkspaceMember(existing.board.workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await listsRepo.isBoardMember(existing.boardId, userId);
+    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const prev = input.prevId ? await listsRepo.findListPosition(input.prevId) : null;
+    const next = input.nextId ? await listsRepo.findListPosition(input.nextId) : null;
+
+    if (prev && prev.boardId !== existing.boardId) {
+      throw new ApiError(400, "LIST_MOVE_INVALID", "prevId must belong to the same board");
+    }
+    if (next && next.boardId !== existing.boardId) {
+      throw new ApiError(400, "LIST_MOVE_INVALID", "nextId must belong to the same board");
+    }
+
+    const position = computeBetweenPosition(prev?.position, next?.position);
+    const list = await listsRepo.updatePosition(listId, position);
     return { list };
   }
 }

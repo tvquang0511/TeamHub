@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
+import { z } from "zod";
 
 import { createListInputSchema, updateListInputSchema, listsService } from "./lists.service";
+
+const moveListInputSchema = z.object({
+  prevId: z.string().uuid().nullable().optional(),
+  nextId: z.string().uuid().nullable().optional(),
+});
 
 export class ListsController {
   create = async (req: Request, res: Response) => {
@@ -29,6 +35,14 @@ export class ListsController {
     const listId = String(req.params.id);
     const input = updateListInputSchema.parse(req.body);
     const result = await listsService.update(userId, listId, input);
+    res.status(200).json(result);
+  };
+
+  move = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const listId = String(req.params.id);
+    const input = moveListInputSchema.parse(req.body);
+    const result = await listsService.move(userId, listId, input);
     res.status(200).json(result);
   };
 }

@@ -106,6 +106,29 @@ export class ListsRepo {
       },
     });
   }
+
+  async findListPosition(listId: string) {
+    return prisma.lists.findUnique({
+      where: { id: listId },
+      select: { id: true, boardId: true, position: true, archivedAt: true },
+    });
+  }
+
+  async updatePosition(listId: string, position: Prisma.Decimal) {
+    return prisma.lists.update({
+      where: { id: listId },
+      data: { position },
+      select: {
+        id: true,
+        boardId: true,
+        name: true,
+        position: true,
+        archivedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
 }
 
 export const listsRepo = new ListsRepo();

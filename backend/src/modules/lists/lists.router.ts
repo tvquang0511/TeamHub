@@ -14,3 +14,6 @@ listsRoutes.post("/", listsController.create);
 
 listsRoutes.get("/:id", listsController.get);
 listsRoutes.patch("/:id", listsController.update);
+
+// Move/reorder using prev/next anchors
+listsRoutes.post("/:id/move", listsController.move);

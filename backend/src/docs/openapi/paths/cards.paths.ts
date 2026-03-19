@@ -169,4 +169,50 @@ export const cardsPaths = {
       },
     },
   },
+  "/cards/{id}/move": {
+    post: {
+      tags: ["Cards"],
+      summary: "Move / reorder a card using prev/next anchors",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                listId: { type: "string", format: "uuid" },
+                prevId: { type: "string", format: "uuid", nullable: true },
+                nextId: { type: "string", format: "uuid", nullable: true },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "OK",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  card: { $ref: "#/components/schemas/Card" },
+                },
+                required: ["card"],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 } as const;

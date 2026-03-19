@@ -162,4 +162,49 @@ export const listsPaths = {
       },
     },
   },
+  "/lists/{id}/move": {
+    post: {
+      tags: ["Lists"],
+      summary: "Move / reorder a list using prev/next anchors",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                prevId: { type: "string", format: "uuid", nullable: true },
+                nextId: { type: "string", format: "uuid", nullable: true },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        200: {
+          description: "OK",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  list: { $ref: "#/components/schemas/List" },
+                },
+                required: ["list"],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 } as const;

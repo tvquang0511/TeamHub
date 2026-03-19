@@ -199,4 +199,85 @@ export const boardsPaths = {
       },
     },
   },
+  "/boards/{id}/detail": {
+    get: {
+      tags: ["Boards"],
+      summary: "Get board one-shot payload (board + lists + cards + members + labels)",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: {
+          description: "OK",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  board: { $ref: "#/components/schemas/Board" },
+                  lists: { type: "array", items: { $ref: "#/components/schemas/List" } },
+                  cards: { type: "array", items: { $ref: "#/components/schemas/Card" } },
+                  members: { type: "array", items: { type: "object" } },
+                  labels: { type: "array", items: { type: "object" } },
+                },
+                required: ["board", "lists", "cards", "members", "labels"],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  "/boards/{id}/members/by-email": {
+    post: {
+      tags: ["Boards"],
+      summary: "Add board member by email",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                email: { type: "string", format: "email" },
+                role: { type: "string", enum: ["OWNER", "ADMIN", "MEMBER"] },
+              },
+              required: ["email"],
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: "Created",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  member: { type: "object" },
+                },
+                required: ["member"],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
 } as const;

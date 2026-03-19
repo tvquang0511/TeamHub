@@ -34,7 +34,15 @@ export function buildOpenApiDocument() {
         description: 'Backend API base (mounted under /api).',
       },
     ],
-  tags: [{ name: 'Health' }, { name: 'Auth' }, { name: 'Workspaces' }, { name: 'Invites' }, { name: 'Boards' }, { name: 'Lists' }, { name: 'Cards' }],
+    tags: [
+      { name: 'Health' },
+      { name: 'Auth' },
+      { name: 'Workspaces' },
+      { name: 'Invites' },
+      { name: 'Boards' },
+      { name: 'Lists' },
+      { name: 'Cards' },
+    ],
     components: {
       schemas: {
         ...sharedSchemas,

@@ -14,8 +14,10 @@ boardsRoutes.get("/", boardsController.list);
 boardsRoutes.post("/", boardsController.create);
 
 boardsRoutes.get("/:id", boardsController.get);
+boardsRoutes.get("/:id/detail", boardsController.getDetail);
 boardsRoutes.patch("/:id", boardsController.update);
 
 boardsRoutes.get("/:id/members", boardMembersController.list);
 boardsRoutes.post("/:id/members", boardMembersController.add);
+boardsRoutes.post("/:id/members/by-email", boardMembersController.addByEmail);
 boardsRoutes.delete("/:id/members/:userId", boardMembersController.remove);

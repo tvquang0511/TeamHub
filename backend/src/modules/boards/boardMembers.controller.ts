@@ -8,6 +8,11 @@ const addMemberSchema = z.object({
   role: z.enum(["OWNER", "ADMIN", "MEMBER"]).optional(),
 });
 
+const addMemberByEmailSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(["OWNER", "ADMIN", "MEMBER"]).optional(),
+});
+
 export class BoardMembersController {
   list = async (req: Request, res: Response) => {
     const userId = req.user!.id;
@@ -21,6 +26,14 @@ export class BoardMembersController {
     const boardId = String(req.params.id);
     const input = addMemberSchema.parse(req.body);
     const result = await boardsService.addMember(actorId, boardId, input);
+    res.status(201).json(result);
+  };
+
+  addByEmail = async (req: Request, res: Response) => {
+    const actorId = req.user!.id;
+    const boardId = String(req.params.id);
+    const input = addMemberByEmailSchema.parse(req.body);
+    const result = await boardsService.addMemberByEmail(actorId, boardId, input);
     res.status(201).json(result);
   };
 

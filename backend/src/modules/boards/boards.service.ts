@@ -72,6 +72,33 @@ export class BoardsService {
     return { board };
   }
 
+  async getDetail(userId: string, boardId: string) {
+    const board = await boardsRepo.findById(boardId);
+    if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, userId);
+    if (!wsMembership) {
+      throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+    }
+
+    if (board.visibility !== "WORKSPACE") {
+      const boardMember = await boardsRepo.isBoardMember(board.id, userId);
+      if (!boardMember) {
+        // Hide the board existence when it is private.
+        throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+      }
+    }
+
+    const [lists, cards, members, labels] = await Promise.all([
+      boardsRepo.listListsByBoard(boardId),
+      boardsRepo.listCardsByBoard(boardId),
+      boardsRepo.listBoardMembers(boardId),
+      boardsRepo.listLabelsByWorkspace(board.workspaceId),
+    ]);
+
+    return { board, lists, cards, members, labels };
+  }
+
   async update(userId: string, boardId: string, input: z.infer<typeof updateBoardInputSchema>) {
     const existing = await boardsRepo.findById(boardId);
     if (!existing) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
@@ -143,6 +170,36 @@ export class BoardsService {
 
     const role = input.role ?? "MEMBER";
     const member = await boardsRepo.addBoardMember({ boardId, userId: input.userId, role });
+    return { member };
+  }
+
+  async addMemberByEmail(
+    actorId: string,
+    boardId: string,
+    input: { email: string; role?: "OWNER" | "ADMIN" | "MEMBER" },
+  ) {
+    const board = await boardsRepo.findById(boardId);
+    if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, actorId);
+    if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const actorBoardMember = await boardsRepo.isBoardMember(boardId, actorId);
+    if (!actorBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (actorBoardMember.role !== "OWNER" && actorBoardMember.role !== "ADMIN") {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to manage board members");
+    }
+
+    const user = await boardsRepo.findUserByEmail(input.email);
+    if (!user) throw new ApiError(400, "BOARD_MEMBER_INVALID", "User with this email does not exist");
+
+    const targetWsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, user.id);
+    if (!targetWsMembership) {
+      throw new ApiError(400, "BOARD_MEMBER_INVALID", "User is not a member of this workspace");
+    }
+
+    const role = input.role ?? "MEMBER";
+    const member = await boardsRepo.addBoardMember({ boardId, userId: user.id, role });
     return { member };
   }
 

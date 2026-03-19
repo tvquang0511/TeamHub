@@ -48,6 +48,13 @@ export class BoardsRepo {
     });
   }
 
+  async findUserByEmail(email: string) {
+    return prisma.users.findUnique({
+      where: { email },
+      select: { id: true, email: true, displayName: true },
+    });
+  }
+
   async removeBoardMember(boardId: string, userId: string) {
     return (prisma as any).board_members.delete({
       where: { boardId_userId: { boardId, userId } },
@@ -141,6 +148,56 @@ export class BoardsRepo {
         description: true,
         position: true,
         archivedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async listListsByBoard(boardId: string) {
+    return prisma.lists.findMany({
+      where: { boardId, archivedAt: null },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        boardId: true,
+        name: true,
+        position: true,
+        archivedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async listCardsByBoard(boardId: string) {
+    return prisma.cards.findMany({
+      where: { archivedAt: null, list: { boardId } },
+      orderBy: [{ position: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        listId: true,
+        title: true,
+        description: true,
+        dueAt: true,
+        position: true,
+        archivedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async listLabelsByWorkspace(workspaceId: string) {
+    // Labels are workspace-scoped in schema.
+    return (prisma as any).labels.findMany({
+      where: { workspaceId },
+      orderBy: [{ createdAt: "asc" }],
+      select: {
+        id: true,
+        workspaceId: true,
+        name: true,
+        color: true,
         createdAt: true,
         updatedAt: true,
       },

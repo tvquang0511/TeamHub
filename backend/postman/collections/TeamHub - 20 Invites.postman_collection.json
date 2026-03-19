@@ -1,0 +1,88 @@
+{
+  "info": {
+    "_postman_id": "a2aa4f1c-5d4b-4d93-9f6f-f8c3f8a8d020",
+    "name": "TeamHub - 20 Invites",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:4000/api" }],
+  "item": [
+    {
+      "name": "Create workspace invite (captures inviteToken)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/invites",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}", "invites"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteEmail}}\"\n}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.invite && json.invite.token) pm.collectionVariables.set('inviteToken', json.invite.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List workspace invites (OWNER/ADMIN)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/workspaces/{{workspaceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "workspaces", "{{workspaceId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.invites && json.invites.length) pm.collectionVariables.set('inviteId', json.invites[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Revoke workspace invite (OWNER/ADMIN)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/workspaces/{{workspaceId}}/{{inviteId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "workspaces", "{{workspaceId}}", "{{inviteId}}"]
+        }
+      }
+    },
+    {
+      "name": "Accept invite as invited user",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{inviteAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/{{inviteToken}}/accept",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "{{inviteToken}}", "accept"]
+        }
+      }
+    }
+  ]
+}

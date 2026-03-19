@@ -1,6 +1,6 @@
-# TeamHub — Trello-like Kanban + Chat realtime theo Workspace + Email Reminder (SMTP)
+# TeamHub — Trello-like Kanban + Chat realtime theo Board + Email Reminder (SMTP)
 
-> Mục tiêu đồ án: Xây dựng một ứng dụng web quản lý công việc kiểu Trello (Kanban) với mức độ giống Trello “nhiều nhất có thể”, có **realtime** (Socket.IO) để đồng bộ thay đổi ngay lập tức giữa nhiều người dùng, có **chat chung** theo Workspace để luyện WebSocket/Socket.IO, và có **nhắc nhở qua email** (SMTP) theo **reminder do từng người dùng tự đặt**.
+> Mục tiêu đồ án: Xây dựng một ứng dụng web quản lý công việc kiểu Trello (Kanban) với mức độ giống Trello “nhiều nhất có thể”, có **realtime** (Socket.IO) để đồng bộ thay đổi ngay lập tức giữa nhiều người dùng, có **chat** theo **Board** (mỗi board 1 box chat) để luyện WebSocket/Socket.IO, và có **nhắc nhở qua email** (SMTP) theo **reminder do từng người dùng tự đặt**.
 
 ---
 
@@ -17,7 +17,7 @@
 - Deploy local: **Docker + docker-compose**
 
 ### 1.2. Phạm vi (scope) đã chốt
-- Chat: **đơn giản** — mỗi Workspace chỉ có **1 box chat chung** cho tất cả thành viên.
+- Chat: **đơn giản** — mỗi Board có **1 box chat** cho các thành viên của board đó.
 - Kanban: tập trung làm **giống Trello** (board/list/card/drag-drop/labels/members/checklists/comments/activity).
 - Reminder: **chỉ gửi email cho người dùng nào tự set reminder**, không gửi cho tất cả assignee.
 
@@ -48,8 +48,9 @@
 - **Owner/Admin** có quyền:
   - mời thành viên
   - đổi role thành viên (tùy mức bạn làm)
-- Mọi thao tác board/list/card yêu cầu:
-  - người dùng là member của workspace chứa board đó.
+- Board privacy (mô hình “workspace = công ty, board = phòng ban”):
+  - Board `PRIVATE`: chỉ **board members** mới xem/ thao tác lists/cards/chat.
+  - Board `WORKSPACE`: workspace members có thể **thấy board**, nhưng (khuyến nghị) chat + write vẫn yêu cầu board membership.
 
 ---
 

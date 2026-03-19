@@ -6,40 +6,27 @@
 - All server emits should be scoped to rooms.
 
 ## 2) Rooms
-- `workspace:{workspaceId}`:
-  - Chat events
-  - (Optional) workspace-level events (member joined, board created...)
 - `board:{boardId}`:
   - Board/list/card events (reorder, move, comment...)
+  - Chat events (board chat)
 
 ## 3) Client -> Server events
 
-### 3.1 `workspace:join`
-**Payload**
-```json
-{ "workspaceId": "uuid" }
-```
-**Auth**: user must be member of workspace  
-**Ack**
-```json
-{ "ok": true }
-```
-
-### 3.2 `board:join`
+### 3.1 `board:join`
 **Payload**
 ```json
 { "boardId": "uuid" }
 ```
-**Auth**: user must be member of workspace that owns the board  
+**Auth**: user must be member of board (or be allowed by board visibility policy)  
 **Ack**
 ```json
 { "ok": true }
 ```
 
-### 3.3 `chat:send`
+### 3.2 `chat:send`
 **Payload**
 ```json
-{ "workspaceId": "uuid", "content": "string" }
+{ "boardId": "uuid", "content": "string" }
 ```
 **Rules**
 - content non-empty
@@ -53,7 +40,7 @@
 {
   "message": {
     "id": "uuid",
-    "workspaceId": "uuid",
+    "boardId": "uuid",
     "senderId": "uuid",
     "senderDisplayName": "string",
     "content": "string",

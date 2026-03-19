@@ -32,6 +32,9 @@ export class CardsService {
     const membership = await cardsRepo.isWorkspaceMember(list.board.workspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
+  const boardMember = await cardsRepo.isBoardMember(list.board.id, userId);
+  if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
     const dueAt = input.dueAt ? new Date(input.dueAt) : null;
 
     const card = await cardsRepo.create({
@@ -54,6 +57,11 @@ export class CardsService {
     const membership = await cardsRepo.isWorkspaceMember(list.board.workspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
+    if (list.board.visibility !== "WORKSPACE") {
+      const boardMember = await cardsRepo.isBoardMember(list.board.id, userId);
+      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    }
+
     const cards = await cardsRepo.listByList(listId);
     return { cards };
   }
@@ -66,6 +74,11 @@ export class CardsService {
     const membership = await cardsRepo.isWorkspaceMember(workspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
+    if (card.list.board.visibility !== "WORKSPACE") {
+      const boardMember = await cardsRepo.isBoardMember(card.list.board.id, userId);
+      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    }
+
     return { card };
   }
 
@@ -77,6 +90,9 @@ export class CardsService {
     const membership = await cardsRepo.isWorkspaceMember(existingWorkspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
+  const boardMember = await cardsRepo.isBoardMember(existing.list.board.id, userId);
+  if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
     let nextListId: string | undefined = undefined;
     if (input.listId) {
       const nextList = await cardsRepo.findList(input.listId);
@@ -86,6 +102,10 @@ export class CardsService {
       if (nextList.board.workspaceId !== existingWorkspaceId) {
         throw new ApiError(400, "CARD_MOVE_INVALID", "Cannot move card to a different workspace");
       }
+
+      // Must be a member of the destination board when moving.
+      const nextBoardMember = await cardsRepo.isBoardMember(nextList.board.id, userId);
+      if (!nextBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
       nextListId = input.listId;
     }
 

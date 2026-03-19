@@ -3,7 +3,7 @@
 ## 1) Goals
 - Trello-like Kanban (board/list/card) với drag-drop reorder/move dựa trên **position float**
 - Realtime sync bằng **Socket.IO**
-- Workspace chat realtime (1 box chat chung / workspace)
+- Board chat realtime (1 box chat / board)
 - Reminder email per-user (SMTP) chạy bằng worker poll DB
 - Deploy local bằng Docker Compose + Nginx reverse proxy
 
@@ -32,7 +32,7 @@
 - Client gọi REST -> API validates -> DB write -> API emit Socket.IO to `board:{boardId}` -> clients update UI.
 
 ### 3.2 Chat
-- Client connect Socket.IO (JWT) -> join `workspace:{workspaceId}` -> send message -> server insert DB -> emit to room.
+- Client connect Socket.IO (JWT) -> join `board:{boardId}` -> send message -> server insert DB -> emit to room.
 
 ### 3.3 Reminder
 - Client set reminder -> DB insert ReminderJob(PENDING)
@@ -48,12 +48,13 @@
 
 ## 5) Realtime rooms & contracts
 - Rooms:
-  - `workspace:{workspaceId}`: chat + workspace-level events
-  - `board:{boardId}`: board realtime events
+   - `board:{boardId}`: board realtime events + board chat
 - Event payload guideline: `{ type, payload, actorId, ts }` (optional but recommended)
 
 ## 6) Security / Authorization baseline
-- All workspace data requires **workspace membership**.
+- Workspace access requires **workspace membership**.
+- Board access (boards/lists/cards/chat) requires **board membership** if board is `PRIVATE`.
+- If board is `WORKSPACE`, any workspace member can **see the board**, but chat/write operations should still require board membership (recommended).
 - Owner/Admin controls invites/roles.
 - Socket events must validate JWT + membership before join/emit.
 

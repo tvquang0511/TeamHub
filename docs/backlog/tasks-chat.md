@@ -1,10 +1,10 @@
-# Tasks — Workspace Chat
+# Tasks — Board Chat
 
 ## Tasks
-1. DB: workspace_messages
+1. DB: board_messages
 2. Socket.IO
    - auth handshake (JWT)
-   - workspace join membership check
+   - board join membership check
 3. chat:send handler
    - validate content length
    - insert message
@@ -12,8 +12,8 @@
 4. History API
    - cursor pagination by (createdAt,id)
 5. Rate limit (phase 2)
-   - Redis key per user/workspace
+   - Redis key per user/board
 
 ## Acceptance criteria
-- 2 clients in same workspace see message instantly
+- 2 clients in same board see message instantly
 - Non-member cannot join/receive

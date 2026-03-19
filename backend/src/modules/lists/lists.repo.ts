@@ -10,15 +10,22 @@ export type CreateListData = {
 
 export class ListsRepo {
   async findBoard(boardId: string) {
-    return prisma.boards.findUnique({
+    return (prisma as any).boards.findUnique({
       where: { id: boardId },
-      select: { id: true, workspaceId: true, archivedAt: true },
+      select: { id: true, workspaceId: true, archivedAt: true, visibility: true },
     });
   }
 
   async isWorkspaceMember(workspaceId: string, userId: string) {
     return prisma.workspace_members.findUnique({
       where: { workspaceId_userId: { workspaceId, userId } },
+      select: { id: true, role: true },
+    });
+  }
+
+  async isBoardMember(boardId: string, userId: string) {
+    return (prisma as any).board_members.findUnique({
+      where: { boardId_userId: { boardId, userId } },
       select: { id: true, role: true },
     });
   }

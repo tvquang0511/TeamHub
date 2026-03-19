@@ -24,6 +24,9 @@ export class ListsService {
     const membership = await listsRepo.isWorkspaceMember(board.workspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
+    const boardMember = await listsRepo.isBoardMember(board.id, userId);
+    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
     const list = await listsRepo.create({
       boardId: input.boardId,
       name: input.name,
@@ -40,6 +43,11 @@ export class ListsService {
     const membership = await listsRepo.isWorkspaceMember(board.workspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
+    if (board.visibility !== "WORKSPACE") {
+      const boardMember = await listsRepo.isBoardMember(board.id, userId);
+      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    }
+
     const lists = await listsRepo.listByBoard(boardId);
     return { lists };
   }
@@ -51,6 +59,15 @@ export class ListsService {
     const membership = await listsRepo.isWorkspaceMember(list.board.workspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
+    const boardId = list.boardId;
+    // List detail should follow the board visibility rules.
+    const board = await listsRepo.findBoard(boardId);
+    if (!board || board.archivedAt) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (board.visibility !== "WORKSPACE") {
+      const boardMember = await listsRepo.isBoardMember(board.id, userId);
+      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    }
+
     return { list };
   }
 
@@ -60,6 +77,9 @@ export class ListsService {
 
     const membership = await listsRepo.isWorkspaceMember(existing.board.workspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await listsRepo.isBoardMember(existing.boardId, userId);
+    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
 
     const archivedAt = input.archived === undefined ? undefined : input.archived ? new Date() : null;
 

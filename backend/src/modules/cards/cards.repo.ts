@@ -12,12 +12,12 @@ export type CreateCardData = {
 
 export class CardsRepo {
   async findList(listId: string) {
-    return prisma.lists.findUnique({
+    return (prisma as any).lists.findUnique({
       where: { id: listId },
       select: {
         id: true,
         board: {
-          select: { id: true, workspaceId: true, archivedAt: true },
+          select: { id: true, workspaceId: true, archivedAt: true, visibility: true },
         },
         archivedAt: true,
       },
@@ -27,6 +27,13 @@ export class CardsRepo {
   async isWorkspaceMember(workspaceId: string, userId: string) {
     return prisma.workspace_members.findUnique({
       where: { workspaceId_userId: { workspaceId, userId } },
+      select: { id: true, role: true },
+    });
+  }
+
+  async isBoardMember(boardId: string, userId: string) {
+    return (prisma as any).board_members.findUnique({
+      where: { boardId_userId: { boardId, userId } },
       select: { id: true, role: true },
     });
   }
@@ -73,7 +80,7 @@ export class CardsRepo {
   }
 
   async findById(cardId: string) {
-    return prisma.cards.findUnique({
+    return (prisma as any).cards.findUnique({
       where: { id: cardId },
       select: {
         id: true,
@@ -85,7 +92,7 @@ export class CardsRepo {
         archivedAt: true,
         createdAt: true,
         updatedAt: true,
-        list: { select: { board: { select: { workspaceId: true } } } },
+        list: { select: { board: { select: { id: true, workspaceId: true, visibility: true } } } },
       },
     });
   }

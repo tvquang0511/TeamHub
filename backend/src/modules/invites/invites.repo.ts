@@ -8,6 +8,27 @@ export const invitesRepo = {
     });
   },
 
+  listWorkspaceInvites(workspaceId: string) {
+    return prisma.workspace_invites.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: 'desc' },
+    });
+  },
+
+  findWorkspaceInviteById(inviteId: string) {
+    return prisma.workspace_invites.findUnique({
+      where: { id: inviteId },
+    });
+  },
+
+  revokeWorkspaceInvite(inviteId: string) {
+    // Soft revoke using acceptedAt sentinel; we don't want to leak token validity.
+    return prisma.workspace_invites.update({
+      where: { id: inviteId },
+      data: { acceptedAt: new Date() },
+    });
+  },
+
   markWorkspaceInviteAccepted(id: string) {
     return prisma.workspace_invites.update({
       where: { id },

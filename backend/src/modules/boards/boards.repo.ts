@@ -6,25 +6,61 @@ export type CreateBoardData = {
   workspaceId: string;
   name: string;
   description?: string | null;
+  visibility?: "PRIVATE" | "WORKSPACE";
   position?: Prisma.Decimal | null;
 };
 
 export class BoardsRepo {
   async isWorkspaceMember(workspaceId: string, userId: string) {
-    const member = await prisma.workspace_members.findUnique({
+    return prisma.workspace_members.findUnique({
       where: { workspaceId_userId: { workspaceId, userId } },
       select: { id: true, role: true },
     });
+  }
 
-    return member;
+  async isBoardMember(boardId: string, userId: string) {
+    // NOTE: if Prisma Client typings haven't been regenerated yet,
+    // access via `any` to unblock compilation; runtime works once `prisma generate` is run.
+    return (prisma as any).board_members.findUnique({
+      where: { boardId_userId: { boardId, userId } },
+      select: { id: true, role: true },
+    });
+  }
+
+  async addBoardMember(data: { boardId: string; userId: string; role: "OWNER" | "ADMIN" | "MEMBER" }) {
+    return (prisma as any).board_members.create({
+      data: {
+        boardId: data.boardId,
+        userId: data.userId,
+        role: data.role as any,
+      },
+      select: { id: true, boardId: true, userId: true, role: true, createdAt: true },
+    });
+  }
+
+  async listBoardMembers(boardId: string) {
+    return (prisma as any).board_members.findMany({
+      where: { boardId },
+      include: {
+        user: { select: { id: true, email: true, displayName: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async removeBoardMember(boardId: string, userId: string) {
+    return (prisma as any).board_members.delete({
+      where: { boardId_userId: { boardId, userId } },
+    });
   }
 
   async create(data: CreateBoardData) {
-    return prisma.boards.create({
+    return (prisma as any).boards.create({
       data: {
         workspaceId: data.workspaceId,
         name: data.name,
         description: data.description ?? null,
+        visibility: (data.visibility ?? "PRIVATE") as any,
         position: data.position ?? null,
       },
       select: {
@@ -32,6 +68,8 @@ export class BoardsRepo {
         workspaceId: true,
         name: true,
         description: true,
+        // visibility field exists in schema; may require `prisma generate` for typings.
+        visibility: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -40,15 +78,23 @@ export class BoardsRepo {
     });
   }
 
-  async listByWorkspace(workspaceId: string) {
-    return prisma.boards.findMany({
-      where: { workspaceId, archivedAt: null },
+  async listByWorkspaceVisibleToUser(workspaceId: string, userId: string) {
+    return (prisma as any).boards.findMany({
+      where: {
+        workspaceId,
+        archivedAt: null,
+        OR: [
+          { visibility: "WORKSPACE" as any },
+          { members: { some: { userId } } } as any,
+        ],
+      },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
       select: {
         id: true,
         workspaceId: true,
         name: true,
         description: true,
+        visibility: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -58,13 +104,14 @@ export class BoardsRepo {
   }
 
   async findById(boardId: string) {
-    return prisma.boards.findUnique({
+    return (prisma as any).boards.findUnique({
       where: { id: boardId },
       select: {
         id: true,
         workspaceId: true,
         name: true,
         description: true,
+        visibility: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -79,7 +126,7 @@ export class BoardsRepo {
       archivedAt?: Date | null;
     },
   ) {
-    return prisma.boards.update({
+    return (prisma as any).boards.update({
       where: { id: boardId },
       data: {
         name: data.name,

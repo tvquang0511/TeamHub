@@ -1,6 +1,11 @@
 import { buildSharedSchemas } from './components/schemas';
 import { authPaths, buildAuthSchemas } from './paths/auth.paths';
 import { healthPaths } from './paths/health.paths';
+import { buildWorkspacesSchemas, workspacesPaths } from './paths/workspaces.paths';
+import { buildInvitesSchemas, invitesPaths } from './paths/invites.paths';
+import { buildBoardsSchemas, boardsPaths } from './paths/boards.paths';
+import { buildListsSchemas, listsPaths } from './paths/lists.paths';
+import { buildCardsSchemas, cardsPaths } from './paths/cards.paths';
 
 /**
  * Modular OpenAPI entrypoint.
@@ -10,6 +15,11 @@ import { healthPaths } from './paths/health.paths';
 export function buildOpenApiDocument() {
   const sharedSchemas = buildSharedSchemas();
   const authSchemas = buildAuthSchemas();
+  const workspacesSchemas = buildWorkspacesSchemas();
+  const invitesSchemas = buildInvitesSchemas();
+  const boardsSchemas = buildBoardsSchemas();
+  const listsSchemas = buildListsSchemas();
+  const cardsSchemas = buildCardsSchemas();
 
   return {
     openapi: '3.0.3',
@@ -24,11 +34,16 @@ export function buildOpenApiDocument() {
         description: 'Backend API base (mounted under /api).',
       },
     ],
-    tags: [{ name: 'Health' }, { name: 'Auth' }],
+  tags: [{ name: 'Health' }, { name: 'Auth' }, { name: 'Workspaces' }, { name: 'Invites' }, { name: 'Boards' }, { name: 'Lists' }, { name: 'Cards' }],
     components: {
       schemas: {
         ...sharedSchemas,
         ...authSchemas,
+        ...workspacesSchemas,
+        ...invitesSchemas,
+        ...boardsSchemas,
+        ...listsSchemas,
+        ...cardsSchemas,
       },
       securitySchemes: {
         bearerAuth: {
@@ -41,6 +56,11 @@ export function buildOpenApiDocument() {
     paths: {
       ...healthPaths,
       ...authPaths,
+      ...workspacesPaths,
+      ...invitesPaths,
+      ...boardsPaths,
+      ...listsPaths,
+      ...cardsPaths,
     },
   };
 }

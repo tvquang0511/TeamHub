@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { ApiError } from '../errors/ApiError';
+import { Prisma } from '@prisma/client';
 
 export default function errorHandler(
   err: unknown,
@@ -36,6 +37,31 @@ export default function errorHandler(
         details: err.details ?? {},
       },
     });
+  }
+
+  // Prisma known request errors
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    // Unique constraint violation
+    if (err.code === 'P2002') {
+      return res.status(409).json({
+        error: {
+          code: 'CONFLICT',
+          message: 'Resource already exists',
+          details: { target: (err.meta as any)?.target },
+        },
+      });
+    }
+
+    // Record not found
+    if (err.code === 'P2025') {
+      return res.status(404).json({
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Resource not found',
+          details: {},
+        },
+      });
+    }
   }
 
   const message = err instanceof Error ? err.message : 'Internal Server Error';

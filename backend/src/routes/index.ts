@@ -5,6 +5,7 @@ import invitesRoutes from '../modules/invites/invites.router';
 import { boardsRoutes } from '../modules/boards/boards.router';
 import { listsRoutes } from '../modules/lists/lists.router';
 import { cardsRoutes } from '../modules/cards/cards.router';
+import usersRoutes from '../modules/users/users.router';
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/invites', invitesRoutes);
 router.use('/boards', boardsRoutes);
 router.use('/lists', listsRoutes);
 router.use('/cards', cardsRoutes);
+router.use('/users', usersRoutes);
 
 export default router;

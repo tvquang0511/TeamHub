@@ -1,25 +1,40 @@
 import { z } from 'zod';
 import { ApiError } from '../../common/errors/ApiError';
 import { workspacesRepo } from './workspaces.repo';
-import crypto from 'crypto';
+import { workspace_member_role } from '@prisma/client';
 
 export const createWorkspaceInputSchema = z.object({
   name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
 });
 
-export const createWorkspaceInviteInputSchema = z.object({
-  email: z.string().email(),
-  // optional; if not provided, default 7 days
-  expiresAt: z.string().datetime().optional(),
+export const updateWorkspaceInputSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).nullable().optional(),
 });
 
-function publicWorkspace(ws: { id: string; name: string }) {
-  return { id: ws.id, name: ws.name };
+function publicWorkspace(ws: {
+  id: string;
+  name: string;
+  description?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: ws.id,
+    name: ws.name,
+    description: ws.description ?? null,
+    createdAt: ws.createdAt,
+    updatedAt: ws.updatedAt,
+  };
 }
 
 export const workspacesService = {
-  async createWorkspace(userId: string, input: { name: string }) {
-    const ws = await workspacesRepo.createWorkspace({ name: input.name });
+  async createWorkspace(userId: string, input: { name: string; description?: string }) {
+    const ws = await workspacesRepo.createWorkspace({
+      name: input.name,
+      description: input.description ?? null,
+    });
     await workspacesRepo.createMember({
       workspaceId: ws.id,
       userId,
@@ -33,8 +48,7 @@ export const workspacesService = {
     const rows = await workspacesRepo.listMyWorkspaces(userId);
     return {
       workspaces: rows.map((r) => ({
-        id: r.workspace.id,
-        name: r.workspace.name,
+        ...publicWorkspace(r.workspace),
         role: r.role,
       })),
     };
@@ -54,6 +68,28 @@ export const workspacesService = {
     return { workspace: publicWorkspace(ws) };
   },
 
+  async updateWorkspace(actorId: string, workspaceId: string, input: { name?: string; description?: string | null }) {
+    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
+    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
+    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
+      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
+    }
+
+    const ws = await workspacesRepo.updateWorkspace(workspaceId, input);
+    return { workspace: publicWorkspace(ws) };
+  },
+
+  async deleteWorkspace(actorId: string, workspaceId: string) {
+    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
+    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
+    if (actor.role !== 'OWNER') {
+      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Only OWNER can delete workspace');
+    }
+
+    await workspacesRepo.deleteWorkspace(workspaceId);
+    return { ok: true };
+  },
+
   async listMembers(userId: string, workspaceId: string) {
     const membership = await workspacesRepo.findMembership(workspaceId, userId);
     if (!membership) {
@@ -71,41 +107,60 @@ export const workspacesService = {
     };
   },
 
-  async createInvite(
-    userId: string,
+  async updateMemberRole(
+    actorId: string,
     workspaceId: string,
-    input: { email: string; expiresAt?: string },
+    targetUserId: string,
+    role: Extract<workspace_member_role, 'ADMIN' | 'MEMBER'>,
   ) {
-    const membership = await workspacesRepo.findMembership(workspaceId, userId);
-    if (!membership) {
-      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
-    }
-
-    if (membership.role !== 'OWNER' && membership.role !== 'ADMIN') {
+    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
+    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
+    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
       throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
     }
 
-    const expiresAt = input.expiresAt ? new Date(input.expiresAt) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    if (Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date()) {
-      throw new ApiError(400, 'WORKSPACE_INVITE_INVALID', 'Invalid expiresAt');
+    const target = await workspacesRepo.findMembership(workspaceId, targetUserId);
+    if (!target) throw new ApiError(404, 'WORKSPACE_MEMBER_NOT_FOUND', 'Member not found');
+
+    // Keep OWNER immutable via this endpoint.
+    if (target.role === 'OWNER') {
+      throw new ApiError(400, 'WORKSPACE_MEMBER_INVALID', 'Cannot change OWNER role');
     }
 
-    const token = crypto.randomBytes(24).toString('hex');
-    const invite = await workspacesRepo.createInvite({
-      workspaceId,
-      email: input.email.toLowerCase(),
-      token,
-      expiresAt,
-    });
+    await workspacesRepo.updateMemberRole(workspaceId, targetUserId, role);
+    return { ok: true };
+  },
 
-    // MVP: return token so Postman can test (later: send email and hide token)
-    return {
-      invite: {
-        id: invite.id,
-        email: invite.email,
-        token: invite.token,
-        expiresAt: invite.expiresAt.toISOString(),
-      },
-    };
+  async removeMember(actorId: string, workspaceId: string, targetUserId: string) {
+    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
+    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
+    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
+      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
+    }
+
+    const target = await workspacesRepo.findMembership(workspaceId, targetUserId);
+    if (!target) throw new ApiError(404, 'WORKSPACE_MEMBER_NOT_FOUND', 'Member not found');
+
+    // Prevent removing the last OWNER.
+    if (target.role === 'OWNER') {
+      const ownerCount = await workspacesRepo.countOwners(workspaceId);
+      if (ownerCount <= 1) throw new ApiError(400, 'WORKSPACE_OWNER_REQUIRED', 'Workspace must have at least one OWNER');
+    }
+
+    await workspacesRepo.removeMember(workspaceId, targetUserId);
+    return { ok: true };
+  },
+
+  async leave(userId: string, workspaceId: string) {
+    const membership = await workspacesRepo.findMembership(workspaceId, userId);
+    if (!membership) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
+
+    if (membership.role === 'OWNER') {
+      const ownerCount = await workspacesRepo.countOwners(workspaceId);
+      if (ownerCount <= 1) throw new ApiError(400, 'WORKSPACE_OWNER_REQUIRED', 'Workspace must have at least one OWNER');
+    }
+
+    await workspacesRepo.removeMember(workspaceId, userId);
+    return { ok: true };
   },
 };

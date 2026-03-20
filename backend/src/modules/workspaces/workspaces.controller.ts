@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import {
   createWorkspaceInputSchema,
-  createWorkspaceInviteInputSchema,
+  updateWorkspaceInputSchema,
   workspacesService,
 } from './workspaces.service';
 
@@ -33,9 +33,44 @@ export const listWorkspaceMembers = async (req: Request, res: Response) => {
   return res.json(result);
 };
 
-export const createWorkspaceInvite = async (req: Request, res: Response) => {
+const memberParamsSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+});
+
+const updateMemberRoleBodySchema = z.object({
+  role: z.enum(['ADMIN', 'MEMBER']),
+});
+
+export const updateWorkspaceMemberRole = async (req: Request, res: Response) => {
+  const { id: workspaceId, userId: targetUserId } = memberParamsSchema.parse(req.params);
+  const body = updateMemberRoleBodySchema.parse(req.body);
+
+  const result = await workspacesService.updateMemberRole(req.user!.id, workspaceId, targetUserId, body.role);
+  return res.json(result);
+};
+
+export const removeWorkspaceMember = async (req: Request, res: Response) => {
+  const { id: workspaceId, userId: targetUserId } = memberParamsSchema.parse(req.params);
+  const result = await workspacesService.removeMember(req.user!.id, workspaceId, targetUserId);
+  return res.json(result);
+};
+
+export const leaveWorkspace = async (req: Request, res: Response) => {
+  const { id: workspaceId } = idParamSchema.parse(req.params);
+  const result = await workspacesService.leave(req.user!.id, workspaceId);
+  return res.json(result);
+};
+
+export const updateWorkspace = async (req: Request, res: Response) => {
   const { id } = idParamSchema.parse(req.params);
-  const body = createWorkspaceInviteInputSchema.parse(req.body);
-  const result = await workspacesService.createInvite(req.user!.id, id, body);
-  return res.status(201).json(result);
+  const body = updateWorkspaceInputSchema.parse(req.body);
+  const result = await workspacesService.updateWorkspace(req.user!.id, id, body);
+  return res.json(result);
+};
+
+export const deleteWorkspace = async (req: Request, res: Response) => {
+  const { id } = idParamSchema.parse(req.params);
+  const result = await workspacesService.deleteWorkspace(req.user!.id, id);
+  return res.json(result);
 };

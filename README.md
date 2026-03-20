@@ -562,6 +562,8 @@
 ## 10. API design (mức đặc tả)
 > Chỉ là blueprint, bạn có thể đổi path theo ý, nhưng nên giữ nhất quán.
 
+> Nếu bạn đang bắt đầu làm Front-end, xem thêm **hợp đồng FE/BE (MVP)** tại: `docs/api/frontend-contract.md`.
+
 ### 10.1. Auth
 - `POST /auth/register`
 - `POST /auth/login`
@@ -574,21 +576,33 @@
 - `GET /workspaces`
 - `GET /workspaces/:id`
 - `GET /workspaces/:id/members`
-- `POST /workspaces/:id/invites`
-- `POST /invites/:token/accept`
+- `PATCH /workspaces/:id/members/:userId` (update role ADMIN/MEMBER)
+- `DELETE /workspaces/:id/members/:userId` (remove member)
+- `POST /workspaces/:id/leave`
+- `POST /invites/workspaces/:workspaceId` (create invite)
+- `POST /invites/:token/accept` (accept workspace invite)
+
+### 10.2.1. Users
+- `GET /users/search?q=...&workspaceId=...&limit=10`
 
 ### 10.3. Chat history
 - `GET /workspaces/:id/messages?cursor=...`
 
 ### 10.4. Board/List/Card
 - `POST /workspaces/:wid/boards`
-- `GET /boards/:bid` (trả board + lists + cards)
+- `GET /boards/:bid` (board basic)
+- `GET /boards/:bid/detail` (one-shot payload: board + lists + cards + labels + members)
 - `PATCH /boards/:bid`
 - `POST /boards/:bid/lists`
 - `PATCH /lists/:lid`
 - `POST /lists/:lid/cards`
 - `PATCH /cards/:cid`
 - `POST /cards/:cid/move` (prev/next + toListId)
+
+### 10.4.1. Board membership & invites
+- `POST /boards/:bid/members/by-email`
+- `POST /invites/boards/:boardId` (create board invite)
+- `POST /invites/boards/token/:token/accept` (accept board invite)
 
 ### 10.5. Card details
 - `POST /cards/:cid/comments`
@@ -602,6 +616,36 @@
 - `PUT /cards/:cid/reminders` (set)
 - `DELETE /cards/:cid/reminders/:reminderJobId` (cancel)
 - `GET /cards/:cid/reminders` (list của user hiện tại)
+
+---
+
+## 10.7. Front-end contract (MVP)
+
+Mục tiêu: FE có thể dựng UI Kanban mà không phải đoán payload/flow.
+
+### Payload “one-shot” cho Board
+- `GET /boards/:id/detail` trả:
+  - `board`
+  - `lists[]` (sort theo `position`)
+  - `cards[]` (sort theo `position`)
+  - `members[]`
+  - `labels[]`
+
+### Move/Reorder contract (prev/next)
+- List: `POST /lists/:id/move` với `{ prevId, nextId }`
+- Card: `POST /cards/:id/move` với `{ listId?, prevId, nextId }`
+
+### Invites centralized
+- Workspace invite:
+  - `POST /invites/workspaces/:workspaceId`
+  - `POST /invites/:token/accept`
+- Board invite:
+  - `POST /invites/boards/:boardId`
+  - `POST /invites/boards/token/:token/accept`
+
+**Policy**: accept invite yêu cầu **email user đăng nhập trùng email invite**.
+
+Chi tiết đầy đủ (request/response samples + flows): `docs/api/frontend-contract.md`.
 
 ---
 

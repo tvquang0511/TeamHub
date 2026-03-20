@@ -54,6 +54,46 @@
         "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
         "url": { "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members", "host": ["{{baseUrl}}"], "path": ["workspaces", "{{workspaceId}}", "members"] }
       }
+    },
+    {
+      "name": "Update member role (OWNER/ADMIN)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{memberUserId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}", "members", "{{memberUserId}}"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"role\": \"ADMIN\"\n}" }
+      }
+    },
+    {
+      "name": "Remove member (OWNER/ADMIN)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{memberUserId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}", "members", "{{memberUserId}}"]
+        }
+      }
+    },
+    {
+      "name": "Leave workspace (current user)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/leave",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}", "leave"]
+        }
+      }
     }
   ]
 }

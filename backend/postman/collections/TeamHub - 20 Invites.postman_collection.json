@@ -15,9 +15,9 @@
           { "key": "Authorization", "value": "Bearer {{accessToken}}" }
         ],
         "url": {
-          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/invites",
+          "raw": "{{baseUrl}}/invites/workspaces/{{workspaceId}}",
           "host": ["{{baseUrl}}"],
-          "path": ["workspaces", "{{workspaceId}}", "invites"]
+          "path": ["invites", "workspaces", "{{workspaceId}}"]
         },
         "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteEmail}}\"\n}" }
       },
@@ -81,6 +81,84 @@
           "raw": "{{baseUrl}}/invites/{{inviteToken}}/accept",
           "host": ["{{baseUrl}}"],
           "path": ["invites", "{{inviteToken}}", "accept"]
+        }
+      }
+    },
+    {
+      "name": "Create board invite (captures boardInviteToken)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/invites/boards/{{boardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "boards", "{{boardId}}"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteEmail}}\"\n}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.invite && json.invite.token) pm.collectionVariables.set('boardInviteToken', json.invite.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List board invites (board ADMIN)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/boards/{{boardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "boards", "{{boardId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.invites && json.invites.length) pm.collectionVariables.set('boardInviteId', json.invites[0].id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Revoke board invite (board ADMIN)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/boards/{{boardId}}/{{boardInviteId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "boards", "{{boardId}}", "{{boardInviteId}}"]
+        }
+      }
+    },
+    {
+      "name": "Accept board invite as invited user",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{inviteAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/boards/token/{{boardInviteToken}}/accept",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "boards", "token", "{{boardInviteToken}}", "accept"]
         }
       }
     }

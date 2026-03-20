@@ -62,7 +62,19 @@ export const authService = {
       displayName: input.displayName,
     });
 
-    return { user: publicUser(user) };
+    // Match login(): issue tokens immediately so newly registered users are logged in.
+    const accessToken = signAccessToken(user);
+    const refreshToken = signRefreshToken(user);
+    const tokenHash = hashToken(refreshToken);
+    const expiresAt = parseJwtExpiresAt(refreshToken);
+
+    await authRepo.createRefreshToken({ userId: user.id, tokenHash, expiresAt });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: publicUser(user),
+    };
   },
 
   async login(input: { email: string; password: string }) {

@@ -11,8 +11,10 @@ Request
 ```
 Response (201)
 ```json
-{ "user": { "id": "uuid", "email": "user@mail.com", "displayName": "Quang" } }
+{ "accessToken": "jwt", "user": { "id": "uuid", "email": "user@mail.com", "displayName": "Quang" } }
 ```
+Notes
+- Refresh token is set as an **httpOnly cookie** (not returned in JSON).
 
 ### POST `/auth/login`
 Request
@@ -23,30 +25,28 @@ Response
 ```json
 {
   "accessToken": "jwt",
-  "refreshToken": "jwt",
   "user": { "id": "uuid", "email": "user@mail.com", "displayName": "Quang" }
 }
 ```
+Notes
+- Refresh token is set as an **httpOnly cookie** (not returned in JSON).
 
 ### POST `/auth/refresh`
-Request
-```json
-{ "refreshToken": "jwt" }
-```
 Response
 ```json
-{ "accessToken": "jwt", "refreshToken": "jwt" }
+{ "accessToken": "jwt" }
 ```
+Notes
+- Server reads refresh token from cookie (browser must send credentials).
+- For backward compatibility (Postman), server may accept `refreshToken` in body.
 
 ### POST `/auth/logout`
-Request
-```json
-{ "refreshToken": "jwt" }
-```
 Response
 ```json
 { "ok": true }
 ```
+Notes
+- Server clears refresh cookie.
 
 ### GET `/me`
 Auth: Bearer access token  
@@ -89,7 +89,7 @@ Response
 ```
 
 ## 3) Invites
-### POST `/workspaces/:id/invites`
+### POST `/invites/workspaces/:workspaceId`
 Request
 ```json
 { "email": "invitee@mail.com", "expiresAt": "iso" }
@@ -103,6 +103,52 @@ Response
 Response
 ```json
 { "workspace": { "id": "uuid", "name": "My Workspace" } }
+```
+
+### POST `/invites/boards/:boardId`
+Request
+```json
+{ "email": "invitee@mail.com", "expiresAt": "iso" }
+```
+Response
+```json
+{ "invite": { "id": "uuid", "email": "invitee@mail.com", "expiresAt": "iso" } }
+```
+
+### POST `/invites/boards/token/:token/accept`
+Response
+```json
+{ "board": { "id": "uuid", "name": "Board A", "workspaceId": "uuid" } }
+```
+
+## 3.1) Workspace member management
+### PATCH `/workspaces/:id/members/:userId`
+Request
+```json
+{ "role": "ADMIN" }
+```
+Response
+```json
+{ "member": { "id": "uuid", "userId": "uuid", "displayName": "Quang", "role": "ADMIN" } }
+```
+
+### DELETE `/workspaces/:id/members/:userId`
+Response
+```json
+{ "ok": true }
+```
+
+### POST `/workspaces/:id/leave`
+Response
+```json
+{ "ok": true }
+```
+
+## 3.2) Users
+### GET `/users/search?q=...&workspaceId=...&limit=10`
+Response
+```json
+{ "users": [ { "id": "uuid", "email": "user@mail.com", "displayName": "User" } ] }
 ```
 
 ## 4) Chat

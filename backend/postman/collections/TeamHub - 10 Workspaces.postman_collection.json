@@ -15,7 +15,7 @@
           { "key": "Authorization", "value": "Bearer {{accessToken}}" }
         ],
         "url": { "raw": "{{baseUrl}}/workspaces", "host": ["{{baseUrl}}"], "path": ["workspaces"] },
-        "body": { "mode": "raw", "raw": "{\n  \"name\": \"My Workspace\"\n}" }
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"My Workspace\",\n  \"description\": \"Optional description\"\n}" }
       },
       "event": [
         {
@@ -30,6 +30,34 @@
           }
         }
       ]
+    },
+    {
+      "name": "Update workspace (OWNER/ADMIN)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"My Workspace (updated)\",\n  \"description\": null\n}" }
+      }
+    },
+    {
+      "name": "Delete workspace (OWNER)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}"]
+        }
+      }
     },
     {
       "name": "List mine",

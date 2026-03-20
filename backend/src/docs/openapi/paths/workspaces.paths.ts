@@ -3,11 +3,15 @@ import { toSchema } from '../components/schemas';
 
 const CreateWorkspaceRequestSchema = z.object({
   name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
 });
 
 const WorkspaceSchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 });
 
 const CreateWorkspaceResponseSchema = z.object({
@@ -51,7 +55,7 @@ const WorkspaceMemberSchema = z.object({
 });
 
 const UpdateWorkspaceMemberRoleResponseSchema = z.object({
-  member: WorkspaceMemberSchema,
+  ok: z.boolean(),
 });
 
 const OkResponseSchema = z.object({ ok: z.boolean() });

@@ -8,6 +8,7 @@ const RegisterRequestSchema = z.object({
 });
 
 const RegisterResponseSchema = z.object({
+  accessToken: z.string(),
   user: z.object({
     id: z.string(),
     email: z.string().email(),
@@ -22,7 +23,6 @@ const LoginRequestSchema = z.object({
 
 const LoginResponseSchema = z.object({
   accessToken: z.string(),
-  refreshToken: z.string(),
   user: z.object({
     id: z.string(),
     email: z.string().email(),
@@ -36,7 +36,12 @@ const RefreshRequestSchema = z.object({
 
 const RefreshResponseSchema = z.object({
   accessToken: z.string(),
-  refreshToken: z.string(),
+});
+
+const MeResponseSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  displayName: z.string(),
 });
 
 const LogoutResponseSchema = z.object({
@@ -51,6 +56,7 @@ export function buildAuthSchemas() {
     LoginResponse: toSchema(LoginResponseSchema, 'LoginResponse'),
     RefreshRequest: toSchema(RefreshRequestSchema, 'RefreshRequest'),
     RefreshResponse: toSchema(RefreshResponseSchema, 'RefreshResponse'),
+    MeResponse: toSchema(MeResponseSchema, 'MeResponse'),
     LogoutResponse: toSchema(LogoutResponseSchema, 'LogoutResponse'),
   };
 }
@@ -151,7 +157,6 @@ export const authPaths = {
                   summary: 'Login response',
                   value: {
                     accessToken: 'jwt',
-                    refreshToken: 'jwt',
                     user: {
                       id: 'uuid',
                       email: 'user@mail.com',
@@ -188,7 +193,7 @@ export const authPaths = {
       tags: ['Auth'],
       summary: 'Refresh tokens (rotation)',
       requestBody: {
-        required: true,
+        required: false,
         content: {
           'application/json': {
             schema: { $ref: '#/components/schemas/RefreshRequest' },
@@ -214,7 +219,6 @@ export const authPaths = {
                   summary: 'Refresh response',
                   value: {
                     accessToken: 'jwt',
-                    refreshToken: 'jwt',
                   },
                 },
               },
@@ -265,6 +269,32 @@ export const authPaths = {
                   value: { ok: true },
                 },
               },
+            },
+          },
+        },
+      },
+    },
+  },
+
+  '/auth/me': {
+    get: {
+      tags: ['Auth'],
+      summary: 'Get current user (from access token)',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/MeResponse' },
+            },
+          },
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
             },
           },
         },

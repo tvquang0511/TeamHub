@@ -55,15 +55,17 @@ Response
 { "user": { "id": "uuid", "email": "user@mail.com", "displayName": "Quang" } }
 ```
 
+> Note: actual backend route is `GET /auth/me` (under `/api/auth/me`).
+
 ## 2) Workspaces
 ### POST `/workspaces`
 Request
 ```json
-{ "name": "My Workspace" }
+{ "name": "My Workspace", "description": "optional" }
 ```
 Response
 ```json
-{ "workspace": { "id": "uuid", "name": "My Workspace" } }
+{ "workspace": { "id": "uuid", "name": "My Workspace", "description": null, "createdAt": "iso", "updatedAt": "iso" } }
 ```
 
 ### GET `/workspaces`
@@ -164,18 +166,18 @@ Response
 ```
 
 ## 5) Boards/Lists/Cards (Trello-like)
-### POST `/workspaces/:wid/boards`
+### POST `/boards`
 Request
 ```json
-{ "name": "Board A", "description": "optional" }
+{ "workspaceId": "uuid", "name": "Board A", "description": "optional", "visibility": "PRIVATE|WORKSPACE" }
 ```
 Response
 ```json
 { "board": { "id": "uuid", "workspaceId": "uuid", "name": "Board A" } }
 ```
 
-### GET `/boards/:bid`
-Response (suggested one-shot payload)
+### GET `/boards/:bid/detail`
+Response (one-shot payload)
 ```json
 {
   "board": { "id": "uuid", "name": "Board A" },
@@ -186,10 +188,10 @@ Response (suggested one-shot payload)
 }
 ```
 
-### POST `/boards/:bid/lists`
+### POST `/lists`
 Request
 ```json
-{ "name": "Todo" }
+{ "boardId": "uuid", "name": "Todo" }
 ```
 Response
 ```json
@@ -206,10 +208,10 @@ Response
 { "list": { "id": "uuid", "name": "Doing" } }
 ```
 
-### POST `/lists/:lid/cards`
+### POST `/cards`
 Request
 ```json
-{ "title": "Card title" }
+{ "listId": "uuid", "title": "Card title", "description": "optional" }
 ```
 Response
 ```json
@@ -229,7 +231,7 @@ Response
 ### POST `/cards/:cid/move`
 Request
 ```json
-{ "toListId": "uuid", "prevCardId": "uuid|null", "nextCardId": "uuid|null" }
+{ "listId": "uuid(optional)", "prevId": "uuid|null", "nextId": "uuid|null" }
 ```
 Response
 ```json

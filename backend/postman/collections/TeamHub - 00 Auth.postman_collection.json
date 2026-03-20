@@ -98,7 +98,7 @@
         "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+          "raw": "{}"
         }
       },
       "event": [
@@ -117,6 +117,14 @@
       ]
     },
     {
+      "name": "Me",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+      }
+    },
+    {
       "name": "Logout",
       "request": {
         "method": "POST",
@@ -124,7 +132,7 @@
         "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+          "raw": "{}"
         }
       }
     }

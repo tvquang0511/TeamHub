@@ -6,6 +6,7 @@ import { buildInvitesSchemas, invitesPaths } from './paths/invites.paths';
 import { buildBoardsSchemas, boardsPaths } from './paths/boards.paths';
 import { buildListsSchemas, listsPaths } from './paths/lists.paths';
 import { buildCardsSchemas, cardsPaths } from './paths/cards.paths';
+import { usersPaths } from './paths/users.paths';
 
 /**
  * Modular OpenAPI entrypoint.
@@ -39,6 +40,7 @@ export function buildOpenApiDocument() {
       { name: 'Auth' },
       { name: 'Workspaces' },
       { name: 'Invites' },
+      { name: 'Users' },
       { name: 'Boards' },
       { name: 'Lists' },
       { name: 'Cards' },
@@ -66,6 +68,7 @@ export function buildOpenApiDocument() {
       ...authPaths,
       ...workspacesPaths,
       ...invitesPaths,
+      ...usersPaths,
       ...boardsPaths,
       ...listsPaths,
       ...cardsPaths,

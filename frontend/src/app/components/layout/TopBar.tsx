@@ -40,15 +40,6 @@ export const TopBar: React.FC = () => {
             </div>
             <span className="text-xl font-bold text-gray-900">TeamHub</span>
           </Link>
-
-          <nav className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/workspaces">
-                <Home className="mr-2 h-4 w-4" />
-                Workspaces
-              </Link>
-            </Button>
-          </nav>
         </div>
 
         <div className="flex items-center gap-4">

@@ -48,14 +48,12 @@ Response
 Notes
 - Server clears refresh cookie.
 
-### GET `/me`
+### GET `/auth/me`
 Auth: Bearer access token  
 Response
 ```json
 { "user": { "id": "uuid", "email": "user@mail.com", "displayName": "Quang" } }
 ```
-
-> Note: actual backend route is `GET /auth/me` (under `/api/auth/me`).
 
 ## 2) Workspaces
 ### POST `/workspaces`
@@ -90,40 +88,7 @@ Response
 }
 ```
 
-## 3) Invites
-### POST `/invites/workspaces/:workspaceId`
-Request
-```json
-{ "email": "invitee@mail.com", "expiresAt": "iso" }
-```
-Response
-```json
-{ "invite": { "id": "uuid", "email": "invitee@mail.com", "expiresAt": "iso" } }
-```
-
-### POST `/invites/:token/accept`
-Response
-```json
-{ "workspace": { "id": "uuid", "name": "My Workspace" } }
-```
-
-### POST `/invites/boards/:boardId`
-Request
-```json
-{ "email": "invitee@mail.com", "expiresAt": "iso" }
-```
-Response
-```json
-{ "invite": { "id": "uuid", "email": "invitee@mail.com", "expiresAt": "iso" } }
-```
-
-### POST `/invites/boards/token/:token/accept`
-Response
-```json
-{ "board": { "id": "uuid", "name": "Board A", "workspaceId": "uuid" } }
-```
-
-## 3.1) Workspace member management
+## 3) Workspace member management
 ### PATCH `/workspaces/:id/members/:userId`
 Request
 ```json
@@ -146,26 +111,87 @@ Response
 { "ok": true }
 ```
 
-## 3.2) Users
+## 4) Users
 ### GET `/users/search?q=...&workspaceId=...&limit=10`
 Response
 ```json
-{ "users": [ { "id": "uuid", "email": "user@mail.com", "displayName": "User" } ] }
+{ "users": [ { "id": "uuid", "email": "user@mail.com", "displayName": "User", "workspaceRole": "OWNER|ADMIN|MEMBER" } ] }
 ```
 
-## 4) Chat
-### GET `/workspaces/:id/messages?cursor=...`
+## 5) Invites
+### Workspace invites
+
+### POST `/invites/workspaces/:workspaceId`
+Request
+```json
+{ "email": "invitee@mail.com", "expiresAt": "iso(optional)" }
+```
 Response
 ```json
-{
-  "messages": [
-    { "id": "uuid", "content": "hello", "senderId": "uuid", "createdAt": "iso" }
-  ],
-  "nextCursor": "string|null"
-}
+{ "invite": { "id": "uuid", "email": "invitee@mail.com", "token": "string", "expiresAt": "iso" } }
 ```
 
-## 5) Boards/Lists/Cards (Trello-like)
+### GET `/invites/workspaces/:workspaceId`
+Response
+```json
+{ "invites": [ { "id": "uuid", "workspaceId": "uuid", "email": "invitee@mail.com", "expiresAt": "iso", "acceptedAt": "iso|null", "createdAt": "iso" } ] }
+```
+
+### DELETE `/invites/workspaces/:workspaceId/:inviteId`
+Response
+```json
+{ "ok": true }
+```
+
+### GET `/invites/:token`
+Response
+```json
+{ "invite": { "id": "uuid", "workspaceId": "uuid", "email": "invitee@mail.com", "expiresAt": "iso", "acceptedAt": "iso|null", "createdAt": "iso" }, "workspace": { "id": "uuid", "name": "My Workspace" } }
+```
+
+### POST `/invites/:token/accept`
+Response
+```json
+{ "workspace": { "id": "uuid", "name": "My Workspace" } }
+```
+
+### Board invites
+
+### POST `/invites/boards/:boardId`
+Request
+```json
+{ "email": "invitee@mail.com", "expiresAt": "iso(optional)" }
+```
+Response
+```json
+{ "invite": { "id": "uuid", "email": "invitee@mail.com", "token": "string", "expiresAt": "iso" } }
+```
+
+### GET `/invites/boards/:boardId`
+Response
+```json
+{ "invites": [ { "id": "uuid", "boardId": "uuid", "email": "invitee@mail.com", "expiresAt": "iso", "acceptedAt": "iso|null", "createdAt": "iso" } ] }
+```
+
+### DELETE `/invites/boards/:boardId/:inviteId`
+Response
+```json
+{ "ok": true }
+```
+
+### GET `/invites/boards/token/:token`
+Response
+```json
+{ "invite": { "id": "uuid", "boardId": "uuid", "email": "invitee@mail.com", "expiresAt": "iso", "acceptedAt": "iso|null", "createdAt": "iso" }, "board": { "id": "uuid", "name": "Board A", "workspaceId": "uuid" } }
+```
+
+### POST `/invites/boards/token/:token/accept`
+Response
+```json
+{ "board": { "id": "uuid", "name": "Board A", "workspaceId": "uuid" } }
+```
+
+## 6) Boards/Lists/Cards (Trello-like)
 ### POST `/boards`
 Request
 ```json
@@ -236,38 +262,4 @@ Request
 Response
 ```json
 { "card": { "id": "uuid", "listId": "uuid", "position": 1536 } }
-```
-
-## 6) Card details
-### POST `/cards/:cid/comments`
-Request
-```json
-{ "content": "comment text" }
-```
-Response
-```json
-{ "comment": { "id": "uuid", "cardId": "uuid", "content": "comment text" } }
-```
-
-### Reminders
-### PUT `/cards/:cid/reminders`
-Request
-```json
-{ "remindAt": "iso" }
-```
-Response
-```json
-{ "reminderJob": { "id": "uuid", "cardId": "uuid", "remindAt": "iso", "status": "PENDING" } }
-```
-
-### DELETE `/cards/:cid/reminders/:reminderJobId`
-Response
-```json
-{ "ok": true }
-```
-
-### GET `/cards/:cid/reminders`
-Response
-```json
-{ "reminders": [ { "id": "uuid", "remindAt": "iso", "status": "PENDING" } ] }
 ```

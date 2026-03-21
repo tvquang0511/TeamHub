@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useDrag } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cardsApi } from "../../../api/cards.api";
 import {
@@ -14,14 +14,27 @@ import { Textarea } from "../../../components/ui/textarea";
 import { Label } from "../../../components/ui/label";
 import { Calendar, Trash2 } from "lucide-react";
 // toast placeholder (wire real toast later)
-import type { Card } from "../../../types/api";
+import type { BoardDetail, Card } from "../../../types/api";
+
+type CardDnDItem = {
+  id: string;
+  listId: string;
+  targetListId?: string;
+};
 
 interface CardItemProps {
   card: Card;
   listId: string;
+  boardId: string;
+  onCardReorderUI?: (dragCardId: string, hoverCardId: string) => void;
 }
 
-export const CardItem: React.FC<CardItemProps> = ({ card, listId }) => {
+export const CardItem: React.FC<CardItemProps> = ({
+  card,
+  listId,
+  boardId,
+  onCardReorderUI,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || "");
@@ -29,26 +42,101 @@ export const CardItem: React.FC<CardItemProps> = ({ card, listId }) => {
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "CARD",
-    item: { id: card.id, listId },
+    item: { id: card.id, listId } satisfies CardDnDItem,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
+    }),
+  }));
+
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: "CARD",
+    hover: (item: CardDnDItem) => {
+      // Update UI order while hovering over a card (same-list reorder + cross-list insert).
+      if (item.id === card.id) return;
+      if (!onCardReorderUI) return;
+
+      // If dragging from another list, treat this list as the current target.
+      if (item.listId !== listId) {
+        item.targetListId = listId;
+      }
+
+      onCardReorderUI(item.id, card.id);
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver({ shallow: true }),
     }),
   }));
 
   const updateCardMutation = useMutation({
     mutationFn: (data: { title?: string; description?: string }) =>
       cardsApi.update(card.id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["board"] });
+    onMutate: async (data) => {
+      const key = ["board", boardId, "detail"] as const;
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<BoardDetail>(key);
+      if (!previous) return { previous };
+
+      const lists = previous.lists.map((l) => {
+        if (l.id !== listId) return l;
+        const cards = l.cards.map((c) =>
+          c.id === card.id
+            ? {
+                ...c,
+                title: data.title ?? c.title,
+                description: data.description ?? c.description,
+                updatedAt: new Date().toISOString(),
+              }
+            : c
+        );
+        return { ...l, cards };
+      });
+
+      queryClient.setQueryData<BoardDetail>(key, { ...previous, lists });
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      const key = ["board", boardId, "detail"] as const;
+      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    },
+    onSuccess: (updated) => {
+      const key = ["board", boardId, "detail"] as const;
+      const current = queryClient.getQueryData<BoardDetail>(key);
+      if (!current) return;
+
+      const lists = current.lists.map((l) => {
+        if (l.id !== updated.listId) return l;
+        const cards = l.cards.map((c) => (c.id === updated.id ? { ...c, ...updated } : c));
+        return { ...l, cards };
+      });
+
+      queryClient.setQueryData<BoardDetail>(key, { ...current, lists });
       // toast: updated
     },
   });
 
   const deleteCardMutation = useMutation({
     mutationFn: () => cardsApi.delete(card.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["board"] });
+    onMutate: async () => {
+      const key = ["board", boardId, "detail"] as const;
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<BoardDetail>(key);
+      if (!previous) return { previous };
+
+      const lists = previous.lists.map((l) => {
+        if (l.id !== listId) return l;
+        const cards = l.cards.filter((c) => c.id !== card.id);
+        return { ...l, cards };
+      });
+
+      queryClient.setQueryData<BoardDetail>(key, { ...previous, lists });
       setIsModalOpen(false);
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      const key = ["board", boardId, "detail"] as const;
+      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    },
+    onSuccess: () => {
       // toast: deleted
     },
   });
@@ -67,11 +155,13 @@ export const CardItem: React.FC<CardItemProps> = ({ card, listId }) => {
     <>
       <div
         ref={(node) => {
+          drop(node);
           drag(node);
         }}
         onClick={() => setIsModalOpen(true)}
         className={`cursor-pointer rounded-md bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
           isDragging ? "opacity-50" : ""
+        } ${isOver ? "ring-2 ring-blue-400" : ""}
         }`}
       >
         <p className="text-sm">{card.title}</p>

@@ -14,7 +14,7 @@ MVP ưu tiên:
 
 ---
 
-## 2) JWT Strategy
+## 2) Authentication (JWT)
 
 ### 2.1 Access token
 - TTL ngắn: 10–20 phút (ví dụ 15m)
@@ -102,6 +102,13 @@ Ngay cả khi socket đã auth user, bạn vẫn phải check permission khi joi
 
 ## 5) Authorization rules (permission model)
 
+### 5.0 Scope: workspace → board → list/card
+Mọi tài nguyên (boards/lists/cards/etc.) đều thuộc về 1 `workspace`.
+Authorization được xây theo 2 lớp:
+
+- **Workspace membership**: điều kiện tối thiểu để truy cập bất kỳ board nào trong workspace.
+- **Board membership**: điều kiện để thao tác *write* trong board (tạo/sửa/move list/card...), và để truy cập board `PRIVATE` (trừ các ngoại lệ nêu bên dưới).
+
 ### 5.1 Workspace boundary
 Rule nền tảng:
 - Mọi dữ liệu board/list/card/chat/reminder thuộc 1 workspace
@@ -111,18 +118,88 @@ Rule nền tảng:
   - join socket rooms của workspace/board
   - set reminder trên card
 
+> Chính sách hiện tại: chỉ **workspace OWNER/ADMIN** được tạo board mới trong workspace.
+
 ### 5.2 Roles
-- MEMBER:
-  - thao tác kanban + chat + reminder
-- ADMIN/OWNER:
-  - mời member
-  - đổi role (tuỳ triển khai)
-- OWNER:
-  - đảm bảo workspace luôn còn >= 1 OWNER (constraint logic ở service)
+
+#### Workspace roles
+- `workspace_members.role = MEMBER | ADMIN | OWNER`
+- **MEMBER**
+  - Read workspace data (workspace detail, members list).
+  - Read boards theo visibility rules.
+  - Không được tạo board.
+- **ADMIN**
+  - Tạo board trong workspace.
+  - Quản lý workspace invites / members (add/remove, change role theo policy).
+- **OWNER**
+  - Như ADMIN + các quyền nhạy cảm (ví dụ delete workspace) + ràng buộc “không được rời/kick nếu là OWNER cuối cùng”.
+
+#### Board roles
+- `board_members.role = MEMBER | ADMIN | OWNER`
+- **MEMBER**
+  - Thao tác nội dung board (write) *khi là board member*.
+  - Có thể rời board.
+- **ADMIN**
+  - Update board settings, quản lý board members.
+  - Quản lý board invites.
+- **OWNER**
+  - Như ADMIN + ràng buộc “board phải luôn có ít nhất 1 OWNER”.
+
+> Lưu ý: backend hiện đang enforce write-operations của list/card yêu cầu **board membership**.
+
+### 5.3 Board visibility & read-only policies
+
+#### Visibility values
+- `boards.visibility = PRIVATE | WORKSPACE`
+
+#### WORKSPACE boards
+- Mọi `workspace_member` có thể **read** (get/list/detail).
+- Nếu user **không phải** `board_member`:
+  - **read-only**: mọi write APIs (create/update/move/delete list/card) bị từ chối với `403 BOARD_FORBIDDEN`.
+
+#### PRIVATE boards
+- Mặc định: chỉ `board_member` mới có thể read/detail.
+- **Option B (current policy)**: `workspace OWNER/ADMIN` có thể **read-only** PRIVATE boards ngay cả khi không phải `board_member`.
+  - Lưu ý: write APIs vẫn yêu cầu `board_member`, do đó admin override chỉ cho *read*.
+
+Khuyến nghị vận hành:
+- Nếu áp dụng Option B, nên bổ sung **audit log** cho các lần admin đọc PRIVATE board (phase sau).
 
 ### 5.3 Invite acceptance
-- Token hợp lệ và chưa hết hạn, chưa accepted
-- Nếu email người nhận đã là member -> conflict
+
+TeamHub có 2 loại invite token:
+
+- `workspace_invites`: mời user vào workspace
+- `board_invites`: mời user vào board
+
+**Token là một secret ngẫu nhiên** đại diện cho lời mời (thường được gửi qua email/deep link).
+
+Quy tắc accept (high-level):
+- Token hợp lệ, chưa hết hạn, chưa accepted
+- User phải đăng nhập (JWT) và **email phải trùng với email trong invite**
+- Nếu user đã là member tương ứng → trả conflict
+
+Board invite accept:
+- Khi accept board invite, backend đảm bảo user có workspace membership (auto-add MEMBER nếu cần) rồi mới thêm board membership.
+
+### 5.4 Invite UX recommendation (frontend)
+
+Mục tiêu: người dùng click link invite và vào đúng nơi.
+
+Khuyến nghị flow:
+1) Link dạng:
+  - Board: `/invite/board/:token`
+  - Workspace: `/invite/workspace/:token`
+2) Nếu chưa login: redirect `/login?next=<inviteUrl>`
+3) Sau login: gọi endpoint accept
+  - Board: `POST /invites/boards/token/:token/accept`
+  - Workspace: `POST /invites/:token/accept`
+4) Thành công: invalidate cache + redirect vào board/workspace.
+
+Note về preview invite:
+- Hiện tại backend giới hạn các endpoint lookup token (preview) khá chặt. Nếu cần trang preview đẹp “Bạn được mời vào board X”, có thể:
+  - thêm endpoint preview public trả về thông tin tối thiểu (không lộ PII), hoặc
+  - nới policy read preview cho người đã login (nhưng chưa là member).
 
 ---
 

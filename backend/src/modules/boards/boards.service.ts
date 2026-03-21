@@ -27,6 +27,9 @@ export class BoardsService {
     if (!membership) {
       throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
     }
+    if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+      throw new ApiError(403, "WORKSPACE_FORBIDDEN", "Insufficient workspace role to create board");
+    }
 
     const board = await boardsRepo.create({
       workspaceId: input.workspaceId,
@@ -64,8 +67,11 @@ export class BoardsService {
     if (board.visibility !== "WORKSPACE") {
       const boardMember = await boardsRepo.isBoardMember(board.id, userId);
       if (!boardMember) {
-        // Hide the board existence when it is private.
-        throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        // Option B: workspace OWNER/ADMIN can view PRIVATE boards in read-only mode.
+        if (wsMembership.role !== "OWNER" && wsMembership.role !== "ADMIN") {
+          // Hide the board existence when it is private.
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
       }
     }
 
@@ -84,8 +90,11 @@ export class BoardsService {
     if (board.visibility !== "WORKSPACE") {
       const boardMember = await boardsRepo.isBoardMember(board.id, userId);
       if (!boardMember) {
-        // Hide the board existence when it is private.
-        throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        // Option B: workspace OWNER/ADMIN can view PRIVATE boards in read-only mode.
+        if (wsMembership.role !== "OWNER" && wsMembership.role !== "ADMIN") {
+          // Hide the board existence when it is private.
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
       }
     }
 
@@ -156,7 +165,12 @@ export class BoardsService {
 
     if (board.visibility !== "WORKSPACE") {
       const boardMember = await boardsRepo.isBoardMember(boardId, userId);
-      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+      if (!boardMember) {
+        // Option B: workspace OWNER/ADMIN can view PRIVATE board members list.
+        if (wsMembership.role !== "OWNER" && wsMembership.role !== "ADMIN") {
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
+      }
     }
 
     const members = await boardsRepo.listBoardMembers(boardId);
@@ -243,6 +257,30 @@ export class BoardsService {
     }
 
     await boardsRepo.removeBoardMember(boardId, memberUserId);
+    return { ok: true };
+  }
+
+  async leaveBoard(userId: string, boardId: string) {
+    const board = await boardsRepo.findById(boardId);
+    if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    // Keep consistency with other board APIs: must belong to workspace.
+    const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, userId);
+    if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await boardsRepo.isBoardMember(boardId, userId);
+    if (!boardMember) throw new ApiError(400, "BOARD_MEMBER_INVALID", "You are not a board member");
+
+    // Prevent leaving if user is the last OWNER.
+    if (boardMember.role === "OWNER") {
+      const members = await boardsRepo.listBoardMembers(boardId);
+      const ownerCount = members.filter((m: any) => m.role === "OWNER").length;
+      if (ownerCount <= 1) {
+        throw new ApiError(400, "BOARD_OWNER_REQUIRED", "Board must have at least one OWNER");
+      }
+    }
+
+    await boardsRepo.removeBoardMember(boardId, userId);
     return { ok: true };
   }
 }

@@ -26,7 +26,10 @@ export class ListsService {
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
     const boardMember = await listsRepo.isBoardMember(board.id, userId);
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (!boardMember) {
+      // WORKSPACE boards are readable by workspace members, but write operations require board membership.
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     const list = await listsRepo.create({
       boardId: input.boardId,
@@ -80,7 +83,9 @@ export class ListsService {
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
     const boardMember = await listsRepo.isBoardMember(existing.boardId, userId);
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (!boardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     const archivedAt = input.archived === undefined ? undefined : input.archived ? new Date() : null;
 
@@ -113,7 +118,9 @@ export class ListsService {
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
     const boardMember = await listsRepo.isBoardMember(existing.boardId, userId);
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (!boardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     const prev = input.prevId ? await listsRepo.findListPosition(input.prevId) : null;
     const next = input.nextId ? await listsRepo.findListPosition(input.nextId) : null;
@@ -141,7 +148,9 @@ export class ListsService {
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
     const boardMember = await listsRepo.isBoardMember(existing.boardId, userId);
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (!boardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     // Soft delete list
     await listsRepo.update(listId, { archivedAt: new Date() });

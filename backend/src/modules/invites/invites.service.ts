@@ -54,7 +54,7 @@ export const invitesService = {
   ) {
     const member = await invitesRepo.findBoardMember(boardId, userId);
     if (!member) throw new ApiError(403, 'BOARD_FORBIDDEN', 'Not a board member');
-    if (member.role !== 'ADMIN') {
+    if (member.role !== 'OWNER' && member.role !== 'ADMIN') {
       throw new ApiError(403, 'BOARD_FORBIDDEN', 'Insufficient board role');
     }
 
@@ -87,7 +87,7 @@ export const invitesService = {
   async listBoardInvites(userId: string, boardId: string) {
     const member = await invitesRepo.findBoardMember(boardId, userId);
     if (!member) throw new ApiError(403, 'BOARD_FORBIDDEN', 'Not a board member');
-    if (member.role !== 'ADMIN') {
+    if (member.role !== 'OWNER' && member.role !== 'ADMIN') {
       throw new ApiError(403, 'BOARD_FORBIDDEN', 'Insufficient board role');
     }
 
@@ -98,7 +98,7 @@ export const invitesService = {
   async revokeBoardInvite(userId: string, boardId: string, inviteId: string) {
     const member = await invitesRepo.findBoardMember(boardId, userId);
     if (!member) throw new ApiError(403, 'BOARD_FORBIDDEN', 'Not a board member');
-    if (member.role !== 'ADMIN') {
+    if (member.role !== 'OWNER' && member.role !== 'ADMIN') {
       throw new ApiError(403, 'BOARD_FORBIDDEN', 'Insufficient board role');
     }
 

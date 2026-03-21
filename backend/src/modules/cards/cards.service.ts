@@ -33,8 +33,11 @@ export class CardsService {
     const membership = await cardsRepo.isWorkspaceMember(list.board.workspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
-  const boardMember = await cardsRepo.isBoardMember(list.board.id, userId);
-  if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    const boardMember = await cardsRepo.isBoardMember(list.board.id, userId);
+    if (!boardMember) {
+      // WORKSPACE boards are readable by workspace members, but write operations require board membership.
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     const dueAt = input.dueAt ? new Date(input.dueAt) : null;
 
@@ -91,8 +94,10 @@ export class CardsService {
     const membership = await cardsRepo.isWorkspaceMember(existingWorkspaceId, userId);
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
-  const boardMember = await cardsRepo.isBoardMember(existing.list.board.id, userId);
-  if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    const boardMember = await cardsRepo.isBoardMember(existing.list.board.id, userId);
+    if (!boardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     let nextListId: string | undefined = undefined;
     if (input.listId) {
@@ -145,7 +150,9 @@ export class CardsService {
     // Must be member of the source board.
     const sourceBoardId = existing.list.board.id;
     const sourceBoardMember = await cardsRepo.isBoardMember(sourceBoardId, userId);
-    if (!sourceBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (!sourceBoardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     // Determine destination list/board
     const destinationListId = input.listId ?? existing.listId;
@@ -159,7 +166,9 @@ export class CardsService {
 
     // Must be member of destination board.
     const destBoardMember = await cardsRepo.isBoardMember(destinationList.board.id, userId);
-    if (!destBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (!destBoardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     const prev = input.prevId ? await cardsRepo.findCardPosition(input.prevId) : null;
     const next = input.nextId ? await cardsRepo.findCardPosition(input.nextId) : null;
@@ -185,7 +194,9 @@ export class CardsService {
     if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
     const boardMember = await cardsRepo.isBoardMember(existing.list.board.id, userId);
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (!boardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
 
     await cardsRepo.update(cardId, { archivedAt: new Date() });
     return { ok: true };

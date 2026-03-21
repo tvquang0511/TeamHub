@@ -45,6 +45,13 @@ export class BoardsController {
     const result = await boardsService.delete(userId, boardId);
     res.status(200).json(result);
   };
+
+  leave = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const boardId = String(req.params.id);
+    const result = await boardsService.leaveBoard(userId, boardId);
+    res.status(200).json(result);
+  };
 }
 
 export const boardsController = new BoardsController();

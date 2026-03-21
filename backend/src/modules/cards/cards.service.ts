@@ -63,7 +63,12 @@ export class CardsService {
 
     if (list.board.visibility !== "WORKSPACE") {
       const boardMember = await cardsRepo.isBoardMember(list.board.id, userId);
-      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+      if (!boardMember) {
+        // Option B: workspace OWNER/ADMIN can read PRIVATE boards in read-only mode.
+        if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
+      }
     }
 
     const cards = await cardsRepo.listByList(listId);
@@ -80,7 +85,11 @@ export class CardsService {
 
     if (card.list.board.visibility !== "WORKSPACE") {
       const boardMember = await cardsRepo.isBoardMember(card.list.board.id, userId);
-      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+      if (!boardMember) {
+        if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
+      }
     }
 
     return { card };

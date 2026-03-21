@@ -49,7 +49,12 @@ export class ListsService {
 
     if (board.visibility !== "WORKSPACE") {
       const boardMember = await listsRepo.isBoardMember(board.id, userId);
-      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+      if (!boardMember) {
+        // Option B: workspace OWNER/ADMIN can read PRIVATE boards in read-only mode.
+        if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
+      }
     }
 
     const lists = await listsRepo.listByBoard(boardId);
@@ -69,7 +74,11 @@ export class ListsService {
     if (!board || board.archivedAt) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
     if (board.visibility !== "WORKSPACE") {
       const boardMember = await listsRepo.isBoardMember(board.id, userId);
-      if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+      if (!boardMember) {
+        if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
+      }
     }
 
     return { list };

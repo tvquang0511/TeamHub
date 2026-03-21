@@ -147,8 +147,13 @@ export class BoardsService {
     if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
     const boardMember = await boardsRepo.isBoardMember(existing.id, userId);
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-    if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
+    if (!boardMember) {
+      // Company safety policy: workspace OWNER/ADMIN may delete (archive) any board.
+      if (wsMembership.role !== "OWNER" && wsMembership.role !== "ADMIN") {
+        throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+      }
+    } else if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
+      // If user is on the board but not admin/owner, still deny.
       throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to delete this board");
     }
 

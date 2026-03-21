@@ -161,6 +161,15 @@ Rule nền tảng:
 - Mặc định: chỉ `board_member` mới có thể read/detail.
 - **Option B (current policy)**: `workspace OWNER/ADMIN` có thể **read-only** PRIVATE boards ngay cả khi không phải `board_member`.
   - Lưu ý: write APIs vẫn yêu cầu `board_member`, do đó admin override chỉ cho *read*.
+  - Phạm vi read-only override bao gồm:
+    - `GET /boards/:id` / `GET /boards/:id/detail`
+    - `GET /lists?boardId=...`, `GET /lists/:id`
+    - `GET /cards?listId=...`, `GET /cards/:id`
+
+#### Company safety: delete board
+- `workspace OWNER/ADMIN` có thể **xóa/archived** bất kỳ board nào trong workspace (kể cả `PRIVATE` và họ không là board member).
+- Mục đích: xử lý tình huống “nổi loạn trong công ty”, dọn dẹp board vi phạm, hoặc incident response.
+- Khuyến nghị: bổ sung audit log cho thao tác này (phase sau).
 
 Khuyến nghị vận hành:
 - Nếu áp dụng Option B, nên bổ sung **audit log** cho các lần admin đọc PRIVATE board (phase sau).

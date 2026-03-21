@@ -20,21 +20,20 @@ import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 type CardDnDItem = {
   id: string;
   listId: string;
-  targetListId?: string;
 };
 
 interface CardItemProps {
   card: Card;
   listId: string;
   boardId: string;
-  onCardReorderUI?: (dragCardId: string, hoverCardId: string, hoverFraction?: number) => void;
+  onCardDropped?: (dragCardId: string, hoverCardId: string, hoverAbove: boolean) => void;
 }
 
 export const CardItem: React.FC<CardItemProps> = ({
   card,
   listId,
   boardId,
-  onCardReorderUI,
+  onCardDropped,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState(card.title);
@@ -51,29 +50,23 @@ export const CardItem: React.FC<CardItemProps> = ({
     }),
   }));
 
-  const getHoverFraction = (monitor: any): number => {
-    const ref = cardRef.current;
-    if (!ref) return 0;
-    const clientOffset = monitor.getClientOffset();
-    if (!clientOffset) return 0;
-    const rect = ref.getBoundingClientRect();
-    const hoverClientY = clientOffset.y - rect.top;
-    return hoverClientY / (rect.bottom - rect.top);
-  };
-
   const [{ isOver }, drop] = useDrop(() => ({
     accept: "CARD",
-    hover: (item: CardDnDItem, monitor) => {
+    drop: (item: CardDnDItem, monitor) => {
+      // Only trigger on actual drop, not hover
       if (item.id === card.id) return;
-      if (!onCardReorderUI) return;
+      if (!onCardDropped) return;
 
-      const hoverFraction = getHoverFraction(monitor);
+      const ref = cardRef.current;
+      if (!ref) return;
 
-      // Same-list reorder should only happen after crossing halfway.
-      // Cross-list insert can preview immediately (it avoids "card disappears" feel).
-      if (item.listId === listId && hoverFraction < 0.5) return;
+      const clientOffset = monitor.getClientOffset();
+      if (!clientOffset) return;
 
-      onCardReorderUI(item.id, card.id, hoverFraction);
+      const rect = ref.getBoundingClientRect();
+      const hoverAbove = clientOffset.y - rect.top < rect.height / 2;
+
+      onCardDropped(item.id, card.id, hoverAbove);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver({ shallow: true }),

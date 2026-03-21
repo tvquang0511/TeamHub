@@ -8,7 +8,7 @@ import { listsApi } from "../../../api/lists.api";
 import { BoardHeader } from "../components/BoardHeader";
 import { ListColumn } from "../components/ListColumn";
 import { AddListButton } from "../components/AddListButton";
-import { ScrollArea } from "../../../components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "../../../components/ui/scroll-area";
 import { toast } from "sonner";
 import type { BoardDetail } from "../../../types/api";
 
@@ -127,18 +127,35 @@ export const BoardPage: React.FC = () => {
     },
   });
 
-  const commitListDrop = (dragListId: string) => {
+  const commitListDrop = (
+    dragListId: string,
+    dropTargetListId: string,
+    intent: "before" | "after" = "before",
+  ) => {
     if (!boardId) return;
     const key = ["board", boardId, "detail"] as const;
     const current = queryClient.getQueryData<BoardDetail>(key);
     if (!current) return;
 
+    // Compute prev/next based on *drop target* + intent (before/after).
+    // This makes list behavior match card drop semantics and avoids no-op moves.
     const ordered = [...current.lists].sort((a, b) => a.position - b.position);
-    const index = ordered.findIndex((l) => l.id === dragListId);
+    const dragged = ordered.find((l) => l.id === dragListId);
+    if (!dragged) return;
+
+    const withoutDragged = ordered.filter((l) => l.id !== dragListId);
+    const targetIndex = withoutDragged.findIndex((l) => l.id === dropTargetListId);
+    if (targetIndex < 0) return;
+
+    const insertIndex = intent === "after" ? targetIndex + 1 : targetIndex;
+    withoutDragged.splice(insertIndex, 0, dragged);
+    const nextOrdered = withoutDragged;
+
+    const index = nextOrdered.findIndex((l) => l.id === dragListId);
     if (index < 0) return;
 
-    const prevId = index > 0 ? ordered[index - 1].id : null;
-    const nextId = index < ordered.length - 1 ? ordered[index + 1].id : null;
+    const prevId = index > 0 ? nextOrdered[index - 1].id : null;
+    const nextId = index < nextOrdered.length - 1 ? nextOrdered[index + 1].id : null;
 
     moveListMutation.mutate({ listId: dragListId, prevId, nextId });
   };
@@ -172,8 +189,8 @@ export const BoardPage: React.FC = () => {
         <BoardHeader board={boardDetail} />
 
         <ScrollArea className="flex-1">
-          <div className="h-full overflow-x-auto overflow-y-hidden">
-            <div className="flex h-full w-max min-w-full gap-4 p-6">
+          <div className="h-full w-max">
+            <div className="flex h-full gap-4 p-6">
               {boardDetail.lists
                 .sort((a, b) => a.position - b.position)
                 .map((list) => (
@@ -181,12 +198,13 @@ export const BoardPage: React.FC = () => {
                     key={list.id}
                     list={list}
                     boardId={boardId!}
-                    onListDropCommit={(dragListId) => commitListDrop(dragListId)}
+                    onListDropCommit={commitListDrop}
                   />
                 ))}
               <AddListButton onAdd={handleCreateList} />
             </div>
           </div>
+          <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
     </DndProvider>

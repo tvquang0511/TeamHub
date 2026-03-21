@@ -27,7 +27,11 @@ type CardDragItem = {
 interface ListColumnProps {
   list: List;
   boardId: string;
-  onListDropCommit?: (dragListId: string, dropListId: string) => void;
+  onListDropCommit?: (
+    dragListId: string,
+    dropTargetListId: string,
+    intent: "before" | "after",
+  ) => void;
 }
 
 export const ListColumn: React.FC<ListColumnProps> = ({
@@ -106,117 +110,51 @@ export const ListColumn: React.FC<ListColumnProps> = ({
   const moveCardMutation = useMutation({
     mutationFn: ({ cardId, data }: { cardId: string; data: any }) =>
       cardsApi.move(cardId, data),
-    onMutate: async ({ cardId, data }) => {
+    onSuccess: () => {
+      // Invalidate to refetch from server (no optimistic update, server is source of truth)
       const key = ["board", boardId, "detail"] as const;
-      await queryClient.cancelQueries({ queryKey: key });
-      const previous = queryClient.getQueryData<BoardDetail>(key);
-      if (!previous) return { previous };
-
-      const destinationListId = data?.toListId ?? list.id;
-      const nextLists = previous.lists.map((l) => {
-        const ordered = [...l.cards].sort((a, b) => a.position - b.position);
-        if (l.id === list.id) {
-          const cards = ordered.filter((c) => c.id !== cardId);
-          return { ...l, cards };
-        }
-        if (l.id === destinationListId) {
-          const card = previous.lists.flatMap((x) => x.cards).find((c) => c.id === cardId);
-          if (!card) return l;
-          const cards = ordered.filter((c) => c.id !== cardId);
-          const inserted = [...cards, { ...card, listId: destinationListId }];
-          return { ...l, cards: inserted };
-        }
-        return l;
-      });
-
-      queryClient.setQueryData<BoardDetail>(key, { ...previous, lists: nextLists });
-      return { previous };
+      queryClient.invalidateQueries({ queryKey: key });
     },
-    onError: (_err, _vars, ctx) => {
-      const key = ["board", boardId, "detail"] as const;
-      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    onError: () => {
       toast.error("Không thể di chuyển card");
     },
   });
 
   const sortedCards = [...list.cards].sort((a, b) => a.position - b.position);
 
-  const reorderCardsUI = (dragCardId: string, hoverCardId: string, hoverFraction?: number) => {
+  /**
+   * Handle card drop: compute prev/next and call API
+   */
+  const handleCardDropped = (dragCardId: string, hoverCardId: string, hoverAbove: boolean) => {
     const key = ["board", boardId, "detail"] as const;
     const current = queryClient.getQueryData<BoardDetail>(key);
     if (!current) return;
 
-    // Find source list (where the card currently is in UI)
-    const sourceList = current.lists.find((l) => l.cards.some((c) => c.id === dragCardId));
-    if (!sourceList) return;
-
-    const targetListId = list.id;
-    const hoverIndexInTarget = (() => {
-      const target = current.lists.find((l) => l.id === targetListId);
-      if (!target) return -1;
-      const ordered = [...target.cards].sort((a, b) => a.position - b.position);
-      return ordered.findIndex((c) => c.id === hoverCardId);
-    })();
-    if (hoverIndexInTarget < 0) return;
-
-    const movedCard = sourceList.cards.find((c) => c.id === dragCardId);
-    if (!movedCard) return;
-
-    // Apply 50% threshold: insert after if hovering bottom half
-    const insertAfter = hoverFraction !== undefined && hoverFraction >= 0.5;
-    const adjustedIndex = insertAfter ? hoverIndexInTarget + 1 : hoverIndexInTarget;
-
-    const lists = current.lists.map((l) => {
-      const ordered = [...l.cards].sort((a, b) => a.position - b.position);
-
-      // Remove from source
-      if (l.id === sourceList.id) {
-        const filtered = ordered.filter((c) => c.id !== dragCardId);
-        const normalized = filtered.map((c, idx) => ({ ...c, position: (idx + 1) * 1024 }));
-        return { ...l, cards: normalized };
-      }
-
-      // Insert into target
-      if (l.id === targetListId) {
-        const without = ordered.filter((c) => c.id !== dragCardId);
-        const toIndex = Math.max(0, Math.min(adjustedIndex, without.length));
-        const inserted = [...without];
-        inserted.splice(toIndex, 0, { ...movedCard, listId: targetListId });
-        const normalized = inserted.map((c, idx) => ({ ...c, position: (idx + 1) * 1024 }));
-        return { ...l, cards: normalized };
-      }
-
-      return l;
-    });
-
-    queryClient.setQueryData<BoardDetail>(key, { ...current, lists });
-  };
-
-  const commitCardDrop = (dragCardId: string) => {
-    const key = ["board", boardId, "detail"] as const;
-    const current = queryClient.getQueryData<BoardDetail>(key);
-    if (!current) return;
-
-    // Recompute from fresh state to ensure prev/next are correct
-    const targetList = current.lists.find((l) => l.id === list.id);
+    // Find the list containing the hover card
+    const targetList = current.lists.find((l) => l.cards.some((c) => c.id === hoverCardId));
     if (!targetList) return;
-    
+
     const ordered = [...targetList.cards]
       .filter((c) => !c.id.startsWith("temp:"))
       .sort((a, b) => a.position - b.position);
-    
-    const index = ordered.findIndex((c) => c.id === dragCardId);
-    if (index < 0) return;
 
-    const prevId = index > 0 ? ordered[index - 1].id : null;
-    const nextId = index < ordered.length - 1 ? ordered[index + 1].id : null;
+    const hoverIndex = ordered.findIndex((c) => c.id === hoverCardId);
+    if (hoverIndex < 0) return;
 
+    // Compute insertion index based on hoverAbove
+    const insertIndex = hoverAbove ? hoverIndex : hoverIndex + 1;
+
+    // Find prev/next cards around insertion point
+    const prevCard = insertIndex > 0 ? ordered[insertIndex - 1] : null;
+    const nextCard = insertIndex < ordered.length ? ordered[insertIndex] : null;
+
+    // Call move API with prev/next
     moveCardMutation.mutate({
       cardId: dragCardId,
       data: {
-        toListId: list.id,
-        prevCardId: prevId,
-        nextCardId: nextId,
+        toListId: targetList.id,
+        prevCardId: prevCard?.id ?? undefined,
+        nextCardId: nextCard?.id ?? undefined,
       },
     });
   };
@@ -224,43 +162,23 @@ export const ListColumn: React.FC<ListColumnProps> = ({
   // End-of-list drop zone (allows "drop to end" without hovering a card)
   const [{ isOverEnd }, dropEnd] = useDrop(() => ({
     accept: "CARD",
-    hover: (item: CardDragItem) => {
-      // If dragging from another list, show it appended at end while hovering the end zone.
-      if (item.id == null) return;
-      if (item.listId !== list.id) {
-        item.targetListId = list.id;
+    drop: (item: CardDragItem) => {
+      // Drop at end of list
+      const lastCard = sortedCards[sortedCards.length - 1];
+      if (!lastCard) {
+        // List is empty, just move card with no prev/next
+        moveCardMutation.mutate({
+          cardId: item.id,
+          data: {
+            toListId: list.id,
+            prevCardId: undefined,
+            nextCardId: undefined,
+          },
+        });
+      } else {
+        // Insert after last card
+        handleCardDropped(item.id, lastCard.id, false);
       }
-
-      const key = ["board", boardId, "detail"] as const;
-      const current = queryClient.getQueryData<BoardDetail>(key);
-      if (!current) return;
-      const source = current.lists.find((l) => l.cards.some((c) => c.id === item.id));
-      if (!source) return;
-      const movedCard = source.cards.find((c) => c.id === item.id);
-      if (!movedCard) return;
-
-      const lists = current.lists.map((l) => {
-        const ordered = [...l.cards].sort((a, b) => a.position - b.position);
-        if (l.id === source.id) {
-          const filtered = ordered.filter((c) => c.id !== item.id);
-          const normalized = filtered.map((c, idx) => ({ ...c, position: (idx + 1) * 1024 }));
-          return { ...l, cards: normalized };
-        }
-        if (l.id === list.id) {
-          const without = ordered.filter((c) => c.id !== item.id);
-          const appended = [...without, { ...movedCard, listId: list.id }];
-          const normalized = appended.map((c, idx) => ({ ...c, position: (idx + 1) * 1024 }));
-          return { ...l, cards: normalized };
-        }
-        return l;
-      });
-
-      queryClient.setQueryData<BoardDetail>(key, { ...current, lists });
-    },
-    drop: (item: CardDragItem, monitor) => {
-      const didDrop = monitor.didDrop();
-      if (didDrop) return;
-      commitCardDrop(item.id);
     },
     collect: (monitor) => ({
       isOverEnd: monitor.isOver({ shallow: true }),
@@ -269,12 +187,12 @@ export const ListColumn: React.FC<ListColumnProps> = ({
 
   const [{ isOverCard }, dropCard] = useDrop(() => ({
     accept: "CARD",
-    drop: (item: { id: string; listId: string; targetListId?: string }, monitor) => {
-      const didDrop = monitor.didDrop();
-      if (didDrop) return;
-
-      // Commit on drop
-      commitCardDrop(item.id);
+    drop: (item: { id: string; listId: string }) => {
+      // This drop handler catches drops within the list area (not on specific card)
+      if (item.listId === list.id && sortedCards.length > 0) {
+        // Within same list, just move to end
+        handleCardDropped(item.id, sortedCards[0].id, true);
+      }
     },
     collect: (monitor) => ({
       isOverCard: monitor.isOver({ shallow: true }),
@@ -283,10 +201,26 @@ export const ListColumn: React.FC<ListColumnProps> = ({
 
   const [{ isOverList }, dropList] = useDrop(() => ({
     accept: "LIST",
-    drop: (item: { id: string }) => {
+    drop: (item: { id: string }, monitor) => {
+      // Prevent nested drops firing twice
+      if (monitor.didDrop()) return;
       if (!onListDropCommit) return;
       if (item.id === list.id) return;
-      onListDropCommit(item.id, list.id);
+
+      // Determine if user intended to drop before/after this list based on cursor X.
+      const client = monitor.getClientOffset();
+      let intent: "before" | "after" = "before";
+      if (client) {
+        const elementAtPoint = document.elementFromPoint(client.x, client.y) as HTMLElement | null;
+        const listRoot = elementAtPoint?.closest?.('[data-list-column="true"]') as HTMLElement | null;
+        const rect = listRoot?.getBoundingClientRect();
+        if (rect) {
+          intent = client.x < rect.left + rect.width / 2 ? "before" : "after";
+        }
+      }
+
+      // Commit-on-drop like cards: parent will compute prev/next based on intent then call API.
+      onListDropCommit(item.id, list.id, intent);
     },
     collect: (monitor) => ({
       isOverList: monitor.isOver({ shallow: true }),
@@ -317,6 +251,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
         dropList(node);
         dropCard(node);
       }}
+      data-list-column="true"
       className={`flex h-fit min-w-70 max-w-70 flex-col rounded-lg bg-gray-100 transition-colors ${
         isOverCard ? "bg-gray-200" : ""
       } ${isOverList ? "ring-2 ring-white/60" : ""} ${
@@ -382,7 +317,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
             card={card}
             listId={list.id}
             boardId={boardId}
-            onCardReorderUI={reorderCardsUI}
+            onCardDropped={handleCardDropped}
           />
         ))}
 

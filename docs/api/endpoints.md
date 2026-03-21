@@ -202,6 +202,18 @@ Response
 { "board": { "id": "uuid", "workspaceId": "uuid", "name": "Board A" } }
 ```
 
+### DELETE `/boards/:bid`
+Auth: Bearer access token
+
+Notes
+- Soft-delete (archive): server sets `archivedAt`.
+- Requires board role: `OWNER` or `ADMIN`.
+
+Response
+```json
+{ "ok": true }
+```
+
 ### GET `/boards/:bid/detail`
 Response (one-shot payload)
 ```json
@@ -234,6 +246,18 @@ Response
 { "list": { "id": "uuid", "name": "Doing" } }
 ```
 
+### DELETE `/lists/:lid`
+Auth: Bearer access token
+
+Notes
+- Soft-delete (archive): set list `archivedAt`, and archive all cards in that list.
+- Requires being a board member of the list's board.
+
+Response
+```json
+{ "ok": true }
+```
+
 ### POST `/cards`
 Request
 ```json
@@ -252,6 +276,18 @@ Request (partial)
 Response
 ```json
 { "card": { "id": "uuid", "title": "New title" } }
+```
+
+### DELETE `/cards/:cid`
+Auth: Bearer access token
+
+Notes
+- Soft-delete (archive): server sets `archivedAt`.
+- Requires being a board member of the card's board.
+
+Response
+```json
+{ "ok": true }
 ```
 
 ### POST `/cards/:cid/move`

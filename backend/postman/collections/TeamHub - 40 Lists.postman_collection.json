@@ -56,5 +56,15 @@
         "body": { "mode": "raw", "raw": "{\n  \"prevId\": null,\n  \"nextId\": null\n}" }
       }
     }
+    ,
+    {
+      "name": "Delete (archive)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/lists/{{listId}}", "host": ["{{baseUrl}}"], "path": ["lists", "{{listId}}"]
+        }
+      }
+    }
   ]
 }

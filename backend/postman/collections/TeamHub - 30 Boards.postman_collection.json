@@ -64,6 +64,14 @@
       }
     },
     {
+      "name": "Delete (archive)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}"] }
+      }
+    },
+    {
       "name": "Members - List",
       "request": {
         "method": "GET",

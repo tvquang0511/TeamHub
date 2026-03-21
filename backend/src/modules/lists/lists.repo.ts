@@ -129,6 +129,13 @@ export class ListsRepo {
       },
     });
   }
+
+  async archiveCardsByList(listId: string) {
+    return prisma.cards.updateMany({
+      where: { listId, archivedAt: null },
+      data: { archivedAt: new Date() },
+    });
+  }
 }
 
 export const listsRepo = new ListsRepo();

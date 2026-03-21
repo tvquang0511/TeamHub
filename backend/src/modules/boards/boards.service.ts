@@ -130,6 +130,23 @@ export class BoardsService {
     return { board };
   }
 
+  async delete(userId: string, boardId: string) {
+    const existing = await boardsRepo.findById(boardId);
+    if (!existing) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const wsMembership = await boardsRepo.isWorkspaceMember(existing.workspaceId, userId);
+    if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await boardsRepo.isBoardMember(existing.id, userId);
+    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to delete this board");
+    }
+
+    await boardsRepo.update(boardId, { archivedAt: new Date() });
+    return { ok: true };
+  }
+
   async listMembers(userId: string, boardId: string) {
     const board = await boardsRepo.findById(boardId);
     if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");

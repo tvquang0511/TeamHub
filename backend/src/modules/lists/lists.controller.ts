@@ -45,6 +45,13 @@ export class ListsController {
     const result = await listsService.move(userId, listId, input);
     res.status(200).json(result);
   };
+
+  delete = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const listId = String(req.params.id);
+    const result = await listsService.delete(userId, listId);
+    res.status(200).json(result);
+  };
 }
 
 export const listsController = new ListsController();

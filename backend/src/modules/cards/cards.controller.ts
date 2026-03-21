@@ -47,6 +47,13 @@ export class CardsController {
     const result = await cardsService.move(userId, cardId, input);
     res.status(200).json(result);
   };
+
+  delete = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const result = await cardsService.delete(userId, cardId);
+    res.status(200).json(result);
+  };
 }
 
 export const cardsController = new CardsController();

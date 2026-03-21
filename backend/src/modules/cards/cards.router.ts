@@ -14,6 +14,7 @@ cardsRoutes.post("/", cardsController.create);
 
 cardsRoutes.get("/:id", cardsController.get);
 cardsRoutes.patch("/:id", cardsController.update);
+cardsRoutes.delete("/:id", cardsController.delete);
 
 // Move/reorder using prev/next anchors
 cardsRoutes.post("/:id/move", cardsController.move);

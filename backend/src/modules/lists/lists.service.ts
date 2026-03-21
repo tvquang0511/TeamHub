@@ -129,6 +129,28 @@ export class ListsService {
     const list = await listsRepo.updatePosition(listId, position);
     return { list };
   }
+
+  async delete(userId: string, listId: string) {
+    const existing = await listsRepo.findById(listId);
+    if (!existing) throw new ApiError(404, "LIST_NOT_FOUND", "List not found");
+
+    const board = await listsRepo.findBoard(existing.boardId);
+    if (!board || board.archivedAt) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const membership = await listsRepo.isWorkspaceMember(existing.board.workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await listsRepo.isBoardMember(existing.boardId, userId);
+    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    // Soft delete list
+    await listsRepo.update(listId, { archivedAt: new Date() });
+
+    // Soft delete cards in this list as well (keeps referential integrity & hides from queries)
+    await listsRepo.archiveCardsByList(listId);
+
+    return { ok: true };
+  }
 }
 
 export const listsService = new ListsService();

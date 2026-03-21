@@ -175,6 +175,21 @@ export class CardsService {
     const card = await cardsRepo.move(cardId, { listId: destinationListId, position });
     return { card };
   }
+
+  async delete(userId: string, cardId: string) {
+    const existing = await cardsRepo.findById(cardId);
+    if (!existing) throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+
+    const workspaceId = existing.list.board.workspaceId;
+    const membership = await cardsRepo.isWorkspaceMember(workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await cardsRepo.isBoardMember(existing.list.board.id, userId);
+    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    await cardsRepo.update(cardId, { archivedAt: new Date() });
+    return { ok: true };
+  }
 }
 
 export const cardsService = new CardsService();

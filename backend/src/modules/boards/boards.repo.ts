@@ -190,7 +190,7 @@ export class BoardsRepo {
 
   async listLabelsByWorkspace(workspaceId: string) {
     // Labels are workspace-scoped in schema.
-    return (prisma as any).labels.findMany({
+    return prisma.labels.findMany({
       where: { workspaceId },
       orderBy: [{ createdAt: "asc" }],
       select: {
@@ -199,7 +199,6 @@ export class BoardsRepo {
         name: true,
         color: true,
         createdAt: true,
-        updatedAt: true,
       },
     });
   }

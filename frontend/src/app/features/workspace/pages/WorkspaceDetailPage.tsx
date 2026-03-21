@@ -56,18 +56,22 @@ export const WorkspaceDetailPage: React.FC = () => {
 
   const createBoardMutation = useMutation({
     mutationFn: boardsApi.create,
-    onSuccess: () => {
+    onSuccess: (createdBoard) => {
       queryClient.invalidateQueries({
         queryKey: ["workspace", workspaceId, "boards"],
       });
       setIsCreateBoardDialogOpen(false);
       setNewBoardName("");
       setNewBoardDescription("");
-  // toast: created
+      // toast: created
+
+      if (createdBoard?.id) {
+        navigate(`/boards/${createdBoard.id}`);
+      }
     },
     onError: (error: any) => {
-  console.error(
-  error.response?.data?.error?.message || "Tạo board thất bại"
+      console.error(
+        error.response?.data?.error?.message || "Tạo board thất bại"
       );
     },
   });

@@ -174,17 +174,17 @@ export const BoardPage: React.FC = () => {
         <ScrollArea className="flex-1">
           <div className="h-full overflow-x-auto overflow-y-hidden">
             <div className="flex h-full w-max min-w-full gap-4 p-6">
-            {boardDetail.lists
-              .sort((a, b) => a.position - b.position)
-              .map((list) => (
-                <ListColumn
-                  key={list.id}
-                  list={list}
-                  boardId={boardId!}
-                  onListDropCommit={(dragListId) => commitListDrop(dragListId)}
-                />
-              ))}
-            <AddListButton onAdd={handleCreateList} />
+              {boardDetail.lists
+                .sort((a, b) => a.position - b.position)
+                .map((list) => (
+                  <ListColumn
+                    key={list.id}
+                    list={list}
+                    boardId={boardId!}
+                    onListDropCommit={(dragListId) => commitListDrop(dragListId)}
+                  />
+                ))}
+              <AddListButton onAdd={handleCreateList} />
             </div>
           </div>
         </ScrollArea>

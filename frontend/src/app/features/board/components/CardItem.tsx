@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cardsApi } from "../../../api/cards.api";
@@ -27,7 +27,7 @@ interface CardItemProps {
   card: Card;
   listId: string;
   boardId: string;
-  onCardReorderUI?: (dragCardId: string, hoverCardId: string) => void;
+  onCardReorderUI?: (dragCardId: string, hoverCardId: string, hoverFraction?: number) => void;
 }
 
 export const CardItem: React.FC<CardItemProps> = ({
@@ -41,6 +41,7 @@ export const CardItem: React.FC<CardItemProps> = ({
   const [description, setDescription] = useState(card.description || "");
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const cardRef = useRef<HTMLDivElement | null>(null);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "CARD",
@@ -50,19 +51,29 @@ export const CardItem: React.FC<CardItemProps> = ({
     }),
   }));
 
+  const getHoverFraction = (monitor: any): number => {
+    const ref = cardRef.current;
+    if (!ref) return 0;
+    const clientOffset = monitor.getClientOffset();
+    if (!clientOffset) return 0;
+    const rect = ref.getBoundingClientRect();
+    const hoverClientY = clientOffset.y - rect.top;
+    return hoverClientY / (rect.bottom - rect.top);
+  };
+
   const [{ isOver }, drop] = useDrop(() => ({
     accept: "CARD",
-    hover: (item: CardDnDItem) => {
-      // Update UI order while hovering over a card (same-list reorder + cross-list insert).
+    hover: (item: CardDnDItem, monitor) => {
       if (item.id === card.id) return;
       if (!onCardReorderUI) return;
 
-      // If dragging from another list, treat this list as the current target.
-      if (item.listId !== listId) {
-        item.targetListId = listId;
-      }
+      const hoverFraction = getHoverFraction(monitor);
 
-      onCardReorderUI(item.id, card.id);
+      // Same-list reorder should only happen after crossing halfway.
+      // Cross-list insert can preview immediately (it avoids "card disappears" feel).
+      if (item.listId === listId && hoverFraction < 0.5) return;
+
+      onCardReorderUI(item.id, card.id, hoverFraction);
     },
     collect: (monitor) => ({
       isOver: monitor.isOver({ shallow: true }),
@@ -124,14 +135,17 @@ export const CardItem: React.FC<CardItemProps> = ({
       const previous = queryClient.getQueryData<BoardDetail>(key);
       if (!previous) return { previous };
 
-      const lists = previous.lists.map((l) => {
+      // Keep the cursor card visible until the new server ordering arrives.
+      // This avoids the "card jumped away" feel during cross-list moves.
+      const nextLists = previous.lists.map((l) => {
         if (l.id !== listId) return l;
-        const cards = l.cards.filter((c) => c.id !== card.id);
-        return { ...l, cards };
+        return {
+          ...l,
+          cards: l.cards.filter((c) => c.id !== card.id),
+        };
       });
 
-      queryClient.setQueryData<BoardDetail>(key, { ...previous, lists });
-      setIsModalOpen(false);
+      queryClient.setQueryData<BoardDetail>(key, { ...previous, lists: nextLists });
       return { previous };
     },
     onError: (_err, _vars, ctx) => {
@@ -160,6 +174,7 @@ export const CardItem: React.FC<CardItemProps> = ({
         ref={(node) => {
           drop(node);
           drag(node);
+          cardRef.current = node;
         }}
         onClick={() => setIsModalOpen(true)}
         className={`cursor-pointer rounded-md bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${

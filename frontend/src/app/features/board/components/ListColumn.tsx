@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2, Edit2, GripVertical } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import type { BoardDetail, List } from "../../../types/api";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
@@ -106,10 +106,30 @@ export const ListColumn: React.FC<ListColumnProps> = ({
   const moveCardMutation = useMutation({
     mutationFn: ({ cardId, data }: { cardId: string; data: any }) =>
       cardsApi.move(cardId, data),
-    onMutate: async () => {
+    onMutate: async ({ cardId, data }) => {
       const key = ["board", boardId, "detail"] as const;
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<BoardDetail>(key);
+      if (!previous) return { previous };
+
+      const destinationListId = data?.toListId ?? list.id;
+      const nextLists = previous.lists.map((l) => {
+        const ordered = [...l.cards].sort((a, b) => a.position - b.position);
+        if (l.id === list.id) {
+          const cards = ordered.filter((c) => c.id !== cardId);
+          return { ...l, cards };
+        }
+        if (l.id === destinationListId) {
+          const card = previous.lists.flatMap((x) => x.cards).find((c) => c.id === cardId);
+          if (!card) return l;
+          const cards = ordered.filter((c) => c.id !== cardId);
+          const inserted = [...cards, { ...card, listId: destinationListId }];
+          return { ...l, cards: inserted };
+        }
+        return l;
+      });
+
+      queryClient.setQueryData<BoardDetail>(key, { ...previous, lists: nextLists });
       return { previous };
     },
     onError: (_err, _vars, ctx) => {
@@ -121,7 +141,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
 
   const sortedCards = [...list.cards].sort((a, b) => a.position - b.position);
 
-  const reorderCardsUI = (dragCardId: string, hoverCardId: string) => {
+  const reorderCardsUI = (dragCardId: string, hoverCardId: string, hoverFraction?: number) => {
     const key = ["board", boardId, "detail"] as const;
     const current = queryClient.getQueryData<BoardDetail>(key);
     if (!current) return;
@@ -142,6 +162,10 @@ export const ListColumn: React.FC<ListColumnProps> = ({
     const movedCard = sourceList.cards.find((c) => c.id === dragCardId);
     if (!movedCard) return;
 
+    // Apply 50% threshold: insert after if hovering bottom half
+    const insertAfter = hoverFraction !== undefined && hoverFraction >= 0.5;
+    const adjustedIndex = insertAfter ? hoverIndexInTarget + 1 : hoverIndexInTarget;
+
     const lists = current.lists.map((l) => {
       const ordered = [...l.cards].sort((a, b) => a.position - b.position);
 
@@ -155,7 +179,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
       // Insert into target
       if (l.id === targetListId) {
         const without = ordered.filter((c) => c.id !== dragCardId);
-        const toIndex = Math.max(0, Math.min(hoverIndexInTarget, without.length));
+        const toIndex = Math.max(0, Math.min(adjustedIndex, without.length));
         const inserted = [...without];
         inserted.splice(toIndex, 0, { ...movedCard, listId: targetListId });
         const normalized = inserted.map((c, idx) => ({ ...c, position: (idx + 1) * 1024 }));
@@ -173,9 +197,14 @@ export const ListColumn: React.FC<ListColumnProps> = ({
     const current = queryClient.getQueryData<BoardDetail>(key);
     if (!current) return;
 
+    // Recompute from fresh state to ensure prev/next are correct
     const targetList = current.lists.find((l) => l.id === list.id);
     if (!targetList) return;
-    const ordered = [...targetList.cards].sort((a, b) => a.position - b.position);
+    
+    const ordered = [...targetList.cards]
+      .filter((c) => !c.id.startsWith("temp:"))
+      .sort((a, b) => a.position - b.position);
+    
     const index = ordered.findIndex((c) => c.id === dragCardId);
     if (index < 0) return;
 
@@ -303,7 +332,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
           className="-ml-1 flex h-8 w-6 items-center justify-center rounded hover:bg-black/5 cursor-grab active:cursor-grabbing"
           title="Kéo để sắp xếp list"
         >
-          <GripVertical className="h-4 w-4 text-gray-500" />
+          <MoreHorizontal className="h-5 w-5 text-gray-600 rotate-90" />
         </div>
         {isEditing ? (
           <Input

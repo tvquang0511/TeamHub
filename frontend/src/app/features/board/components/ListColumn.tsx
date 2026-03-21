@@ -16,6 +16,7 @@ import {
 import { MoreHorizontal, Trash2, Edit2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import type { BoardDetail, List } from "../../../types/api";
+import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 
 type CardDragItem = {
   id: string;
@@ -26,18 +27,17 @@ type CardDragItem = {
 interface ListColumnProps {
   list: List;
   boardId: string;
-  onListReorderUI?: (dragListId: string, hoverListId: string) => void;
   onListDropCommit?: (dragListId: string, dropListId: string) => void;
 }
 
 export const ListColumn: React.FC<ListColumnProps> = ({
   list,
   boardId,
-  onListReorderUI,
   onListDropCommit,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [listName, setListName] = useState(list.name);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const queryClient = useQueryClient();
 
   const [{ isListDragging }, dragList] = useDrag(() => ({
@@ -99,6 +99,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
     },
     onSuccess: () => {
       toast.success("Đã xoá list!");
+      setConfirmDelete(false);
     },
   });
 
@@ -253,11 +254,6 @@ export const ListColumn: React.FC<ListColumnProps> = ({
 
   const [{ isOverList }, dropList] = useDrop(() => ({
     accept: "LIST",
-    hover: (item: { id: string }) => {
-      if (!onListReorderUI) return;
-      if (item.id === list.id) return;
-      onListReorderUI(item.id, list.id);
-    },
     drop: (item: { id: string }) => {
       if (!onListDropCommit) return;
       if (item.id === list.id) return;
@@ -339,7 +335,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
               Đổi tên
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => deleteListMutation.mutate()}
+              onClick={() => setConfirmDelete(true)}
               className="text-red-600"
             >
               <Trash2 className="mr-2 h-4 w-4" />
@@ -377,6 +373,17 @@ export const ListColumn: React.FC<ListColumnProps> = ({
       <div className="p-3 pt-0">
         <AddCardButton listId={list.id} boardId={boardId} />
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Xoá list?"
+        description="List sẽ bị ẩn (archive) và các card trong list cũng sẽ bị archive."
+        confirmText="Xoá"
+        destructive
+        loading={deleteListMutation.isPending}
+        onConfirm={() => deleteListMutation.mutate()}
+      />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import { Label } from "../../../components/ui/label";
 import { Calendar, Trash2 } from "lucide-react";
 // toast placeholder (wire real toast later)
 import type { BoardDetail, Card } from "../../../types/api";
+import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 
 type CardDnDItem = {
   id: string;
@@ -39,6 +40,7 @@ export const CardItem: React.FC<CardItemProps> = ({
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || "");
   const queryClient = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "CARD",
@@ -138,6 +140,7 @@ export const CardItem: React.FC<CardItemProps> = ({
     },
     onSuccess: () => {
       // toast: deleted
+      setConfirmDelete(false);
     },
   });
 
@@ -216,7 +219,7 @@ export const CardItem: React.FC<CardItemProps> = ({
             <div className="flex justify-between pt-4">
               <Button
                 variant="destructive"
-                onClick={() => deleteCardMutation.mutate()}
+                onClick={() => setConfirmDelete(true)}
                 disabled={deleteCardMutation.isPending}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -240,6 +243,17 @@ export const CardItem: React.FC<CardItemProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Xoá card?"
+        description="Card sẽ bị ẩn (archive). Bạn có thể khôi phục sau (tính năng tương lai)."
+        confirmText="Xoá"
+        destructive
+        loading={deleteCardMutation.isPending}
+        onConfirm={() => deleteCardMutation.mutate()}
+      />
     </>
   );
 };

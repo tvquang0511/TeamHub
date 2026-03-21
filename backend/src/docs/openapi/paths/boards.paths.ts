@@ -198,6 +198,39 @@ export const boardsPaths = {
         },
       },
     },
+    delete: {
+      tags: ["Boards"],
+      summary: "Archive (soft-delete) a board",
+      description: "Sets board.archivedAt. Requires board role OWNER/ADMIN.",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: {
+          description: "OK",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  ok: { type: "boolean" },
+                },
+                required: ["ok"],
+              },
+              examples: {
+                ok: { value: { ok: true } },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   "/boards/{id}/detail": {
     get: {

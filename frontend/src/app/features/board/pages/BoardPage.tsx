@@ -127,25 +127,6 @@ export const BoardPage: React.FC = () => {
     },
   });
 
-  const reorderListsUI = (dragListId: string, hoverListId: string) => {
-    if (!boardId) return;
-    const key = ["board", boardId, "detail"] as const;
-    const current = queryClient.getQueryData<BoardDetail>(key);
-    if (!current) return;
-
-    const ordered = [...current.lists].sort((a, b) => a.position - b.position);
-    const fromIndex = ordered.findIndex((l) => l.id === dragListId);
-    const toIndex = ordered.findIndex((l) => l.id === hoverListId);
-    if (fromIndex < 0 || toIndex < 0) return;
-    if (fromIndex === toIndex) return;
-
-    const [moved] = ordered.splice(fromIndex, 1);
-    ordered.splice(toIndex, 0, moved);
-
-    const normalized = ordered.map((l, idx) => ({ ...l, position: (idx + 1) * 1024 }));
-    queryClient.setQueryData<BoardDetail>(key, { ...current, lists: normalized });
-  };
-
   const commitListDrop = (dragListId: string) => {
     if (!boardId) return;
     const key = ["board", boardId, "detail"] as const;
@@ -191,7 +172,8 @@ export const BoardPage: React.FC = () => {
         <BoardHeader board={boardDetail} />
 
         <ScrollArea className="flex-1">
-          <div className="flex h-full gap-4 p-6">
+          <div className="h-full overflow-x-auto overflow-y-hidden">
+            <div className="flex h-full w-max min-w-full gap-4 p-6">
             {boardDetail.lists
               .sort((a, b) => a.position - b.position)
               .map((list) => (
@@ -199,11 +181,11 @@ export const BoardPage: React.FC = () => {
                   key={list.id}
                   list={list}
                   boardId={boardId!}
-                  onListReorderUI={reorderListsUI}
                   onListDropCommit={(dragListId) => commitListDrop(dragListId)}
                 />
               ))}
             <AddListButton onAdd={handleCreateList} />
+            </div>
           </div>
         </ScrollArea>
       </div>

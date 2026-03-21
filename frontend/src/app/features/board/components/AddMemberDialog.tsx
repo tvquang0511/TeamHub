@@ -60,7 +60,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const results = await usersApi.search(searchQuery, 5);
+        const results = await usersApi.search(searchQuery, { limit: 5 });
         setSearchResults(results);
       } catch (error) {
         console.error("Search failed:", error);

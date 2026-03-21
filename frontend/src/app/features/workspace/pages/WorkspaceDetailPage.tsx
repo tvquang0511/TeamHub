@@ -24,17 +24,22 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
-import { Plus, LayoutDashboard, Users, ArrowLeft } from "lucide-react";
+import { Plus, LayoutDashboard, Users, ArrowLeft, Trash2 } from "lucide-react";
 // toast placeholder (wire real toast later)
 import { MemberTable } from "../components/MemberTable";
+import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
+import { useWorkspaceMutations } from "../../../hooks/useWorkspaceMutations";
 
 export const WorkspaceDetailPage: React.FC = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isCreateBoardDialogOpen, setIsCreateBoardDialogOpen] = useState(false);
+  const [confirmDeleteWorkspace, setConfirmDeleteWorkspace] = useState(false);
   const [newBoardName, setNewBoardName] = useState("");
   const [newBoardDescription, setNewBoardDescription] = useState("");
+
+  const workspaceMutations = useWorkspaceMutations({ workspaceId });
 
   const { data: workspace, isLoading: workspaceLoading } = useQuery({
     queryKey: ["workspace", workspaceId],
@@ -102,6 +107,26 @@ export const WorkspaceDetailPage: React.FC = () => {
     );
   }
 
+  const deleteWorkspace = () => {
+    if (!workspaceId) return;
+    workspaceMutations.deleteWorkspace.mutate(workspaceId, {
+      onSuccess: () => {
+        setConfirmDeleteWorkspace(false);
+
+        // keep UI snappy: remove from cache right away
+        queryClient.setQueryData<any>(["workspaces"], (prev: any) => {
+          if (!Array.isArray(prev)) return prev;
+          return prev.filter((w: any) => w.id !== workspaceId);
+        });
+        queryClient.removeQueries({ queryKey: ["workspace", workspaceId] });
+        queryClient.removeQueries({ queryKey: ["workspace", workspaceId, "boards"] });
+        queryClient.removeQueries({ queryKey: ["workspace", workspaceId, "members"] });
+
+        navigate("/workspaces");
+      },
+    });
+  };
+
   return (
     <div className="container mx-auto max-w-7xl py-8">
       <div className="mb-6">
@@ -120,6 +145,14 @@ export const WorkspaceDetailPage: React.FC = () => {
               <p className="mt-2 text-gray-600">{workspace.description}</p>
             )}
           </div>
+
+          <Button
+            variant="destructive"
+            onClick={() => setConfirmDeleteWorkspace(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Xoá workspace
+          </Button>
         </div>
       </div>
 
@@ -259,6 +292,17 @@ export const WorkspaceDetailPage: React.FC = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={confirmDeleteWorkspace}
+        onOpenChange={setConfirmDeleteWorkspace}
+        title="Xoá workspace?"
+        description="Workspace sẽ bị xoá khỏi tài khoản của bạn. Hành động này không thể hoàn tác."
+        confirmText="Xoá"
+        destructive
+        loading={workspaceMutations.deleteWorkspace.isPending}
+        onConfirm={deleteWorkspace}
+      />
     </div>
   );
 };

@@ -161,6 +161,39 @@ export const listsPaths = {
         },
       },
     },
+    delete: {
+      tags: ["Lists"],
+      summary: "Archive (soft-delete) a list",
+      description: "Sets list.archivedAt. Also archives cards in that list.",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: {
+          description: "OK",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  ok: { type: "boolean" },
+                },
+                required: ["ok"],
+              },
+              examples: {
+                ok: { value: { ok: true } },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   "/lists/{id}/move": {
     post: {

@@ -21,6 +21,7 @@ Table refresh_tokens {
 Table workspaces {
   id uuid [pk]
   name varchar [not null]
+  description text
   created_at timestamp
   updated_at timestamp
 }

@@ -168,6 +168,39 @@ export const cardsPaths = {
         },
       },
     },
+    delete: {
+      tags: ["Cards"],
+      summary: "Archive (soft-delete) a card",
+      description: "Sets card.archivedAt.",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: {
+          description: "OK",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  ok: { type: "boolean" },
+                },
+                required: ["ok"],
+              },
+              examples: {
+                ok: { value: { ok: true } },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   "/cards/{id}/move": {
     post: {

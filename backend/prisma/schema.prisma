@@ -159,6 +159,7 @@ model boards {
   name        String
   description String?
   visibility  board_visibility @default(PRIVATE)
+  backgroundColor String? @map("background_color")
   position    Decimal? @db.Decimal(65, 30)
   archivedAt  DateTime? @map("archived_at")
 

@@ -11,6 +11,7 @@ export const usersApi = {
       params: {
         q: query,
         limit: options?.limit ?? 10,
+        // kept for backward compatibility; backend ignores it now
         workspaceId: options?.workspaceId,
       },
     });

@@ -7,7 +7,6 @@ import { BoardPage } from "./features/board/pages/BoardPage";
 import { BoardSettingsPage } from "./features/board/pages/BoardSettingsPage";
 import { AcceptInvitePage } from "./features/invites/pages/AcceptInvitePage";
 import { CreateWorkspaceInvitePage } from "./features/invites/pages/CreateWorkspaceInvitePage";
-import { CreateBoardInvitePage } from "./features/invites/pages/CreateBoardInvitePage";
 import { CardDetailPage } from "./features/cards/pages/CardDetailPage";
 import { AppLayout } from "./layouts/AppLayout";
 
@@ -51,10 +50,6 @@ export const router = createBrowserRouter([
       {
         path: "boards/:boardId/settings",
         Component: BoardSettingsPage,
-      },
-      {
-        path: "boards/:boardId/invites/new",
-        Component: CreateBoardInvitePage,
       },
       {
         path: "cards/:cardId",

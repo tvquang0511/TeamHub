@@ -64,7 +64,7 @@ export const CreateWorkspaceInvitePage: React.FC = () => {
             </div>
           )}
 
-          <InviteLinkBox kind="workspace" token={mutation.data?.token} />
+          <InviteLinkBox kind="workspace" token={mutation.data?.invite?.token} />
         </CardContent>
       </Card>
     </div>

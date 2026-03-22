@@ -1,4 +1,5 @@
 import { httpClient } from "./http";
+import { invitesApi } from "./invites.api";
 import type {
   Workspace,
   WorkspaceMember,
@@ -123,12 +124,22 @@ export const workspacesApi = {
     workspaceId: string,
     data: { email: string; role: "ADMIN" | "MEMBER" }
   ): Promise<WorkspaceMember> => {
-    const response = await httpClient.post<any>(
-      `/workspaces/${workspaceId}/members/by-email`,
-      data
-    );
-    // Backend shape might be { member } or directly the member; normalize.
-    return response.data?.member || response.data;
+    // Backend doesn't implement direct add-by-email for workspaces.
+    // The supported flow is: create a workspace invite, then invitee accepts.
+    // We still accept `role` in the UI, but backend currently always adds as MEMBER.
+    // (See notes in invitesService.accept* methods.)
+    await invitesApi.inviteToWorkspace(workspaceId, { email: data.email });
+
+    // We can't return a WorkspaceMember because the member won't exist until acceptance.
+    // Return a placeholder shape for callers that expect a value.
+    return {
+      id: "",
+      userId: "",
+      workspaceId,
+      role: data.role,
+      user: { id: "", email: data.email, displayName: data.email },
+      joinedAt: new Date().toISOString(),
+    } as any;
   },
 
   // Update member role

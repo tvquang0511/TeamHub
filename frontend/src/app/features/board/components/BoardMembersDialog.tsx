@@ -130,8 +130,7 @@ export const BoardMembersDialog: React.FC<Props> = ({
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
       try {
-        // Prefer backend filtering by workspaceId if supported.
-        const results = await usersApi.search(searchQuery, { limit: 8, workspaceId });
+        const results = await usersApi.search(searchQuery, { limit: 8 });
         setSearchResults(results);
       } catch (error) {
         console.error("Search failed:", error);

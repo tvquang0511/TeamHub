@@ -3,7 +3,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 
-type InviteKind = "workspace" | "board";
+type InviteKind = "workspace";
 
 type Props = {
   kind: InviteKind;
@@ -14,6 +14,7 @@ export const InviteLinkBox: React.FC<Props> = ({ kind, token }) => {
   const inviteUrl = useMemo(() => {
     if (!token) return "";
     const origin = window.location.origin;
+    // Frontend route: /invites/:kind/:token/accept
     return `${origin}/invites/${kind}/${token}/accept?redirect=/workspaces`;
   }, [kind, token]);
 

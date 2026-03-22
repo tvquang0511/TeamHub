@@ -57,7 +57,7 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const users = await usersApi.search(searchQuery, { limit: 8, workspaceId });
+        const users = await usersApi.search(searchQuery, { limit: 8 });
         setResults(users);
       } catch (err) {
         console.error("Search failed:", err);

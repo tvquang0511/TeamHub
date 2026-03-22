@@ -3,18 +3,28 @@ import type {
   InviteToWorkspaceRequest,
 } from "../types/api";
 
-export type WorkspaceInviteInboxItem = {
+export type WorkspaceInvite = {
   id: string;
   workspaceId: string;
-  workspaceName?: string;
   email: string;
-  role: "ADMIN" | "MEMBER";
-  invitedBy?: {
+  expiresAt: string;
+  acceptedAt: string | null;
+  createdAt: string;
+};
+
+export type WorkspaceInviteInboxItem = {
+  invite: WorkspaceInvite;
+  workspace: {
     id: string;
-    displayName: string;
-    email?: string;
+    name: string;
   };
-  createdAt?: string;
+};
+
+export type AcceptInviteResponse = {
+  workspace: {
+    id: string;
+    name: string;
+  };
 };
 
 export const invitesApi = {
@@ -22,8 +32,8 @@ export const invitesApi = {
   inviteToWorkspace: async (
     workspaceId: string,
     data: InviteToWorkspaceRequest
-  ): Promise<{ token: string }> => {
-    const response = await httpClient.post<{ token: string }>(
+  ): Promise<{ invite: { id: string; email: string; token: string; expiresAt: string } }> => {
+    const response = await httpClient.post<{ invite: { id: string; email: string; token: string; expiresAt: string } }>(
       `/invites/workspaces/${workspaceId}`,
       data
     );
@@ -31,8 +41,9 @@ export const invitesApi = {
   },
 
   // Accept workspace invite
-  acceptWorkspaceInvite: async (token: string): Promise<void> => {
-    await httpClient.post(`/invites/${token}/accept`);
+  acceptWorkspaceInvite: async (token: string): Promise<AcceptInviteResponse> => {
+    const res = await httpClient.post<AcceptInviteResponse>(`/invites/${token}/accept`);
+    return res.data;
   },
 
   // Inbox: list my pending workspace invites
@@ -44,12 +55,18 @@ export const invitesApi = {
   },
 
   // Inbox: accept by inviteId
-  acceptWorkspaceInviteInbox: async (inviteId: string): Promise<void> => {
-    await httpClient.post(`/invites/inbox/workspaces/${inviteId}/accept`);
+  acceptWorkspaceInviteInbox: async (inviteId: string): Promise<AcceptInviteResponse> => {
+    const res = await httpClient.post<AcceptInviteResponse>(
+      `/invites/inbox/workspaces/${inviteId}/accept`
+    );
+    return res.data;
   },
 
   // Inbox: decline by inviteId
-  declineWorkspaceInviteInbox: async (inviteId: string): Promise<void> => {
-    await httpClient.post(`/invites/inbox/workspaces/${inviteId}/decline`);
+  declineWorkspaceInviteInbox: async (inviteId: string): Promise<{ ok: boolean }> => {
+    const res = await httpClient.post<{ ok: boolean }>(
+      `/invites/inbox/workspaces/${inviteId}/decline`
+    );
+    return res.data;
   },
 };

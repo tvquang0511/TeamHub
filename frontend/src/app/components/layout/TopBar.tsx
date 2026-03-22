@@ -111,27 +111,24 @@ export const TopBar: React.FC = () => {
                   <div className="max-h-[60vh] space-y-2 overflow-y-auto">
                     {(workspaceInvites || []).map((inv) => (
                       <div
-                        key={inv.id}
+                        key={inv.invite.id}
                         className="flex items-center justify-between gap-3 rounded-md border p-3"
                       >
                         <div className="min-w-0">
                           <div className="font-medium text-gray-900">
-                            {inv.workspaceName || `Workspace ${inv.workspaceId}`}
+                            {inv.workspace?.name || `Workspace ${inv.workspace?.id ?? inv.invite.workspaceId}`}
                           </div>
                           <div className="text-sm text-gray-600">
-                            Vai trò: <span className="font-medium">{inv.role}</span>
-                            {inv.invitedBy?.displayName ? (
-                              <>
-                                {" "}· Mời bởi <span className="font-medium">{inv.invitedBy.displayName}</span>
-                              </>
-                            ) : null}
+                            <span className="text-xs">
+                              Hết hạn: {new Date(inv.invite.expiresAt).toLocaleString()}
+                            </span>
                           </div>
                         </div>
 
                         <div className="flex shrink-0 items-center gap-2">
                           <Button
                             size="sm"
-                            onClick={() => acceptInviteMutation.mutate(inv.id)}
+                            onClick={() => acceptInviteMutation.mutate(inv.invite.id)}
                             disabled={acceptInviteMutation.isPending || declineInviteMutation.isPending}
                           >
                             <Check className="mr-2 h-4 w-4" />
@@ -140,7 +137,7 @@ export const TopBar: React.FC = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => declineInviteMutation.mutate(inv.id)}
+                            onClick={() => declineInviteMutation.mutate(inv.invite.id)}
                             disabled={acceptInviteMutation.isPending || declineInviteMutation.isPending}
                           >
                             <X className="mr-2 h-4 w-4" />

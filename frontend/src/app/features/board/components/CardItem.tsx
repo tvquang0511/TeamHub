@@ -201,7 +201,7 @@ export const CardItem: React.FC<CardItemProps> = ({
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Chi tiết Card</DialogTitle>
+            <DialogTitle>Chi tiết</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { boardsApi } from "../../../api/boards.api";
+import { boardsApi, boardBackgroundToCss } from "../../../api/boards.api";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
@@ -34,6 +34,9 @@ export const BoardSettingsPage: React.FC = () => {
       name: board?.name ?? "",
       description: board?.description ?? "",
       backgroundColor: board?.backgroundColor ?? "",
+      backgroundLeftColor: board?.backgroundLeftColor ?? "#667eea",
+      backgroundRightColor: board?.backgroundRightColor ?? "#764ba2",
+      backgroundSplitPct: typeof board?.backgroundSplitPct === "number" ? board.backgroundSplitPct : 50,
     }),
     [board]
   );
@@ -41,11 +44,17 @@ export const BoardSettingsPage: React.FC = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [backgroundColor, setBackgroundColor] = useState("");
+  const [backgroundLeftColor, setBackgroundLeftColor] = useState("");
+  const [backgroundRightColor, setBackgroundRightColor] = useState("");
+  const [backgroundSplitPct, setBackgroundSplitPct] = useState(50);
 
   React.useEffect(() => {
     setName(initial.name);
     setDescription(initial.description);
     setBackgroundColor(initial.backgroundColor);
+    setBackgroundLeftColor(initial.backgroundLeftColor);
+    setBackgroundRightColor(initial.backgroundRightColor);
+    setBackgroundSplitPct(initial.backgroundSplitPct);
   }, [initial]);
 
   const save = () => {
@@ -55,6 +64,11 @@ export const BoardSettingsPage: React.FC = () => {
       data: {
         name,
         description: description || undefined,
+        // Prefer gradient fields.
+        backgroundLeftColor: backgroundLeftColor || undefined,
+        backgroundRightColor: backgroundRightColor || undefined,
+        backgroundSplitPct,
+        // Keep legacy string optional.
         backgroundColor: backgroundColor || undefined,
       },
     });
@@ -117,18 +131,78 @@ export const BoardSettingsPage: React.FC = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bg">Background color (hex hoặc css)</Label>
-            <Input
-              id="bg"
-              value={backgroundColor}
-              onChange={(e) => setBackgroundColor(e.target.value)}
-              placeholder="#667eea"
-            />
+          <div className="space-y-3">
+            <Label>Màu nền (Gradient ngang)</Label>
+
             <div
               className="h-10 w-full rounded-md border"
-              style={{ background: backgroundColor || board.backgroundColor || undefined }}
+              style={{
+                background:
+                  boardBackgroundToCss({
+                    backgroundColor,
+                    backgroundLeftColor,
+                    backgroundRightColor,
+                    backgroundSplitPct,
+                  }) ?? undefined,
+              }}
             />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Màu trái</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="color"
+                    value={backgroundLeftColor}
+                    onChange={(e) => setBackgroundLeftColor(e.target.value)}
+                    className="w-14 p-1"
+                  />
+                  <Input
+                    value={backgroundLeftColor}
+                    onChange={(e) => setBackgroundLeftColor(e.target.value)}
+                    placeholder="#667eea"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Màu phải</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="color"
+                    value={backgroundRightColor}
+                    onChange={(e) => setBackgroundRightColor(e.target.value)}
+                    className="w-14 p-1"
+                  />
+                  <Input
+                    value={backgroundRightColor}
+                    onChange={(e) => setBackgroundRightColor(e.target.value)}
+                    placeholder="#764ba2"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tỉ lệ màu trái: {backgroundSplitPct}%</Label>
+              <Input
+                type="range"
+                min={0}
+                max={100}
+                value={backgroundSplitPct}
+                onChange={(e) => setBackgroundSplitPct(Number(e.target.value))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bg">(Tuỳ chọn) CSS nền (legacy)</Label>
+              <Input
+                id="bg"
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
+                placeholder="linear-gradient(...) hoặc #111827"
+              />
+            </div>
           </div>
 
           <div className="flex items-center justify-between">

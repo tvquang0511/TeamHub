@@ -10,6 +10,22 @@ import type {
   AddBoardMemberByEmailRequest,
 } from "../types/api";
 
+export const boardBackgroundToCss = (b: {
+  backgroundColor?: string;
+  backgroundLeftColor?: string;
+  backgroundRightColor?: string;
+  backgroundSplitPct?: number;
+}): string | undefined => {
+  if (b.backgroundColor) return b.backgroundColor;
+  if (!b.backgroundLeftColor || !b.backgroundRightColor) return undefined;
+  const pct =
+    typeof b.backgroundSplitPct === "number" && isFinite(b.backgroundSplitPct)
+      ? Math.min(100, Math.max(0, b.backgroundSplitPct))
+      : 50;
+  // Horizontal multi-color gradient with adjustable split point.
+  return `linear-gradient(90deg, ${b.backgroundLeftColor} 0%, ${b.backgroundLeftColor} ${pct}%, ${b.backgroundRightColor} 100%)`;
+};
+
 type BoardEnvelope = { board: any };
 type MembersEnvelope = { members: any[] };
 type BoardDetailEnvelope = {
@@ -29,6 +45,9 @@ const mapBoard = (b: any): Board => {
     privacy: b.visibility === "WORKSPACE" ? "WORKSPACE" : "PRIVATE",
     // Prefer camelCase from backend; fallback to snake_case if an older/alternate serializer is used.
     backgroundColor: (b.backgroundColor ?? b.background_color) ?? undefined,
+    backgroundLeftColor: (b.backgroundLeftColor ?? b.background_left_color) ?? undefined,
+    backgroundRightColor: (b.backgroundRightColor ?? b.background_right_color) ?? undefined,
+    backgroundSplitPct: (b.backgroundSplitPct ?? b.background_split_pct) ?? undefined,
     createdAt: b.createdAt ?? new Date().toISOString(),
     updatedAt: b.updatedAt ?? new Date().toISOString(),
   };
@@ -118,6 +137,9 @@ export const boardsApi = {
       description: data.description,
       visibility: data.privacy === "WORKSPACE" ? "WORKSPACE" : "PRIVATE",
       backgroundColor: data.backgroundColor,
+      backgroundLeftColor: data.backgroundLeftColor,
+      backgroundRightColor: data.backgroundRightColor,
+      backgroundSplitPct: data.backgroundSplitPct,
       position: undefined,
     });
     return mapBoard(response.data.board);
@@ -139,6 +161,12 @@ export const boardsApi = {
             : "PRIVATE",
       backgroundColor:
         data.backgroundColor === undefined ? undefined : data.backgroundColor,
+      backgroundLeftColor:
+        data.backgroundLeftColor === undefined ? undefined : data.backgroundLeftColor,
+      backgroundRightColor:
+        data.backgroundRightColor === undefined ? undefined : data.backgroundRightColor,
+      backgroundSplitPct:
+        data.backgroundSplitPct === undefined ? undefined : data.backgroundSplitPct,
       archived: undefined,
       position: undefined,
     });

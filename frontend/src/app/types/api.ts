@@ -55,6 +55,9 @@ export interface Board {
   workspaceId: string;
   privacy: "PRIVATE" | "WORKSPACE";
   backgroundColor?: string;
+  backgroundLeftColor?: string;
+  backgroundRightColor?: string;
+  backgroundSplitPct?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -147,6 +150,9 @@ export interface CreateBoardRequest {
   workspaceId: string;
   description?: string;
   backgroundColor?: string;
+  backgroundLeftColor?: string;
+  backgroundRightColor?: string;
+  backgroundSplitPct?: number;
   privacy?: "PRIVATE" | "WORKSPACE";
 }
 

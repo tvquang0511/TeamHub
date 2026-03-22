@@ -11,6 +11,9 @@ export const createBoardInputSchema = z.object({
   // PRIVATE = only board members can see; WORKSPACE = any workspace member can see.
   visibility: z.enum(["PRIVATE", "WORKSPACE"]).optional(),
   backgroundColor: z.string().max(30).optional(),
+  backgroundLeftColor: z.string().max(30).optional(),
+  backgroundRightColor: z.string().max(30).optional(),
+  backgroundSplitPct: z.number().int().min(0).max(100).optional(),
   // position is numeric(65,30); we accept number for MVP.
   position: z.number().optional(),
 });
@@ -21,6 +24,9 @@ export const updateBoardInputSchema = z.object({
   position: z.number().nullable().optional(),
   visibility: z.enum(["PRIVATE", "WORKSPACE"]).optional(),
   backgroundColor: z.string().max(30).nullable().optional(),
+  backgroundLeftColor: z.string().max(30).nullable().optional(),
+  backgroundRightColor: z.string().max(30).nullable().optional(),
+  backgroundSplitPct: z.number().int().min(0).max(100).nullable().optional(),
   archived: z.boolean().optional(),
 });
 
@@ -83,6 +89,9 @@ export class BoardsService {
       description: input.description ?? null,
       visibility: input.visibility ?? "PRIVATE",
       backgroundColor: input.backgroundColor ?? null,
+      backgroundLeftColor: input.backgroundLeftColor ?? null,
+      backgroundRightColor: input.backgroundRightColor ?? null,
+      backgroundSplitPct: input.backgroundSplitPct ?? null,
       position: input.position === undefined ? null : new Prisma.Decimal(input.position),
     });
 
@@ -244,6 +253,12 @@ export class BoardsService {
       visibility: input.visibility,
       backgroundColor:
         input.backgroundColor === undefined ? undefined : input.backgroundColor,
+      backgroundLeftColor:
+        input.backgroundLeftColor === undefined ? undefined : input.backgroundLeftColor,
+      backgroundRightColor:
+        input.backgroundRightColor === undefined ? undefined : input.backgroundRightColor,
+      backgroundSplitPct:
+        input.backgroundSplitPct === undefined ? undefined : input.backgroundSplitPct,
       position:
         input.position === undefined
           ? undefined

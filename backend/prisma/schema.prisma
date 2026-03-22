@@ -160,6 +160,9 @@ model boards {
   description String?
   visibility  board_visibility @default(PRIVATE)
   backgroundColor String? @map("background_color")
+  backgroundLeftColor String? @map("background_left_color")
+  backgroundRightColor String? @map("background_right_color")
+  backgroundSplitPct Int? @map("background_split_pct")
   position    Decimal? @db.Decimal(65, 30)
   archivedAt  DateTime? @map("archived_at")
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workspacesApi } from "../../../api/workspaces.api";
 import { boardsApi } from "../../../api/boards.api";
+import { boardBackgroundToCss } from "../../../api/boards.api";
 import { Button } from "../../../components/ui/button";
 import {
   Card,
@@ -153,7 +154,7 @@ export const WorkspaceDetailPage: React.FC = () => {
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Quay lại Workspaces
+          Workspaces
         </Button>
         <div className="flex items-center justify-between">
           <div>
@@ -257,7 +258,7 @@ export const WorkspaceDetailPage: React.FC = () => {
                   className="cursor-pointer transition-shadow hover:shadow-lg"
                   onClick={() => navigate(`/boards/${board.id}`)}
                   style={{
-                    backgroundColor: board.backgroundColor || undefined,
+                    background: boardBackgroundToCss(board) ?? undefined,
                   }}
                 >
                   <CardHeader>

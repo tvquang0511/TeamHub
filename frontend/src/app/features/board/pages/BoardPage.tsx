@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { boardsApi } from "../../../api/boards.api";
+import { boardBackgroundToCss } from "../../../api/boards.api";
 import { listsApi } from "../../../api/lists.api";
 import { BoardHeader } from "../components/BoardHeader";
 import { ListColumn } from "../components/ListColumn";
@@ -181,9 +182,9 @@ export const BoardPage: React.FC = () => {
       <div
         className="flex h-[calc(100vh-3.5rem)] flex-col"
         style={{
-          background: boardDetail.backgroundColor
-            ? boardDetail.backgroundColor
-            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background:
+            boardBackgroundToCss(boardDetail) ??
+            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}
       >
         <BoardHeader board={boardDetail} />

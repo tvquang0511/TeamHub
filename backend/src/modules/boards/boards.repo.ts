@@ -8,6 +8,9 @@ export type CreateBoardData = {
   description?: string | null;
   visibility?: "PRIVATE" | "WORKSPACE";
   backgroundColor?: string | null;
+  backgroundLeftColor?: string | null;
+  backgroundRightColor?: string | null;
+  backgroundSplitPct?: number | null;
   position?: Prisma.Decimal | null;
 };
 
@@ -78,6 +81,9 @@ export class BoardsRepo {
         description: data.description ?? null,
         visibility: (data.visibility ?? "PRIVATE") as any,
         backgroundColor: data.backgroundColor ?? null,
+        backgroundLeftColor: data.backgroundLeftColor ?? null,
+        backgroundRightColor: data.backgroundRightColor ?? null,
+        backgroundSplitPct: data.backgroundSplitPct ?? null,
         position: data.position ?? null,
       },
       select: {
@@ -88,6 +94,9 @@ export class BoardsRepo {
         // visibility field exists in schema; may require `prisma generate` for typings.
         visibility: true as any,
         backgroundColor: true as any,
+        backgroundLeftColor: true as any,
+        backgroundRightColor: true as any,
+        backgroundSplitPct: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -114,6 +123,9 @@ export class BoardsRepo {
         description: true,
         visibility: true as any,
         backgroundColor: true as any,
+        backgroundLeftColor: true as any,
+        backgroundRightColor: true as any,
+        backgroundSplitPct: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -132,6 +144,9 @@ export class BoardsRepo {
         description: true,
         visibility: true as any,
         backgroundColor: true as any,
+        backgroundLeftColor: true as any,
+        backgroundRightColor: true as any,
+        backgroundSplitPct: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -142,7 +157,7 @@ export class BoardsRepo {
 
   async update(
     boardId: string,
-    data: Partial<Pick<CreateBoardData, "name" | "description" | "position" | "visibility" | "backgroundColor">> & {
+    data: Partial<Pick<CreateBoardData, "name" | "description" | "position" | "visibility" | "backgroundColor" | "backgroundLeftColor" | "backgroundRightColor" | "backgroundSplitPct">> & {
       archivedAt?: Date | null;
     },
   ) {
@@ -153,6 +168,9 @@ export class BoardsRepo {
         description: data.description ?? undefined,
         visibility: data.visibility as any,
         backgroundColor: data.backgroundColor ?? undefined,
+        backgroundLeftColor: data.backgroundLeftColor ?? undefined,
+        backgroundRightColor: data.backgroundRightColor ?? undefined,
+        backgroundSplitPct: data.backgroundSplitPct ?? undefined,
         position: data.position ?? undefined,
         archivedAt: data.archivedAt ?? undefined,
       },
@@ -163,6 +181,9 @@ export class BoardsRepo {
         description: true,
         visibility: true as any,
         backgroundColor: true as any,
+        backgroundLeftColor: true as any,
+        backgroundRightColor: true as any,
+        backgroundSplitPct: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,

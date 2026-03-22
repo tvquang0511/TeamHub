@@ -64,6 +64,41 @@
       }
     },
     {
+      "name": "Update visibility",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/visibility",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "visibility"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"visibility\": \"WORKSPACE\"\n}" }
+      }
+    },
+    {
+      "name": "Update background (gradient)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/background",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "background"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"backgroundLeftColor\": \"#667eea\",\n  \"backgroundRightColor\": \"#764ba2\",\n  \"backgroundSplitPct\": 50\n}"
+        }
+      }
+    },
+    {
       "name": "Delete (archive)",
       "request": {
         "method": "DELETE",

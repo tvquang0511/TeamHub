@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 
-import { createBoardInputSchema, updateBoardInputSchema, boardsService } from "./boards.service";
+import {
+  createBoardInputSchema,
+  updateBoardInputSchema,
+  updateBoardVisibilityInputSchema,
+  updateBoardBackgroundInputSchema,
+  boardsService,
+} from "./boards.service";
 
 export class BoardsController {
   create = async (req: Request, res: Response) => {
@@ -36,6 +42,22 @@ export class BoardsController {
     const boardId = String(req.params.id);
     const input = updateBoardInputSchema.parse(req.body);
     const result = await boardsService.update(userId, boardId, input);
+    res.status(200).json(result);
+  };
+
+  updateVisibility = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const boardId = String(req.params.id);
+    const input = updateBoardVisibilityInputSchema.parse(req.body);
+    const result = await boardsService.updateVisibility(userId, boardId, input);
+    res.status(200).json(result);
+  };
+
+  updateBackground = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const boardId = String(req.params.id);
+    const input = updateBoardBackgroundInputSchema.parse(req.body);
+    const result = await boardsService.updateBackground(userId, boardId, input);
     res.status(200).json(result);
   };
 

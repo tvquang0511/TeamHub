@@ -214,6 +214,56 @@ Response
 { "board": { "id": "uuid", "workspaceId": "uuid", "name": "Board A" } }
 ```
 
+### PATCH `/boards/:bid/visibility`
+Auth: Bearer access token
+
+Request
+```json
+{ "visibility": "PRIVATE|WORKSPACE" }
+```
+
+Response
+```json
+{ "board": { "id": "uuid", "workspaceId": "uuid", "name": "Board A", "visibility": "PRIVATE|WORKSPACE" } }
+```
+
+Notes
+- Only board `OWNER|ADMIN` can update visibility.
+
+### PATCH `/boards/:bid/background`
+Auth: Bearer access token
+
+Request (solid color)
+```json
+{ "backgroundColor": "#111827" }
+```
+
+Request (gradient)
+```json
+{ "backgroundLeftColor": "#667eea", "backgroundRightColor": "#764ba2", "backgroundSplitPct": 50 }
+```
+
+Response
+```json
+{
+  "board": {
+    "id": "uuid",
+    "backgroundColor": null,
+    "backgroundLeftColor": "#667eea",
+    "backgroundRightColor": "#764ba2",
+    "backgroundSplitPct": 50
+  }
+}
+```
+
+Notes
+- Only board `OWNER|ADMIN` can update background.
+- Workspace board list `GET /boards?workspaceId=...` should include these background fields for card rendering.
+
+### PATCH `/boards/:bid` (legacy)
+
+This endpoint exists for backward compatibility. Prefer using the dedicated endpoints above.
+
 ### DELETE `/boards/:bid`
 Auth: Bearer access token
 

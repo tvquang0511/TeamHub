@@ -30,6 +30,26 @@ export const updateBoardInputSchema = z.object({
   archived: z.boolean().optional(),
 });
 
+export const updateBoardVisibilityInputSchema = z.object({
+  visibility: z.enum(["PRIVATE", "WORKSPACE"]),
+});
+
+export const updateBoardBackgroundInputSchema = z
+  .object({
+    backgroundColor: z.string().max(30).nullable().optional(),
+    backgroundLeftColor: z.string().max(30).nullable().optional(),
+    backgroundRightColor: z.string().max(30).nullable().optional(),
+    backgroundSplitPct: z.number().int().min(0).max(100).nullable().optional(),
+  })
+  .refine(
+    (v) =>
+      v.backgroundColor !== undefined ||
+      v.backgroundLeftColor !== undefined ||
+      v.backgroundRightColor !== undefined ||
+      v.backgroundSplitPct !== undefined,
+    { message: "At least one background field must be provided" },
+  );
+
 export class BoardsService {
   private buildBoardActorPermissions(params: {
     workspaceRole: "OWNER" | "ADMIN" | "MEMBER";
@@ -266,6 +286,64 @@ export class BoardsService {
             ? null
             : new Prisma.Decimal(input.position),
       archivedAt,
+    });
+
+    return { board };
+  }
+
+  async updateVisibility(
+    userId: string,
+    boardId: string,
+    input: z.infer<typeof updateBoardVisibilityInputSchema>,
+  ) {
+    const existing = await boardsRepo.findById(boardId);
+    if (!existing) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const wsMembership = await boardsRepo.isWorkspaceMember(existing.workspaceId, userId);
+    if (!wsMembership) {
+      throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+    }
+
+    const boardMember = await boardsRepo.isBoardMember(existing.id, userId);
+    // Policy: only board OWNER/ADMIN can update board settings.
+    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to update this board");
+    }
+
+    const board = await boardsRepo.update(boardId, { visibility: input.visibility });
+    return { board };
+  }
+
+  async updateBackground(
+    userId: string,
+    boardId: string,
+    input: z.infer<typeof updateBoardBackgroundInputSchema>,
+  ) {
+    const existing = await boardsRepo.findById(boardId);
+    if (!existing) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const wsMembership = await boardsRepo.isWorkspaceMember(existing.workspaceId, userId);
+    if (!wsMembership) {
+      throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+    }
+
+    const boardMember = await boardsRepo.isBoardMember(existing.id, userId);
+    // Policy: only board OWNER/ADMIN can update board settings.
+    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+    if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to update this board");
+    }
+
+    const board = await boardsRepo.update(boardId, {
+      backgroundColor:
+        input.backgroundColor === undefined ? undefined : input.backgroundColor,
+      backgroundLeftColor:
+        input.backgroundLeftColor === undefined ? undefined : input.backgroundLeftColor,
+      backgroundRightColor:
+        input.backgroundRightColor === undefined ? undefined : input.backgroundRightColor,
+      backgroundSplitPct:
+        input.backgroundSplitPct === undefined ? undefined : input.backgroundSplitPct,
     });
 
     return { board };

@@ -16,6 +16,8 @@ boardsRoutes.post("/", boardsController.create);
 boardsRoutes.get("/:id", boardsController.get);
 boardsRoutes.get("/:id/detail", boardsController.getDetail);
 boardsRoutes.patch("/:id", boardsController.update);
+boardsRoutes.patch("/:id/visibility", boardsController.updateVisibility);
+boardsRoutes.patch("/:id/background", boardsController.updateBackground);
 boardsRoutes.delete("/:id", boardsController.delete);
 
 boardsRoutes.get("/:id/members", boardMembersController.list);

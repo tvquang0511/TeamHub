@@ -173,6 +173,48 @@ export const boardsApi = {
     return mapBoard(response.data.board);
   },
 
+  updateVisibility: async (
+    id: string,
+    visibility: "PRIVATE" | "WORKSPACE"
+  ): Promise<Board> => {
+    const response = await httpClient.patch<BoardEnvelope>(
+      `/boards/${id}/visibility`,
+      { visibility }
+    );
+    return mapBoard(response.data.board);
+  },
+
+  updateBackground: async (
+    id: string,
+    data: {
+      backgroundColor?: string | null;
+      backgroundLeftColor?: string | null;
+      backgroundRightColor?: string | null;
+      backgroundSplitPct?: number | null;
+    }
+  ): Promise<Board> => {
+    const response = await httpClient.patch<BoardEnvelope>(
+      `/boards/${id}/background`,
+      {
+        backgroundColor:
+          data.backgroundColor === undefined ? undefined : data.backgroundColor,
+        backgroundLeftColor:
+          data.backgroundLeftColor === undefined
+            ? undefined
+            : data.backgroundLeftColor,
+        backgroundRightColor:
+          data.backgroundRightColor === undefined
+            ? undefined
+            : data.backgroundRightColor,
+        backgroundSplitPct:
+          data.backgroundSplitPct === undefined
+            ? undefined
+            : data.backgroundSplitPct,
+      }
+    );
+    return mapBoard(response.data.board);
+  },
+
   // Delete board
   delete: async (id: string): Promise<void> => {
     await httpClient.delete(`/boards/${id}`);

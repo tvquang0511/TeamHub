@@ -60,11 +60,11 @@ export const BoardBackgroundDialog: React.FC<Props> = ({ board, open, onOpenChan
     mutationFn: async () => {
       // Always attempt the PATCH so we surface the real backend error (403/404)
       // instead of failing silently due to missing/incorrect actor flags.
-      return boardsApi.update(board.id, {
+      return boardsApi.updateBackground(board.id, {
         backgroundLeftColor: left,
         backgroundRightColor: right,
         backgroundSplitPct: pct,
-      } as any);
+      });
     },
     onSuccess: async () => {
       await Promise.all([

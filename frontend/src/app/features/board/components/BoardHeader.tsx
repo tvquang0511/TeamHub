@@ -44,7 +44,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
   const toggleVisibilityMutation = useMutation({
     mutationFn: async () => {
       const next = visibility === "WORKSPACE" ? "PRIVATE" : "WORKSPACE";
-      return boardsApi.update(board.id, { privacy: next } as any);
+      return boardsApi.updateVisibility(board.id, next);
     },
     onMutate: async () => {
       // Optimistic update so the icon flips instantly.

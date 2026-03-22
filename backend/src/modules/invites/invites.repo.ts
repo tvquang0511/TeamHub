@@ -1,6 +1,28 @@
 import prisma from '../../db/prisma';
 
 export const invitesRepo = {
+  listMyPendingWorkspaceInvites(email: string) {
+    return prisma.workspace_invites.findMany({
+      where: {
+        email: email.toLowerCase(),
+        acceptedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      include: { workspace: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  },
+
+  findWorkspaceInviteByIdForEmail(inviteId: string, email: string) {
+    return prisma.workspace_invites.findFirst({
+      where: {
+        id: inviteId,
+        email: email.toLowerCase(),
+      },
+      include: { workspace: true },
+    });
+  },
+
   findBoardInviteByToken(token: string) {
     return prisma.board_invites.findUnique({
       where: { token },

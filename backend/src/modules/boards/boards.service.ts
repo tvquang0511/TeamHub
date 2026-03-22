@@ -22,6 +22,49 @@ export const updateBoardInputSchema = z.object({
 });
 
 export class BoardsService {
+  private buildBoardActorPermissions(params: {
+    workspaceRole: "OWNER" | "ADMIN" | "MEMBER";
+    boardVisibility: "PRIVATE" | "WORKSPACE";
+    boardMemberRole?: "OWNER" | "ADMIN" | "MEMBER";
+  }) {
+    const isBoardMember = Boolean(params.boardMemberRole);
+    const isWorkspaceAdmin = params.workspaceRole === "OWNER" || params.workspaceRole === "ADMIN";
+    const isBoardAdmin = params.boardMemberRole === "OWNER" || params.boardMemberRole === "ADMIN";
+
+    // Company safety policy:
+    // - Workspace OWNER/ADMIN may read PRIVATE boards in read-only mode even when not a board member.
+    // - Workspace OWNER/ADMIN may delete (archive) any board in the workspace.
+    const canReadBoard =
+      params.boardVisibility === "WORKSPACE" || isBoardMember || isWorkspaceAdmin;
+    const canWriteBoard = isBoardMember;
+    const canManageBoardMembers = isBoardAdmin;
+    const canInviteToBoard = isBoardAdmin;
+    const canUpdateBoardSettings = isBoardAdmin;
+    const canDeleteBoard = isBoardAdmin || isWorkspaceAdmin;
+    const canLeaveBoard = isBoardMember;
+
+    const readOnlyReason =
+      canReadBoard && !canWriteBoard
+        ? isWorkspaceAdmin && !isBoardMember
+          ? "WORKSPACE_ADMIN_READ_ONLY"
+          : "WORKSPACE_READ_ONLY"
+        : null;
+
+    return {
+      workspaceRole: params.workspaceRole,
+      boardVisibility: params.boardVisibility,
+      isBoardMember,
+      boardRole: params.boardMemberRole ?? null,
+      canReadBoard,
+      canWriteBoard,
+      canManageBoardMembers,
+      canInviteToBoard,
+      canUpdateBoardSettings,
+      canDeleteBoard,
+      canLeaveBoard,
+      readOnlyReason,
+    };
+  }
   async create(userId: string, input: z.infer<typeof createBoardInputSchema>) {
     const membership = await boardsRepo.isWorkspaceMember(input.workspaceId, userId);
     if (!membership) {
@@ -64,8 +107,9 @@ export class BoardsService {
       throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
     }
 
+    const boardMember = await boardsRepo.isBoardMember(board.id, userId);
+
     if (board.visibility !== "WORKSPACE") {
-      const boardMember = await boardsRepo.isBoardMember(board.id, userId);
       if (!boardMember) {
         // Option B: workspace OWNER/ADMIN can view PRIVATE boards in read-only mode.
         if (wsMembership.role !== "OWNER" && wsMembership.role !== "ADMIN") {
@@ -75,7 +119,13 @@ export class BoardsService {
       }
     }
 
-    return { board };
+    const actor = this.buildBoardActorPermissions({
+      workspaceRole: wsMembership.role,
+      boardVisibility: board.visibility,
+      boardMemberRole: boardMember?.role,
+    });
+
+    return { board, actor };
   }
 
   async getDetail(userId: string, boardId: string) {
@@ -87,8 +137,9 @@ export class BoardsService {
       throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
     }
 
+    const boardMember = await boardsRepo.isBoardMember(board.id, userId);
+
     if (board.visibility !== "WORKSPACE") {
-      const boardMember = await boardsRepo.isBoardMember(board.id, userId);
       if (!boardMember) {
         // Option B: workspace OWNER/ADMIN can view PRIVATE boards in read-only mode.
         if (wsMembership.role !== "OWNER" && wsMembership.role !== "ADMIN") {
@@ -105,7 +156,13 @@ export class BoardsService {
       boardsRepo.listLabelsByWorkspace(board.workspaceId),
     ]);
 
-    return { board, lists, cards, members, labels };
+    const actor = this.buildBoardActorPermissions({
+      workspaceRole: wsMembership.role,
+      boardVisibility: board.visibility,
+      boardMemberRole: boardMember?.role,
+    });
+
+    return { board, lists, cards, members, labels, actor };
   }
 
   async update(userId: string, boardId: string, input: z.infer<typeof updateBoardInputSchema>) {

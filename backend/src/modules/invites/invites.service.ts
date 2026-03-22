@@ -47,6 +47,53 @@ function publicBoardInvite(invite: {
 }
 
 export const invitesService = {
+  async listMyWorkspaceInvites(userId: string) {
+    const user = await invitesRepo.findUserById(userId);
+    if (!user) throw new ApiError(401, 'AUTH_TOKEN_INVALID', 'User no longer exists');
+
+    const invites = await invitesRepo.listMyPendingWorkspaceInvites(user.email);
+    return {
+      invites: invites.map((i: any) => ({
+        invite: publicInvite(i),
+        workspace: publicWorkspace(i.workspace),
+      })),
+    };
+  },
+
+  async acceptMyWorkspaceInvite(userId: string, inviteId: string) {
+    const user = await invitesRepo.findUserById(userId);
+    if (!user) throw new ApiError(401, 'AUTH_TOKEN_INVALID', 'User no longer exists');
+
+    const invite = await invitesRepo.findWorkspaceInviteByIdForEmail(inviteId, user.email);
+    if (!invite) throw new ApiError(404, 'WORKSPACE_INVITE_NOT_FOUND', 'Invite not found');
+    if (invite.acceptedAt) throw new ApiError(400, 'WORKSPACE_INVITE_INVALID', 'Invite not found');
+    if (invite.expiresAt <= new Date()) throw new ApiError(400, 'WORKSPACE_INVITE_EXPIRED', 'Invite expired');
+
+    const existingMembership = await invitesRepo.findMembership(invite.workspaceId, userId);
+    if (existingMembership) {
+      throw new ApiError(409, 'WORKSPACE_ALREADY_MEMBER', 'Already a workspace member');
+    }
+
+    await invitesRepo.markWorkspaceInviteAccepted(invite.id);
+    await invitesRepo.createMember({ workspaceId: invite.workspaceId, userId, role: 'MEMBER' });
+
+    return { workspace: publicWorkspace(invite.workspace) };
+  },
+
+  async declineMyWorkspaceInvite(userId: string, inviteId: string) {
+    const user = await invitesRepo.findUserById(userId);
+    if (!user) throw new ApiError(401, 'AUTH_TOKEN_INVALID', 'User no longer exists');
+
+    const invite = await invitesRepo.findWorkspaceInviteByIdForEmail(inviteId, user.email);
+    if (!invite) throw new ApiError(404, 'WORKSPACE_INVITE_NOT_FOUND', 'Invite not found');
+
+    if (!invite.acceptedAt) {
+      await invitesRepo.revokeWorkspaceInvite(invite.id);
+    }
+
+    return { ok: true };
+  },
+
   async createBoardInvite(
     userId: string,
     boardId: string,

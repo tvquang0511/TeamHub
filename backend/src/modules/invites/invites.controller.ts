@@ -65,61 +65,31 @@ export const createWorkspaceInvite = async (req: Request, res: Response) => {
   return res.status(201).json(result);
 };
 
-const createBoardInviteParamSchema = z.object({
-  boardId: z.string().uuid(),
-});
-
-const createBoardInviteBodySchema = z.object({
-  email: z.string().email(),
-  expiresAt: z.string().datetime().optional(),
-});
-
-export const createBoardInvite = async (req: Request, res: Response) => {
-  const { boardId } = createBoardInviteParamSchema.parse(req.params);
+// Inbox (user-centric) workspace invites
+export const listMyWorkspaceInvites = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-  const body = createBoardInviteBodySchema.parse(req.body);
-
-  const result = await invitesService.createBoardInvite(userId, boardId, body);
-  return res.status(201).json(result);
-};
-
-const listBoardInvitesParamSchema = z.object({
-  boardId: z.string().uuid(),
-});
-
-export const listBoardInvites = async (req: Request, res: Response) => {
-  const { boardId } = listBoardInvitesParamSchema.parse(req.params);
-  const userId = req.user!.id;
-
-  const result = await invitesService.listBoardInvites(userId, boardId);
+  const result = await invitesService.listMyWorkspaceInvites(userId);
   res.json(result);
 };
 
-const revokeBoardInviteParamSchema = z.object({
-  boardId: z.string().uuid(),
+const inviteIdParamSchema = z.object({
   inviteId: z.string().uuid(),
 });
 
-export const revokeBoardInvite = async (req: Request, res: Response) => {
-  const { boardId, inviteId } = revokeBoardInviteParamSchema.parse(req.params);
+export const acceptMyWorkspaceInvite = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-
-  const result = await invitesService.revokeBoardInvite(userId, boardId, inviteId);
+  const { inviteId } = inviteIdParamSchema.parse(req.params);
+  const result = await invitesService.acceptMyWorkspaceInvite(userId, inviteId);
   res.json(result);
 };
 
-export const getBoardInviteByToken = async (req: Request, res: Response) => {
-  const { token } = tokenParamSchema.parse(req.params);
+export const declineMyWorkspaceInvite = async (req: Request, res: Response) => {
   const userId = req.user!.id;
-
-  const result = await invitesService.getBoardInviteByToken(userId, token);
+  const { inviteId } = inviteIdParamSchema.parse(req.params);
+  const result = await invitesService.declineMyWorkspaceInvite(userId, inviteId);
   res.json(result);
 };
 
-export const acceptBoardInvite = async (req: Request, res: Response) => {
-  const token = String(req.params.token);
-  const userId = req.user!.id;
-
-  const result = await invitesService.acceptBoardInvite(userId, token);
-  res.json(result);
-};
+// Board invites are deprecated. Use:
+// POST /boards/:id/members
+// POST /boards/:id/members/by-email

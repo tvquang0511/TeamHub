@@ -4,10 +4,20 @@ export const usersRepo = {
   searchByEmailPrefix(emailPrefix: string, limit = 10) {
     return prisma.users.findMany({
       where: {
-        email: {
-          startsWith: emailPrefix.toLowerCase(),
-          mode: 'insensitive',
-        },
+        OR: [
+          {
+            email: {
+              contains: emailPrefix.toLowerCase(),
+              mode: 'insensitive',
+            },
+          },
+          {
+            displayName: {
+              contains: emailPrefix,
+              mode: 'insensitive',
+            },
+          },
+        ],
       },
       select: { id: true, email: true, displayName: true },
       take: Math.min(Math.max(limit, 1), 50),
@@ -20,10 +30,20 @@ export const usersRepo = {
       where: {
         workspaceId,
         user: {
-          email: {
-            startsWith: emailPrefix.toLowerCase(),
-            mode: 'insensitive',
-          },
+          OR: [
+            {
+              email: {
+                contains: emailPrefix.toLowerCase(),
+                mode: 'insensitive',
+              },
+            },
+            {
+              displayName: {
+                contains: emailPrefix,
+                mode: 'insensitive',
+              },
+            },
+          ],
         },
       },
       select: {

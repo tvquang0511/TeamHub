@@ -27,7 +27,7 @@ export const usersService = {
       };
     }
 
-    // Global search (email prefix) - for MVP admin tooling; can restrict later.
+    // Global search (email/displayName contains) - for MVP admin tooling; can restrict later.
     const users = await usersRepo.searchByEmailPrefix(q, limit ?? 10);
     return { users };
   },

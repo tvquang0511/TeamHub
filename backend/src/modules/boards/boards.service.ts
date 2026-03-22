@@ -10,6 +10,7 @@ export const createBoardInputSchema = z.object({
   description: z.string().max(2000).optional(),
   // PRIVATE = only board members can see; WORKSPACE = any workspace member can see.
   visibility: z.enum(["PRIVATE", "WORKSPACE"]).optional(),
+  backgroundColor: z.string().max(30).optional(),
   // position is numeric(65,30); we accept number for MVP.
   position: z.number().optional(),
 });
@@ -18,6 +19,8 @@ export const updateBoardInputSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   description: z.string().max(2000).nullable().optional(),
   position: z.number().nullable().optional(),
+  visibility: z.enum(["PRIVATE", "WORKSPACE"]).optional(),
+  backgroundColor: z.string().max(30).nullable().optional(),
   archived: z.boolean().optional(),
 });
 
@@ -79,6 +82,7 @@ export class BoardsService {
       name: input.name,
       description: input.description ?? null,
       visibility: input.visibility ?? "PRIVATE",
+      backgroundColor: input.backgroundColor ?? null,
       position: input.position === undefined ? null : new Prisma.Decimal(input.position),
     });
 
@@ -224,6 +228,8 @@ export class BoardsService {
     if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
     const boardMember = await boardsRepo.isBoardMember(existing.id, userId);
+    // Policy: only board OWNER/ADMIN can update board settings.
+    // Workspace OWNER/ADMIN may read private boards in read-only mode, but cannot update settings unless they're a board admin.
     if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
     if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
       throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to update this board");
@@ -235,6 +241,9 @@ export class BoardsService {
     const board = await boardsRepo.update(boardId, {
       name: input.name,
       description: input.description ?? undefined,
+      visibility: input.visibility,
+      backgroundColor:
+        input.backgroundColor === undefined ? undefined : input.backgroundColor,
       position:
         input.position === undefined
           ? undefined

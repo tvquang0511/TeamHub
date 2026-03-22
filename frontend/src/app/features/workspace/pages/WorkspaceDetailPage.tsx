@@ -25,9 +25,10 @@ import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import { Plus, LayoutDashboard, Users, ArrowLeft, Trash2 } from "lucide-react";
-// toast placeholder (wire real toast later)
+import { toast } from "sonner";
 import { MemberTable } from "../components/MemberTable";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
+import { ConfirmTypeDialog } from "../../../components/shared/ConfirmTypeDialog";
 import { useWorkspaceMutations } from "../../../hooks/useWorkspaceMutations";
 import { AddWorkspaceMemberCard } from "../components/AddWorkspaceMemberCard";
 
@@ -37,6 +38,9 @@ export const WorkspaceDetailPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [isCreateBoardDialogOpen, setIsCreateBoardDialogOpen] = useState(false);
   const [confirmDeleteWorkspace, setConfirmDeleteWorkspace] = useState(false);
+  const [confirmDeleteBoard, setConfirmDeleteBoard] = useState<{ open: boolean; boardId?: string; boardName?: string }>(
+    { open: false }
+  );
   const [newBoardName, setNewBoardName] = useState("");
   const [newBoardDescription, setNewBoardDescription] = useState("");
 
@@ -69,16 +73,26 @@ export const WorkspaceDetailPage: React.FC = () => {
       setIsCreateBoardDialogOpen(false);
       setNewBoardName("");
       setNewBoardDescription("");
-      // toast: created
+  toast.success("Đã tạo board!");
 
       if (createdBoard?.id) {
         navigate(`/boards/${createdBoard.id}`);
       }
     },
     onError: (error: any) => {
-      console.error(
-        error.response?.data?.error?.message || "Tạo board thất bại"
-      );
+      toast.error(error.response?.data?.error?.message || "Tạo board thất bại");
+    },
+  });
+
+  const deleteBoardMutation = useMutation({
+    mutationFn: (boardId: string) => boardsApi.delete(boardId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "boards"] });
+      toast.success("Đã xoá board");
+      setConfirmDeleteBoard({ open: false });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error?.message || "Không thể xoá board");
     },
   });
 
@@ -107,6 +121,8 @@ export const WorkspaceDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const canDeleteBoardsInWorkspace = (members || []).some((m: any) => m.role === "OWNER" || m.role === "ADMIN");
 
   const deleteWorkspace = () => {
     if (!workspaceId) return;
@@ -245,7 +261,33 @@ export const WorkspaceDetailPage: React.FC = () => {
                   }}
                 >
                   <CardHeader>
-                    <CardTitle>{board.name}</CardTitle>
+                    <div className="flex items-start justify-between gap-3">
+                      <CardTitle className="min-w-0 flex-1 truncate">{board.name}</CardTitle>
+                      {canDeleteBoardsInWorkspace ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmDeleteBoard({ open: true, boardId: board.id, boardName: board.name });
+                          }}
+                          title="Xoá board"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled
+                          onClick={(e) => e.stopPropagation()}
+                          className="opacity-40"
+                          title="Chỉ OWNER/ADMIN workspace mới có quyền xoá board"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                     {board.description && (
                       <CardDescription className="line-clamp-2">
                         {board.description}
@@ -308,6 +350,21 @@ export const WorkspaceDetailPage: React.FC = () => {
         destructive
         loading={workspaceMutations.deleteWorkspace.isPending}
         onConfirm={deleteWorkspace}
+      />
+
+      <ConfirmTypeDialog
+        open={confirmDeleteBoard.open}
+        onOpenChange={(open) => setConfirmDeleteBoard((prev) => ({ ...prev, open }))}
+        title={confirmDeleteBoard.boardName ? `Xoá board \"${confirmDeleteBoard.boardName}\"?` : "Xoá board?"}
+        description="Hành động này không thể hoàn tác. Vui lòng gõ delete để xác nhận."
+        expectedText="delete"
+        confirmText="Xoá"
+        destructive
+        loading={deleteBoardMutation.isPending}
+        onConfirm={() => {
+          if (!confirmDeleteBoard.boardId) return;
+          deleteBoardMutation.mutate(confirmDeleteBoard.boardId);
+        }}
       />
     </div>
   );

@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
-import { ArrowLeft, Users, Star } from "lucide-react";
+import { ArrowLeft, Users, Lock, Unlock } from "lucide-react";
 import { BoardMembersDialog } from "./BoardMembersDialog";
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { boardsApi } from "../../../api/boards.api";
 import type { BoardDetail } from "../../../types/api";
 
 interface BoardHeaderProps {
@@ -13,6 +16,82 @@ interface BoardHeaderProps {
 export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
   const navigate = useNavigate();
   const [isMembersOpen, setIsMembersOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Best-effort permission gating:
+  // - Prefer canUpdateBoardSettings (ideal)
+  // - Fallback to canWriteBoard for older actor payloads
+  const canToggleVisibility =
+    (board.actor as any)?.canUpdateBoardSettings ?? board.actor?.canWriteBoard ?? false;
+  const visibility = board.privacy === "WORKSPACE" ? "WORKSPACE" : "PRIVATE";
+
+  const toggleDisabledReason = useMemo(() => {
+    if (canToggleVisibility) return null;
+    if (board.actor?.isBoardMember === false) return "Bạn không phải thành viên của board";
+    if (board.actor?.boardRole && board.actor.boardRole !== "OWNER" && board.actor.boardRole !== "ADMIN") {
+      return "Chỉ OWNER/ADMIN của board mới đổi được visibility";
+    }
+    return "Bạn không có quyền đổi visibility của board";
+  }, [board.actor, canToggleVisibility]);
+
+  const ownerMember = useMemo(
+    () => board.members?.find((m) => m.role === "OWNER"),
+    [board.members]
+  );
+
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async () => {
+      const next = visibility === "WORKSPACE" ? "PRIVATE" : "WORKSPACE";
+      return boardsApi.update(board.id, { privacy: next } as any);
+    },
+    onMutate: async () => {
+      // Optimistic update so the icon flips instantly.
+      const next = visibility === "WORKSPACE" ? "PRIVATE" : "WORKSPACE";
+
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ["board", board.id, "detail"] }),
+        queryClient.cancelQueries({ queryKey: ["board", board.id] }),
+      ]);
+
+      const prevDetail = queryClient.getQueryData<any>(["board", board.id, "detail"]);
+      const prevBoard = queryClient.getQueryData<any>(["board", board.id]);
+
+      if (prevDetail) {
+        queryClient.setQueryData(["board", board.id, "detail"], {
+          ...prevDetail,
+          privacy: next,
+        });
+      }
+      if (prevBoard) {
+        queryClient.setQueryData(["board", board.id], {
+          ...prevBoard,
+          privacy: next,
+        });
+      }
+
+      return { prevDetail, prevBoard };
+    },
+    onError: (error: any, _vars, ctx) => {
+      if (ctx?.prevDetail) queryClient.setQueryData(["board", board.id, "detail"], ctx.prevDetail);
+      if (ctx?.prevBoard) queryClient.setQueryData(["board", board.id], ctx.prevBoard);
+
+      const apiError = error.response?.data?.error;
+      toast.error(
+        apiError?.message
+          ? `${apiError.message} (${apiError.code ?? "ERROR"})`
+          : "Không thể cập nhật quyền xem board"
+      );
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["board", board.id, "detail"] }),
+        queryClient.invalidateQueries({ queryKey: ["board", board.id] }),
+        // If workspace board list shows privacy icons/text, keep it fresh too.
+        queryClient.invalidateQueries({ queryKey: ["boards", "workspace", board.workspaceId] }),
+      ]);
+      toast.success("Đã cập nhật quyền xem board");
+    },
+  });
 
   const getInitials = (name: string) => {
     return name
@@ -42,34 +121,43 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
               variant="ghost"
               size="sm"
               className="h-8 text-white hover:bg-white/20"
+              onClick={() => {
+                // Always attempt the API call so we can surface the real backend reason (403/404)
+                // instead of feeling like the button is dead.
+                if (!canToggleVisibility) {
+                  console.debug("[BoardHeader] toggle visibility blocked by actor", board.actor);
+                }
+                toggleVisibilityMutation.mutate();
+              }}
+              disabled={toggleVisibilityMutation.isPending}
+              title={
+                !canToggleVisibility
+                  ? toggleDisabledReason ?? "Bạn không có quyền đổi visibility"
+                  : visibility === "WORKSPACE"
+                    ? "Board đang PUBLIC trong workspace"
+                    : "Board đang PRIVATE"
+              }
             >
-              <Star className="h-4 w-4" />
+              {visibility === "WORKSPACE" ? (
+                <Unlock className="h-4 w-4" />
+              ) : (
+                <Lock className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Members avatars */}
-          <div className="flex -space-x-2">
-            {board.members?.slice(0, 5).map((member) => (
-              <Avatar
-                key={member.id}
-                className="border-2 border-white"
-                title={member.user.displayName}
-              >
+          {ownerMember ? (
+            <div className="flex -space-x-2">
+              <Avatar className="border-2 border-white" title={`OWNER: ${ownerMember.user.displayName}`}>
                 <AvatarFallback className="bg-blue-600 text-xs text-white">
-                  {getInitials(member.user.displayName)}
+                  {getInitials(ownerMember.user.displayName)}
                 </AvatarFallback>
               </Avatar>
-            ))}
-            {board.members && board.members.length > 5 && (
-              <Avatar className="border-2 border-white">
-                <AvatarFallback className="bg-gray-600 text-xs text-white">
-                  +{board.members.length - 5}
-                </AvatarFallback>
-              </Avatar>
-            )}
-          </div>
+            </div>
+          ) : null}
 
           <Button
             variant="secondary"

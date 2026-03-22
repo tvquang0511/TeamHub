@@ -27,7 +27,8 @@ const mapBoard = (b: any): Board => {
     description: b.description ?? undefined,
     workspaceId: b.workspaceId,
     privacy: b.visibility === "WORKSPACE" ? "WORKSPACE" : "PRIVATE",
-    backgroundColor: undefined,
+    // Prefer camelCase from backend; fallback to snake_case if an older/alternate serializer is used.
+    backgroundColor: (b.backgroundColor ?? b.background_color) ?? undefined,
     createdAt: b.createdAt ?? new Date().toISOString(),
     updatedAt: b.updatedAt ?? new Date().toISOString(),
   };
@@ -116,6 +117,7 @@ export const boardsApi = {
       name: data.name,
       description: data.description,
       visibility: data.privacy === "WORKSPACE" ? "WORKSPACE" : "PRIVATE",
+      backgroundColor: data.backgroundColor,
       position: undefined,
     });
     return mapBoard(response.data.board);
@@ -129,6 +131,14 @@ export const boardsApi = {
     const response = await httpClient.patch<BoardEnvelope>(`/boards/${id}`, {
       name: data.name,
       description: data.description ?? undefined,
+      visibility:
+        data.privacy === undefined
+          ? undefined
+          : data.privacy === "WORKSPACE"
+            ? "WORKSPACE"
+            : "PRIVATE",
+      backgroundColor:
+        data.backgroundColor === undefined ? undefined : data.backgroundColor,
       archived: undefined,
       position: undefined,
     });

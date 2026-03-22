@@ -7,6 +7,7 @@ export type CreateBoardData = {
   name: string;
   description?: string | null;
   visibility?: "PRIVATE" | "WORKSPACE";
+  backgroundColor?: string | null;
   position?: Prisma.Decimal | null;
 };
 
@@ -76,6 +77,7 @@ export class BoardsRepo {
         name: data.name,
         description: data.description ?? null,
         visibility: (data.visibility ?? "PRIVATE") as any,
+        backgroundColor: data.backgroundColor ?? null,
         position: data.position ?? null,
       },
       select: {
@@ -85,6 +87,7 @@ export class BoardsRepo {
         description: true,
         // visibility field exists in schema; may require `prisma generate` for typings.
         visibility: true as any,
+        backgroundColor: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -110,6 +113,7 @@ export class BoardsRepo {
         name: true,
         description: true,
         visibility: true as any,
+        backgroundColor: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -127,6 +131,7 @@ export class BoardsRepo {
         name: true,
         description: true,
         visibility: true as any,
+        backgroundColor: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -137,7 +142,7 @@ export class BoardsRepo {
 
   async update(
     boardId: string,
-    data: Partial<Pick<CreateBoardData, "name" | "description" | "position">> & {
+    data: Partial<Pick<CreateBoardData, "name" | "description" | "position" | "visibility" | "backgroundColor">> & {
       archivedAt?: Date | null;
     },
   ) {
@@ -146,6 +151,8 @@ export class BoardsRepo {
       data: {
         name: data.name,
         description: data.description ?? undefined,
+        visibility: data.visibility as any,
+        backgroundColor: data.backgroundColor ?? undefined,
         position: data.position ?? undefined,
         archivedAt: data.archivedAt ?? undefined,
       },
@@ -154,6 +161,8 @@ export class BoardsRepo {
         workspaceId: true,
         name: true,
         description: true,
+        visibility: true as any,
+        backgroundColor: true as any,
         position: true,
         archivedAt: true,
         createdAt: true,

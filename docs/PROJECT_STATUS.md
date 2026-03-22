@@ -119,9 +119,10 @@ Trong `backend/src/modules/*` (mỗi module có router/controller/service/repo):
 - workspace invites:
   - `POST /api/invites/workspaces/:workspaceId`
   - `POST /api/invites/:token/accept`
-- board invites:
-  - `POST /api/invites/boards/:boardId`
-  - `POST /api/invites/boards/token/:token/accept`
+- inbox (topbar):
+  - `GET /api/invites/inbox/workspaces`
+  - `POST /api/invites/inbox/workspaces/:inviteId/accept`
+  - `POST /api/invites/inbox/workspaces/:inviteId/decline`
 
 ### 4.4 Boards / Lists / Cards
 

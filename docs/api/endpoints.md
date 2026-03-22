@@ -155,40 +155,52 @@ Response
 { "workspace": { "id": "uuid", "name": "My Workspace" } }
 ```
 
-### Board invites
+### Inbox (topbar)
 
-### POST `/invites/boards/:boardId`
-Request
-```json
-{ "email": "invitee@mail.com", "expiresAt": "iso(optional)" }
-```
+### GET `/invites/inbox/workspaces`
 Response
 ```json
-{ "invite": { "id": "uuid", "email": "invitee@mail.com", "token": "string", "expiresAt": "iso" } }
+{
+  "invites": [
+    {
+      "invite": {
+        "id": "uuid",
+        "workspaceId": "uuid",
+        "email": "invitee@mail.com",
+        "expiresAt": "iso",
+        "acceptedAt": null,
+        "createdAt": "iso"
+      },
+      "workspace": { "id": "uuid", "name": "My Workspace" }
+    }
+  ]
+}
 ```
 
-### GET `/invites/boards/:boardId`
+### POST `/invites/inbox/workspaces/:inviteId/accept`
 Response
 ```json
-{ "invites": [ { "id": "uuid", "boardId": "uuid", "email": "invitee@mail.com", "expiresAt": "iso", "acceptedAt": "iso|null", "createdAt": "iso" } ] }
+{ "workspace": { "id": "uuid", "name": "My Workspace" } }
 ```
 
-### DELETE `/invites/boards/:boardId/:inviteId`
+### POST `/invites/inbox/workspaces/:inviteId/decline`
 Response
 ```json
 { "ok": true }
 ```
 
-### GET `/invites/boards/token/:token`
-Response
-```json
-{ "invite": { "id": "uuid", "boardId": "uuid", "email": "invitee@mail.com", "expiresAt": "iso", "acceptedAt": "iso|null", "createdAt": "iso" }, "board": { "id": "uuid", "name": "Board A", "workspaceId": "uuid" } }
-```
+### Board “invite” (direct add)
 
-### POST `/invites/boards/token/:token/accept`
+Board members are now managed directly via Boards endpoints (no token/accept flow).
+
+### POST `/boards/:id/members/by-email`
+Request
+```json
+{ "email": "member@mail.com", "role": "MEMBER" }
+```
 Response
 ```json
-{ "board": { "id": "uuid", "name": "Board A", "workspaceId": "uuid" } }
+{ "member": { "id": "uuid", "boardId": "uuid", "userId": "uuid", "role": "MEMBER" } }
 ```
 
 ## 6) Boards/Lists/Cards (Trello-like)
@@ -222,7 +234,21 @@ Response (one-shot payload)
   "lists": [ { "id": "uuid", "name": "Todo", "position": 1024 } ],
   "cards": [ { "id": "uuid", "listId": "uuid", "title": "Card 1", "position": 1024 } ],
   "labels": [],
-  "members": []
+  "members": [],
+  "actor": {
+    "workspaceRole": "OWNER|ADMIN|MEMBER",
+    "boardVisibility": "PRIVATE|WORKSPACE",
+    "isBoardMember": true,
+    "boardRole": "OWNER|ADMIN|MEMBER|null",
+    "canReadBoard": true,
+    "canWriteBoard": true,
+    "canManageBoardMembers": true,
+    "canInviteToBoard": true,
+    "canUpdateBoardSettings": true,
+    "canDeleteBoard": true,
+    "canLeaveBoard": true,
+    "readOnlyReason": "WORKSPACE_ADMIN_READ_ONLY|WORKSPACE_READ_ONLY|null"
+  }
 }
 ```
 

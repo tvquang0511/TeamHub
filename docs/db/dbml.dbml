@@ -35,16 +35,6 @@ Table workspace_members {
 
   Indexes {
     (workspace_id, user_id) [unique]
-  }
-}
-
-Table workspace_invites {
-  id uuid [pk]
-  workspace_id uuid [not null, ref: > workspaces.id]
-  email varchar [not null]
-  token varchar [not null, unique]
-  expires_at timestamp [not null]
-  accepted_at timestamp
   created_at timestamp
 }
 

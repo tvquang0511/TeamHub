@@ -176,10 +176,9 @@ Khuyến nghị vận hành:
 
 ### 5.3 Invite acceptance
 
-TeamHub có 2 loại invite token:
+TeamHub có 1 loại invite token:
 
-- `workspace_invites`: mời user vào workspace
-- `board_invites`: mời user vào board
+- `workspace_invites`: mời user vào workspace (requires accept)
 
 **Token là một secret ngẫu nhiên** đại diện cho lời mời (thường được gửi qua email/deep link).
 
@@ -188,8 +187,10 @@ Quy tắc accept (high-level):
 - User phải đăng nhập (JWT) và **email phải trùng với email trong invite**
 - Nếu user đã là member tương ứng → trả conflict
 
-Board invite accept:
-- Khi accept board invite, backend đảm bảo user có workspace membership (auto-add MEMBER nếu cần) rồi mới thêm board membership.
+Board membership:
+- Không dùng token/accept.
+- Board ADMIN/OWNER thêm member trực tiếp qua API boards members.
+- Target user phải đã là workspace member.
 
 ### 5.4 Invite UX recommendation (frontend)
 
@@ -197,13 +198,17 @@ Mục tiêu: người dùng click link invite và vào đúng nơi.
 
 Khuyến nghị flow:
 1) Link dạng:
-  - Board: `/invite/board/:token`
   - Workspace: `/invite/workspace/:token`
 2) Nếu chưa login: redirect `/login?next=<inviteUrl>`
 3) Sau login: gọi endpoint accept
-  - Board: `POST /invites/boards/token/:token/accept`
   - Workspace: `POST /invites/:token/accept`
 4) Thành công: invalidate cache + redirect vào board/workspace.
+
+Inbox (topbar) flow:
+- FE gọi `GET /invites/inbox/workspaces` để lấy pending invites cho user hiện tại.
+- Accept/Decline:
+  - `POST /invites/inbox/workspaces/:inviteId/accept`
+  - `POST /invites/inbox/workspaces/:inviteId/decline`
 
 Note về preview invite:
 - Hiện tại backend giới hạn các endpoint lookup token (preview) khá chặt. Nếu cần trang preview đẹp “Bạn được mời vào board X”, có thể:

@@ -139,27 +139,56 @@
       ]
     },
     {
-      "name": "Revoke board invite (board ADMIN)",
+      "name": "Inbox: list my workspace invites",
       "request": {
-        "method": "DELETE",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{inviteAccessToken}}" }],
         "url": {
-          "raw": "{{baseUrl}}/invites/boards/{{boardId}}/{{boardInviteId}}",
+          "raw": "{{baseUrl}}/invites/inbox/workspaces",
           "host": ["{{baseUrl}}"],
-          "path": ["invites", "boards", "{{boardId}}", "{{boardInviteId}}"]
+          "path": ["invites", "inbox", "workspaces"]
         }
-      }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.invites && json.invites.length) pm.collectionVariables.set('inboxInviteId', json.invites[0].invite.id);"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "Accept board invite as invited user",
+      "name": "Inbox: accept workspace invite by inviteId",
       "request": {
         "method": "POST",
         "header": [{ "key": "Authorization", "value": "Bearer {{inviteAccessToken}}" }],
         "url": {
-          "raw": "{{baseUrl}}/invites/boards/token/{{boardInviteToken}}/accept",
+          "raw": "{{baseUrl}}/invites/inbox/workspaces/{{inboxInviteId}}/accept",
           "host": ["{{baseUrl}}"],
-          "path": ["invites", "boards", "token", "{{boardInviteToken}}", "accept"]
+          "path": ["invites", "inbox", "workspaces", "{{inboxInviteId}}", "accept"]
         }
+      }
+    },
+    {
+      "name": "Board: add member by email (direct add)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/members/by-email",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "members", "by-email"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"role\": \"MEMBER\"\n}" }
       }
     }
   ]

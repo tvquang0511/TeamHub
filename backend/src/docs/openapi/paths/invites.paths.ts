@@ -15,20 +15,6 @@ const CreateWorkspaceInviteResponseSchema = z.object({
   }),
 });
 
-const CreateBoardInviteRequestSchema = z.object({
-  email: z.string().email(),
-  expiresAt: z.string().datetime().optional(),
-});
-
-const CreateBoardInviteResponseSchema = z.object({
-  invite: z.object({
-    id: z.string(),
-    email: z.string().email(),
-    token: z.string(),
-    expiresAt: z.string(),
-  }),
-});
-
 const AcceptInviteResponseSchema = z.object({
   workspace: z.object({
     id: z.string(),
@@ -45,24 +31,12 @@ const WorkspaceInviteSchema = z.object({
   createdAt: z.string(),
 });
 
-const BoardInviteSchema = z.object({
-  id: z.string(),
-  boardId: z.string(),
-  email: z.string().email(),
-  expiresAt: z.string(),
-  acceptedAt: z.string().nullable(),
-  createdAt: z.string(),
-});
-
 const ListWorkspaceInvitesResponseSchema = z.object({
   invites: z.array(WorkspaceInviteSchema),
 });
 
-const ListBoardInvitesResponseSchema = z.object({
-  invites: z.array(BoardInviteSchema),
-});
-
-const GetInviteByTokenResponseSchema = z.object({
+// Inbox (topbar notifications)
+const WorkspaceInviteInboxItemSchema = z.object({
   invite: WorkspaceInviteSchema,
   workspace: z.object({
     id: z.string(),
@@ -70,20 +44,15 @@ const GetInviteByTokenResponseSchema = z.object({
   }),
 });
 
-const GetBoardInviteByTokenResponseSchema = z.object({
-  invite: BoardInviteSchema,
-  board: z.object({
-    id: z.string(),
-    name: z.string(),
-    workspaceId: z.string(),
-  }),
+const ListMyWorkspaceInvitesResponseSchema = z.object({
+  invites: z.array(WorkspaceInviteInboxItemSchema),
 });
 
-const AcceptBoardInviteResponseSchema = z.object({
-  board: z.object({
+const GetInviteByTokenResponseSchema = z.object({
+  invite: WorkspaceInviteSchema,
+  workspace: z.object({
     id: z.string(),
     name: z.string(),
-    workspaceId: z.string(),
   }),
 });
 
@@ -101,36 +70,138 @@ export function buildInvitesSchemas() {
       CreateWorkspaceInviteResponseSchema,
       'CreateWorkspaceInviteResponse',
     ),
-    CreateBoardInviteRequest: toSchema(CreateBoardInviteRequestSchema, 'CreateBoardInviteRequest'),
-    CreateBoardInviteResponse: toSchema(
-      CreateBoardInviteResponseSchema,
-      'CreateBoardInviteResponse',
-    ),
     AcceptInviteResponse: toSchema(AcceptInviteResponseSchema, 'AcceptInviteResponse'),
-    AcceptBoardInviteResponse: toSchema(
-      AcceptBoardInviteResponseSchema,
-      'AcceptBoardInviteResponse',
-    ),
     WorkspaceInvite: toSchema(WorkspaceInviteSchema, 'WorkspaceInvite'),
-    BoardInvite: toSchema(BoardInviteSchema, 'BoardInvite'),
     ListWorkspaceInvitesResponse: toSchema(
       ListWorkspaceInvitesResponseSchema,
       'ListWorkspaceInvitesResponse',
     ),
-    ListBoardInvitesResponse: toSchema(ListBoardInvitesResponseSchema, 'ListBoardInvitesResponse'),
+    ListMyWorkspaceInvitesResponse: toSchema(
+      ListMyWorkspaceInvitesResponseSchema,
+      'ListMyWorkspaceInvitesResponse',
+    ),
     GetInviteByTokenResponse: toSchema(
       GetInviteByTokenResponseSchema,
       'GetInviteByTokenResponse',
-    ),
-    GetBoardInviteByTokenResponse: toSchema(
-      GetBoardInviteByTokenResponseSchema,
-      'GetBoardInviteByTokenResponse',
     ),
     OkResponse: toSchema(OkResponseSchema, 'OkResponse'),
   };
 }
 
 export const invitesPaths = {
+  '/invites/inbox/workspaces': {
+    get: {
+      tags: ['Invites'],
+      summary: 'List my pending workspace invites (inbox)',
+      security: [{ bearerAuth: [] }],
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ListMyWorkspaceInvitesResponse' },
+            },
+          },
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+      },
+    },
+  },
+
+  '/invites/inbox/workspaces/{inviteId}/accept': {
+    post: {
+      tags: ['Invites'],
+      summary: 'Accept a workspace invite from inbox',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'inviteId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          example: 'uuid',
+        },
+      ],
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/AcceptInviteResponse' } },
+          },
+        },
+        '400': {
+          description: 'Invalid/expired invite',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '404': {
+          description: 'Invite not found',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '409': {
+          description: 'Already member',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+      },
+    },
+  },
+
+  '/invites/inbox/workspaces/{inviteId}/decline': {
+    post: {
+      tags: ['Invites'],
+      summary: 'Decline a workspace invite from inbox',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'inviteId',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          example: 'uuid',
+        },
+      ],
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/OkResponse' },
+              examples: { sample: { value: { ok: true } } },
+            },
+          },
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '404': {
+          description: 'Invite not found',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+      },
+    },
+  },
+
   '/invites/workspaces/{workspaceId}': {
     post: {
       tags: ['Invites'],
@@ -339,148 +410,6 @@ export const invitesPaths = {
     },
   },
 
-  '/invites/boards/{boardId}': {
-    post: {
-      tags: ['Invites'],
-      summary: 'Create board invite (board ADMIN)',
-      security: [{ bearerAuth: [] }],
-      parameters: [
-        {
-          name: 'boardId',
-          in: 'path',
-          required: true,
-          schema: { type: 'string', format: 'uuid' },
-          example: 'uuid',
-        },
-      ],
-      requestBody: {
-        required: true,
-        content: {
-          'application/json': {
-            schema: { $ref: '#/components/schemas/CreateBoardInviteRequest' },
-            examples: {
-              sample: {
-                summary: 'Invite payload',
-                value: { email: 'invitee@mail.com', expiresAt: '2026-12-31T00:00:00.000Z' },
-              },
-            },
-          },
-        },
-      },
-      responses: {
-        '201': {
-          description: 'Created',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/CreateBoardInviteResponse' },
-            },
-          },
-        },
-        '401': {
-          description: 'Unauthorized',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-        '403': {
-          description: 'Forbidden (not board ADMIN)',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-      },
-    },
-    get: {
-      tags: ['Invites'],
-      summary: 'List board invites (board ADMIN)',
-      security: [{ bearerAuth: [] }],
-      parameters: [
-        {
-          name: 'boardId',
-          in: 'path',
-          required: true,
-          schema: { type: 'string', format: 'uuid' },
-          example: 'uuid',
-        },
-      ],
-      responses: {
-        '200': {
-          description: 'OK',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ListBoardInvitesResponse' },
-            },
-          },
-        },
-        '401': {
-          description: 'Unauthorized',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-        '403': {
-          description: 'Forbidden (not board ADMIN)',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-      },
-    },
-  },
-
-  '/invites/boards/{boardId}/{inviteId}': {
-    delete: {
-      tags: ['Invites'],
-      summary: 'Revoke board invite (board ADMIN)',
-      security: [{ bearerAuth: [] }],
-      parameters: [
-        {
-          name: 'boardId',
-          in: 'path',
-          required: true,
-          schema: { type: 'string', format: 'uuid' },
-          example: 'uuid',
-        },
-        {
-          name: 'inviteId',
-          in: 'path',
-          required: true,
-          schema: { type: 'string', format: 'uuid' },
-          example: 'uuid',
-        },
-      ],
-      responses: {
-        '200': {
-          description: 'OK',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/OkResponse' },
-              examples: { sample: { value: { ok: true } } },
-            },
-          },
-        },
-        '401': {
-          description: 'Unauthorized',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-        '403': {
-          description: 'Forbidden (not board ADMIN)',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-        '404': {
-          description: 'Invite not found',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-      },
-    },
-  },
-
   '/invites/{token}/accept': {
     post: {
       tags: ['Invites'],
@@ -524,84 +453,6 @@ export const invitesPaths = {
             'application/json': {
               schema: { $ref: '#/components/schemas/ErrorResponse' },
             },
-          },
-        },
-      },
-    },
-  },
-
-  '/invites/boards/token/{token}': {
-    get: {
-      tags: ['Invites'],
-      summary: 'Get board invite details by token (board members)',
-      security: [{ bearerAuth: [] }],
-      parameters: [
-        { name: 'token', in: 'path', required: true, schema: { type: 'string' }, example: 'token' },
-      ],
-      responses: {
-        '200': {
-          description: 'OK',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/GetBoardInviteByTokenResponse' },
-            },
-          },
-        },
-        '401': {
-          description: 'Unauthorized',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-        '403': {
-          description: 'Forbidden (not a board member)',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-        '404': {
-          description: 'Invite not found',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-      },
-    },
-  },
-
-  '/invites/boards/token/{token}/accept': {
-    post: {
-      tags: ['Invites'],
-      summary: 'Accept board invite (strict email match)',
-      security: [{ bearerAuth: [] }],
-      parameters: [
-        { name: 'token', in: 'path', required: true, schema: { type: 'string' }, example: 'token' },
-      ],
-      responses: {
-        '200': {
-          description: 'OK',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/AcceptBoardInviteResponse' },
-            },
-          },
-        },
-        '400': {
-          description: 'Invalid/expired invite',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-        '401': {
-          description: 'Unauthorized',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
-          },
-        },
-        '409': {
-          description: 'Already board member',
-          content: {
-            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
           },
         },
       },

@@ -57,13 +57,25 @@ export interface BoardDetail extends Board {
   lists: List[];
   members: BoardMember[];
   labels?: Label[];
+  actor?: {
+    workspaceRole?: "OWNER" | "ADMIN" | "MEMBER";
+    boardRole?: "OWNER" | "ADMIN" | "MEMBER";
+    isWorkspaceMember?: boolean;
+    isBoardMember?: boolean;
+    canReadBoard?: boolean;
+    canWriteBoard?: boolean;
+    canManageBoardMembers?: boolean;
+    canDeleteBoard?: boolean;
+    canArchiveBoard?: boolean;
+    canLeaveBoard?: boolean;
+  };
 }
 
 export interface BoardMember {
   id: string;
   userId: string;
   boardId: string;
-  role: "OWNER" | "MEMBER";
+  role: "OWNER" | "ADMIN" | "MEMBER";
   user: User;
   joinedAt: string;
 }
@@ -152,10 +164,6 @@ export interface UpdateCardRequest {
 export interface InviteToWorkspaceRequest {
   email: string;
   role?: "ADMIN" | "MEMBER";
-}
-
-export interface InviteToBoardRequest {
-  email: string;
 }
 
 export interface AddBoardMemberByEmailRequest {

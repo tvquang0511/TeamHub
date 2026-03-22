@@ -6,7 +6,7 @@ import { invitesApi } from "../../../api/invites.api";
 import { Button } from "../../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 
-type InviteKind = "workspace" | "board";
+type InviteKind = "workspace";
 
 /**
  * Accept invite links.
@@ -28,7 +28,6 @@ export const AcceptInvitePage: React.FC = () => {
   const acceptMutation = useMutation({
     mutationFn: async () => {
       if (!kind || !token) throw new Error("Missing invite info");
-      if (kind === "board") return invitesApi.acceptBoardInvite(token);
       return invitesApi.acceptWorkspaceInvite(token);
     },
     onSuccess: () => {

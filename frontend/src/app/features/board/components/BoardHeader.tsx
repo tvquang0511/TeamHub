@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
 import { ArrowLeft, Users, Star } from "lucide-react";
-import { AddMemberDialog } from "./AddMemberDialog";
+import { BoardMembersDialog } from "./BoardMembersDialog";
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
 import type { BoardDetail } from "../../../types/api";
 
@@ -12,7 +12,7 @@ interface BoardHeaderProps {
 
 export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
   const navigate = useNavigate();
-  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const [isMembersOpen, setIsMembersOpen] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -74,18 +74,19 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setIsAddMemberOpen(true)}
+            onClick={() => setIsMembersOpen(true)}
           >
             <Users className="mr-2 h-4 w-4" />
-            Mời thành viên
+            Thành viên
           </Button>
         </div>
       </div>
 
-      <AddMemberDialog
+      <BoardMembersDialog
         boardId={board.id}
-        open={isAddMemberOpen}
-        onOpenChange={setIsAddMemberOpen}
+        workspaceId={board.workspaceId}
+        open={isMembersOpen}
+        onOpenChange={setIsMembersOpen}
       />
     </div>
   );

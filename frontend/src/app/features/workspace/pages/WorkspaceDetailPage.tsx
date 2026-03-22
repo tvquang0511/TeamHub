@@ -29,6 +29,7 @@ import { Plus, LayoutDashboard, Users, ArrowLeft, Trash2 } from "lucide-react";
 import { MemberTable } from "../components/MemberTable";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 import { useWorkspaceMutations } from "../../../hooks/useWorkspaceMutations";
+import { AddWorkspaceMemberCard } from "../components/AddWorkspaceMemberCard";
 
 export const WorkspaceDetailPage: React.FC = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -281,14 +282,19 @@ export const WorkspaceDetailPage: React.FC = () => {
         <TabsContent value="members" className="mt-6">
           {membersLoading ? (
             <div className="text-center">Đang tải thành viên...</div>
-          ) : members && members.length > 0 ? (
-            <MemberTable members={members} workspaceId={workspaceId!} />
           ) : (
-            <Card className="border-dashed">
-              <CardContent className="py-12 text-center text-sm text-gray-600">
-                Workspace chưa có thành viên nào.
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <AddWorkspaceMemberCard workspaceId={workspaceId!} existingMembers={members || []} />
+              {members && members.length > 0 ? (
+                <MemberTable members={members} workspaceId={workspaceId!} />
+              ) : (
+                <Card className="border-dashed">
+                  <CardContent className="py-12 text-center text-sm text-gray-600">
+                    Workspace chưa có thành viên nào.
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
         </TabsContent>
       </Tabs>

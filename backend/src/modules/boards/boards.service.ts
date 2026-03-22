@@ -128,6 +128,57 @@ export class BoardsService {
     return { board, actor };
   }
 
+  async listMembers(userId: string, boardId: string) {
+    const board = await boardsRepo.findById(boardId);
+    if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, userId);
+    if (!wsMembership) {
+      throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+    }
+
+    const actor = await boardsRepo.isBoardMember(boardId, userId);
+    if (!actor) throw new ApiError(403, "BOARD_FORBIDDEN", "Not a board member");
+
+    const members = await boardsRepo.listBoardMembers(boardId);
+    return {
+      members: members.map((m: any) => ({
+        id: m.id,
+        userId: m.userId,
+        email: m.user?.email,
+        displayName: m.user?.displayName,
+        role: m.role,
+        createdAt: m.createdAt,
+      })),
+    };
+  }
+
+  async updateMemberRole(
+    actorId: string,
+    boardId: string,
+    targetUserId: string,
+    role: "ADMIN" | "MEMBER",
+  ) {
+    const board = await boardsRepo.findById(boardId);
+    if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    // Only board OWNER/ADMIN can update board member roles.
+    const actor = await boardsRepo.isBoardMember(boardId, actorId);
+    if (!actor) throw new ApiError(403, "BOARD_FORBIDDEN", "Not a board member");
+    if (actor.role !== "OWNER" && actor.role !== "ADMIN") {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Insufficient board role");
+    }
+
+    const target = await boardsRepo.isBoardMember(boardId, targetUserId);
+    if (!target) throw new ApiError(404, "BOARD_MEMBER_NOT_FOUND", "Member not found");
+    if (target.role === "OWNER") {
+      throw new ApiError(400, "BOARD_MEMBER_INVALID", "Cannot change OWNER role");
+    }
+
+    await boardsRepo.updateBoardMemberRole(boardId, targetUserId, role);
+    return { ok: true };
+  }
+
   async getDetail(userId: string, boardId: string) {
     const board = await boardsRepo.findById(boardId);
     if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
@@ -217,28 +268,6 @@ export class BoardsService {
     await boardsRepo.update(boardId, { archivedAt: new Date() });
     return { ok: true };
   }
-
-  async listMembers(userId: string, boardId: string) {
-    const board = await boardsRepo.findById(boardId);
-    if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-
-    const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, userId);
-    if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
-
-    if (board.visibility !== "WORKSPACE") {
-      const boardMember = await boardsRepo.isBoardMember(boardId, userId);
-      if (!boardMember) {
-        // Option B: workspace OWNER/ADMIN can view PRIVATE board members list.
-        if (wsMembership.role !== "OWNER" && wsMembership.role !== "ADMIN") {
-          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-        }
-      }
-    }
-
-    const members = await boardsRepo.listBoardMembers(boardId);
-    return { members };
-  }
-
   async addMember(
     actorId: string,
     boardId: string,
@@ -319,30 +348,6 @@ export class BoardsService {
     }
 
     await boardsRepo.removeBoardMember(boardId, memberUserId);
-    return { ok: true };
-  }
-
-  async leaveBoard(userId: string, boardId: string) {
-    const board = await boardsRepo.findById(boardId);
-    if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-
-    // Keep consistency with other board APIs: must belong to workspace.
-    const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, userId);
-    if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
-
-    const boardMember = await boardsRepo.isBoardMember(boardId, userId);
-    if (!boardMember) throw new ApiError(400, "BOARD_MEMBER_INVALID", "You are not a board member");
-
-    // Prevent leaving if user is the last OWNER.
-    if (boardMember.role === "OWNER") {
-      const members = await boardsRepo.listBoardMembers(boardId);
-      const ownerCount = members.filter((m: any) => m.role === "OWNER").length;
-      if (ownerCount <= 1) {
-        throw new ApiError(400, "BOARD_OWNER_REQUIRED", "Board must have at least one OWNER");
-      }
-    }
-
-    await boardsRepo.removeBoardMember(boardId, userId);
     return { ok: true };
   }
 }

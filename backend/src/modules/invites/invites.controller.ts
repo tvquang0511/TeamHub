@@ -8,6 +8,7 @@ const createWorkspaceInviteParamSchema = z.object({
 
 const createWorkspaceInviteBodySchema = z.object({
   email: z.string().email(),
+  role: z.enum(['ADMIN', 'MEMBER']).optional(),
   expiresAt: z.string().datetime().optional(),
 });
 

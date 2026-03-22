@@ -21,6 +21,7 @@ boardsRoutes.delete("/:id", boardsController.delete);
 boardsRoutes.get("/:id/members", boardMembersController.list);
 boardsRoutes.post("/:id/members", boardMembersController.add);
 boardsRoutes.post("/:id/members/by-email", boardMembersController.addByEmail);
+boardsRoutes.patch("/:id/members/:userId", boardMembersController.updateRole);
 boardsRoutes.delete("/:id/members/:userId", boardMembersController.remove);
 
 boardsRoutes.post("/:id/leave", boardsController.leave);

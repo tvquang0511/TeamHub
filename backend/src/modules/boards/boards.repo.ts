@@ -61,6 +61,14 @@ export class BoardsRepo {
     });
   }
 
+  async updateBoardMemberRole(boardId: string, userId: string, role: "ADMIN" | "MEMBER") {
+    return (prisma as any).board_members.update({
+      where: { boardId_userId: { boardId, userId } },
+      data: { role: role as any },
+      select: { id: true, boardId: true, userId: true, role: true, createdAt: true },
+    });
+  }
+
   async create(data: CreateBoardData) {
     return (prisma as any).boards.create({
       data: {

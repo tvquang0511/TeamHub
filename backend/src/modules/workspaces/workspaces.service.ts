@@ -101,6 +101,7 @@ export const workspacesService = {
       members: members.map((m) => ({
         id: m.id,
         userId: m.userId,
+        email: m.user.email,
         displayName: m.user.displayName,
         role: m.role,
       })),

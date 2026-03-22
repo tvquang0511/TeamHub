@@ -124,6 +124,7 @@ model workspace_invites {
 
   email       String
   token       String   @unique
+  role        workspace_member_role @default(MEMBER)
   expiresAt   DateTime @map("expires_at")
   acceptedAt  DateTime? @map("accepted_at")
 

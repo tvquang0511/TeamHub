@@ -1,6 +1,30 @@
 import prisma from '../../db/prisma';
 
 export const invitesRepo = {
+  findActiveInviteByWorkspaceAndEmail(workspaceId: string, email: string) {
+    return prisma.workspace_invites.findFirst({
+      where: {
+        workspaceId,
+        email: email.toLowerCase(),
+        acceptedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  },
+
+  refreshWorkspaceInvite(inviteId: string, data: { token: string; expiresAt: Date; role: 'OWNER' | 'ADMIN' | 'MEMBER' }) {
+    // Prisma client typings may be stale until `prisma generate` runs.
+    return (prisma as any).workspace_invites.update({
+      where: { id: inviteId },
+      data: {
+        token: data.token,
+        expiresAt: data.expiresAt,
+        role: data.role as any,
+      },
+    });
+  },
+
   listMyPendingWorkspaceInvites(email: string) {
     return prisma.workspace_invites.findMany({
       where: {
@@ -37,13 +61,15 @@ export const invitesRepo = {
     });
   },
 
-  createWorkspaceInvite(data: { workspaceId: string; email: string; token: string; expiresAt: Date }) {
-    return prisma.workspace_invites.create({
+  createWorkspaceInvite(data: { workspaceId: string; email: string; token: string; expiresAt: Date; role: 'OWNER' | 'ADMIN' | 'MEMBER' }) {
+    // Prisma client typings may be stale until `prisma generate` runs.
+    return (prisma as any).workspace_invites.create({
       data: {
         workspaceId: data.workspaceId,
         email: data.email,
         token: data.token,
         expiresAt: data.expiresAt,
+        role: data.role as any,
       },
     });
   },

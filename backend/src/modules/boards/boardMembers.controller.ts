@@ -44,6 +44,18 @@ export class BoardMembersController {
     const result = await boardsService.removeMember(actorId, boardId, memberUserId);
     res.status(200).json(result);
   };
+
+  updateRole = async (req: Request, res: Response) => {
+    const actorId = req.user!.id;
+    const boardId = String(req.params.id);
+    const memberUserId = String(req.params.userId);
+    const input = z
+      .object({ role: z.enum(["ADMIN", "MEMBER"]) })
+      .parse(req.body);
+
+    const result = await boardsService.updateMemberRole(actorId, boardId, memberUserId, input.role);
+    res.status(200).json(result);
+  };
 }
 
 export const boardMembersController = new BoardMembersController();

@@ -6,6 +6,7 @@ function publicInvite(invite: {
   id: string;
   workspaceId: string;
   email: string;
+  role?: 'OWNER' | 'ADMIN' | 'MEMBER';
   expiresAt: Date;
   acceptedAt: Date | null;
   createdAt: Date;
@@ -14,6 +15,7 @@ function publicInvite(invite: {
     id: invite.id,
     workspaceId: invite.workspaceId,
     email: invite.email,
+    role: invite.role ?? 'MEMBER',
     expiresAt: invite.expiresAt.toISOString(),
     acceptedAt: invite.acceptedAt ? invite.acceptedAt.toISOString() : null,
     createdAt: invite.createdAt.toISOString(),
@@ -57,7 +59,11 @@ export const invitesService = {
     }
 
     await invitesRepo.markWorkspaceInviteAccepted(invite.id);
-    await invitesRepo.createMember({ workspaceId: invite.workspaceId, userId, role: 'MEMBER' });
+    await invitesRepo.createMember({
+      workspaceId: invite.workspaceId,
+      userId,
+      role: (invite as any).role ?? 'MEMBER',
+    });
 
     return { workspace: publicWorkspace(invite.workspace) };
   },
@@ -81,7 +87,7 @@ export const invitesService = {
   async createWorkspaceInvite(
     userId: string,
     workspaceId: string,
-    input: { email: string; expiresAt?: string },
+    input: { email: string; role?: 'ADMIN' | 'MEMBER'; expiresAt?: string },
   ) {
     const membership = await invitesRepo.findMembership(workspaceId, userId);
     if (!membership) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
@@ -97,12 +103,20 @@ export const invitesService = {
     }
 
     const token = crypto.randomBytes(24).toString('hex');
-    const invite = await invitesRepo.createWorkspaceInvite({
-      workspaceId,
-      email: input.email.toLowerCase(),
-      token,
-      expiresAt,
-    });
+    const inviteEmail = input.email.toLowerCase();
+    const role = input.role ?? 'MEMBER';
+
+    // Dedupe: if there's already a pending, unexpired invite for this email, rotate token/expiry.
+    const existing = await invitesRepo.findActiveInviteByWorkspaceAndEmail(workspaceId, inviteEmail);
+    const invite = existing
+      ? await invitesRepo.refreshWorkspaceInvite(existing.id, { token, expiresAt, role })
+      : await invitesRepo.createWorkspaceInvite({
+          workspaceId,
+          email: inviteEmail,
+          token,
+          expiresAt,
+          role,
+        });
 
     // MVP: return token for testing.
     return {
@@ -111,6 +125,7 @@ export const invitesService = {
         email: invite.email,
         token: invite.token,
         expiresAt: invite.expiresAt.toISOString(),
+        role: (invite as any).role ?? role,
       },
     };
   },
@@ -197,7 +212,7 @@ export const invitesService = {
     await invitesRepo.createMember({
       workspaceId: invite.workspaceId,
       userId,
-      role: 'MEMBER',
+      role: (invite as any).role ?? 'MEMBER',
     });
 
     return { workspace: publicWorkspace(invite.workspace) };

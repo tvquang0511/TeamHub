@@ -21,14 +21,19 @@ export const usersService = {
       });
       if (!membership) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
 
-      const rows = await usersRepo.searchWorkspaceMembersByEmailPrefix(workspaceId, q, limit ?? 10);
+      const rows = await usersRepo.searchWorkspaceMembersByEmailPrefix(
+        workspaceId,
+        q,
+        limit ?? 10,
+        userId,
+      );
       return {
         users: rows.map((r) => ({ ...r.user, workspaceRole: r.role })),
       };
     }
 
     // Global search (email/displayName contains) - for MVP admin tooling; can restrict later.
-    const users = await usersRepo.searchByEmailPrefix(q, limit ?? 10);
+    const users = await usersRepo.searchByEmailPrefix(q, limit ?? 10, userId);
     return { users };
   },
 };

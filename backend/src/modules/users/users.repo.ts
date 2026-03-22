@@ -1,9 +1,10 @@
 import prisma from '../../db/prisma';
 
 export const usersRepo = {
-  searchByEmailPrefix(emailPrefix: string, limit = 10) {
+  searchByEmailPrefix(emailPrefix: string, limit = 10, excludeUserId?: string) {
     return prisma.users.findMany({
       where: {
+        ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
         OR: [
           {
             email: {
@@ -25,10 +26,16 @@ export const usersRepo = {
     });
   },
 
-  searchWorkspaceMembersByEmailPrefix(workspaceId: string, emailPrefix: string, limit = 10) {
+  searchWorkspaceMembersByEmailPrefix(
+    workspaceId: string,
+    emailPrefix: string,
+    limit = 10,
+    excludeUserId?: string,
+  ) {
     return prisma.workspace_members.findMany({
       where: {
         workspaceId,
+        ...(excludeUserId ? { userId: { not: excludeUserId } } : {}),
         user: {
           OR: [
             {

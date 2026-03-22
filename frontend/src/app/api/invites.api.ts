@@ -1,8 +1,21 @@
 import { httpClient } from "./http";
 import type {
   InviteToWorkspaceRequest,
-  InviteToBoardRequest,
 } from "../types/api";
+
+export type WorkspaceInviteInboxItem = {
+  id: string;
+  workspaceId: string;
+  workspaceName?: string;
+  email: string;
+  role: "ADMIN" | "MEMBER";
+  invitedBy?: {
+    id: string;
+    displayName: string;
+    email?: string;
+  };
+  createdAt?: string;
+};
 
 export const invitesApi = {
   // Invite user to workspace
@@ -22,20 +35,21 @@ export const invitesApi = {
     await httpClient.post(`/invites/${token}/accept`);
   },
 
-  // Invite user to board
-  inviteToBoard: async (
-    boardId: string,
-    data: InviteToBoardRequest
-  ): Promise<{ token: string }> => {
-    const response = await httpClient.post<{ token: string }>(
-      `/invites/boards/${boardId}`,
-      data
+  // Inbox: list my pending workspace invites
+  listMyWorkspaceInvites: async (): Promise<WorkspaceInviteInboxItem[]> => {
+    const response = await httpClient.get<{ invites: WorkspaceInviteInboxItem[] }>(
+      `/invites/inbox/workspaces`
     );
-    return response.data;
+    return response.data.invites || [];
   },
 
-  // Accept board invite
-  acceptBoardInvite: async (token: string): Promise<void> => {
-    await httpClient.post(`/invites/boards/token/${token}/accept`);
+  // Inbox: accept by inviteId
+  acceptWorkspaceInviteInbox: async (inviteId: string): Promise<void> => {
+    await httpClient.post(`/invites/inbox/workspaces/${inviteId}/accept`);
+  },
+
+  // Inbox: decline by inviteId
+  declineWorkspaceInviteInbox: async (inviteId: string): Promise<void> => {
+    await httpClient.post(`/invites/inbox/workspaces/${inviteId}/decline`);
   },
 };

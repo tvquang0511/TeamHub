@@ -99,6 +99,7 @@ export const boardsApi = {
       lists: mappedLists.sort((a, b) => a.position - b.position),
       members: (members || []).map(mapMember),
       labels: (labels || []).map(mapLabel),
+      actor: board?.actor,
     };
   },
 
@@ -160,5 +161,18 @@ export const boardsApi = {
   // Remove member
   removeMember: async (boardId: string, userId: string): Promise<void> => {
     await httpClient.delete(`/boards/${boardId}/members/${userId}`);
+  },
+
+  // Update member role
+  updateMemberRole: async (
+    boardId: string,
+    userId: string,
+    role: "ADMIN" | "MEMBER"
+  ): Promise<BoardMember> => {
+    const response = await httpClient.patch<BoardMember>(
+      `/boards/${boardId}/members/${userId}`,
+      { role }
+    );
+    return response.data;
   },
 };

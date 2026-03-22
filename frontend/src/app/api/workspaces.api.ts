@@ -118,6 +118,19 @@ export const workspacesApi = {
     }));
   },
 
+  // Add member by email
+  addMemberByEmail: async (
+    workspaceId: string,
+    data: { email: string; role: "ADMIN" | "MEMBER" }
+  ): Promise<WorkspaceMember> => {
+    const response = await httpClient.post<any>(
+      `/workspaces/${workspaceId}/members/by-email`,
+      data
+    );
+    // Backend shape might be { member } or directly the member; normalize.
+    return response.data?.member || response.data;
+  },
+
   // Update member role
   updateMemberRole: async (
     workspaceId: string,

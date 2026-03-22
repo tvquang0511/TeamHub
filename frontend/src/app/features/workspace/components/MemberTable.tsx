@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
 import { MoreHorizontal, Shield, ShieldCheck, LogOut, UserMinus } from "lucide-react";
-// toast placeholder (wire real toast later)
+import { toast } from "sonner";
 import type { WorkspaceMember } from "../../../types/api";
 
 interface MemberTableProps {
@@ -34,6 +34,8 @@ export const MemberTable: React.FC<MemberTableProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // TODO: wire actual permission from workspace detail/current user.
+  const canManage = true;
 
   const updateRoleMutation = useMutation({
     mutationFn: (input: { userId: string; role: "ADMIN" | "MEMBER" }) =>
@@ -42,12 +44,10 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       queryClient.invalidateQueries({
         queryKey: ["workspace", workspaceId, "members"],
       });
-      // toast: role updated
+      toast.success("Đã cập nhật vai trò thành viên");
     },
     onError: (error: any) => {
-      console.error(
-        error.response?.data?.error?.message || "Không thể cập nhật vai trò"
-      );
+      toast.error(error.response?.data?.error?.message || "Không thể cập nhật vai trò");
     },
   });
 
@@ -55,13 +55,11 @@ export const MemberTable: React.FC<MemberTableProps> = ({
     mutationFn: () => workspacesApi.leave(workspaceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-      // toast: left
+      toast.success("Bạn đã rời workspace");
       navigate("/workspaces");
     },
     onError: (error: any) => {
-      console.error(
-        error.response?.data?.error?.message || "Không thể rời workspace"
-      );
+      toast.error(error.response?.data?.error?.message || "Không thể rời workspace");
     },
   });
 
@@ -72,10 +70,10 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       queryClient.invalidateQueries({
         queryKey: ["workspace", workspaceId, "members"],
       });
-      // toast: removed
+      toast.success("Đã xoá thành viên khỏi workspace");
     },
     onError: (error: any) => {
-      console.error(error.response?.data?.error?.message || "Không thể xoá thành viên");
+      toast.error(error.response?.data?.error?.message || "Không thể xoá thành viên");
     },
   });
 
@@ -132,13 +130,13 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 <div className="flex items-center gap-3">
                   <Avatar>
                     <AvatarFallback>
-                      {getInitials(member.user.displayName)}
+                      {getInitials(member.displayName || member.email || "?")}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">{member.user.displayName}</span>
+                  <span className="font-medium">{member.displayName || member.email || "(unknown)"}</span>
                 </div>
               </TableCell>
-              <TableCell>{member.user.email}</TableCell>
+              <TableCell>{member.email || ""}</TableCell>
               <TableCell>
                 <Badge variant={getRoleBadgeVariant(member.role)}>
                   {member.role === "OWNER"
@@ -149,7 +147,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                 </Badge>
               </TableCell>
               <TableCell>
-                {new Date(member.joinedAt).toLocaleDateString("vi-VN")}
+                {member.joinedAt ? new Date(member.joinedAt).toLocaleDateString("vi-VN") : ""}
               </TableCell>
               <TableCell>
                 {member.role !== "OWNER" && (
@@ -167,7 +165,8 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                             role: member.role === "ADMIN" ? "MEMBER" : "ADMIN",
                           })
                         }
-                        disabled={updateRoleMutation.isPending}
+                        disabled={!canManage || updateRoleMutation.isPending}
+                        className={!canManage ? "opacity-50 pointer-events-none" : undefined}
                       >
                         {member.role === "ADMIN" ? (
                           <>
@@ -184,6 +183,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                       <DropdownMenuItem
                         onClick={() => removeMemberMutation.mutate(member.userId)}
                         className="text-red-600"
+                        disabled={!canManage || removeMemberMutation.isPending}
                       >
                         <UserMinus className="mr-2 h-4 w-4" />
                         Xoá khỏi workspace

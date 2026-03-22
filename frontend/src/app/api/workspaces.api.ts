@@ -110,11 +110,8 @@ export const workspacesApi = {
       userId: m.userId,
       workspaceId: id,
       role: m.role,
-      user: {
-        id: m.userId,
-        email: "",
-        displayName: m.displayName,
-      },
+      email: (m as any).email,
+      displayName: m.displayName,
       joinedAt: new Date().toISOString(),
     }));
   },
@@ -128,7 +125,7 @@ export const workspacesApi = {
     // The supported flow is: create a workspace invite, then invitee accepts.
     // We still accept `role` in the UI, but backend currently always adds as MEMBER.
     // (See notes in invitesService.accept* methods.)
-    await invitesApi.inviteToWorkspace(workspaceId, { email: data.email });
+  await invitesApi.inviteToWorkspace(workspaceId, { email: data.email, role: data.role });
 
     // We can't return a WorkspaceMember because the member won't exist until acceptance.
     // Return a placeholder shape for callers that expect a value.
@@ -137,7 +134,8 @@ export const workspacesApi = {
       userId: "",
       workspaceId,
       role: data.role,
-      user: { id: "", email: data.email, displayName: data.email },
+      email: data.email,
+      displayName: data.email,
       joinedAt: new Date().toISOString(),
     } as any;
   },

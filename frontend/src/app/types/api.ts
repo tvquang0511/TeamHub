@@ -24,6 +24,11 @@ export interface RegisterRequest {
   displayName: string;
 }
 
+export interface InviteToWorkspaceRequest {
+  email: string;
+  role?: "ADMIN" | "MEMBER";
+}
+
 export interface Workspace {
   id: string;
   name: string;
@@ -38,8 +43,9 @@ export interface WorkspaceMember {
   userId: string;
   workspaceId: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
-  user: User;
-  joinedAt: string;
+  email?: string;
+  displayName?: string;
+  joinedAt?: string;
 }
 
 export interface Board {
@@ -161,11 +167,7 @@ export interface UpdateCardRequest {
   dueDate?: string;
 }
 
-export interface InviteToWorkspaceRequest {
-  email: string;
-  role?: "ADMIN" | "MEMBER";
-}
-
 export interface AddBoardMemberByEmailRequest {
   email: string;
+  role?: "ADMIN" | "MEMBER";
 }

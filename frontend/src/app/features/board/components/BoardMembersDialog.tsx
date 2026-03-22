@@ -26,7 +26,8 @@ import {
 } from "../../../components/ui/select";
 
 import { Search, UserPlus, UserMinus } from "lucide-react";
-import type { BoardDetail, BoardMember, User, WorkspaceMember } from "../../../types/api";
+import { toast } from "sonner";
+import type { BoardMember, User, WorkspaceMember } from "../../../types/api";
 import { ConfirmWithRoleDialog, type Role3 } from "../../../components/shared/ConfirmWithRoleDialog";
 
 interface Props {
@@ -82,31 +83,31 @@ export const BoardMembersDialog: React.FC<Props> = ({
 
   const addMemberMutation = useMutation({
     mutationFn: (input: { email: string; role: "ADMIN" | "MEMBER" }) =>
-      boardsApi.addMemberByEmail(boardId, { email: input.email }),
+      boardsApi.addMemberByEmail(boardId, { email: input.email, role: input.role } as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "members"] });
+      toast.success("Đã thêm thành viên vào board");
       setConfirmOpen(false);
       setSelectedUser(null);
       setSearchQuery("");
       setSearchResults([]);
     },
     onError: (error: any) => {
-      console.error(error.response?.data?.error?.message || "Không thể thêm thành viên");
+      toast.error(error.response?.data?.error?.message || "Không thể thêm thành viên");
     },
   });
 
-  // NOTE: backend add-by-email currently doesn’t take role (we designed role selection UI anyway).
-  // We’ll apply role with a follow-up PATCH call if user chose ADMIN.
   const updateRoleMutation = useMutation({
     mutationFn: (input: { userId: string; role: "ADMIN" | "MEMBER" }) =>
       boardsApi.updateMemberRole(boardId, input.userId, input.role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "members"] });
+      toast.success("Đã cập nhật vai trò thành viên");
     },
     onError: (error: any) => {
-      console.error(error.response?.data?.error?.message || "Không thể cập nhật vai trò");
+      toast.error(error.response?.data?.error?.message || "Không thể cập nhật vai trò");
     },
   });
 
@@ -115,9 +116,10 @@ export const BoardMembersDialog: React.FC<Props> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "members"] });
+      toast.success("Đã xoá thành viên khỏi board");
     },
     onError: (error: any) => {
-      console.error(error.response?.data?.error?.message || "Không thể xoá thành viên");
+      toast.error(error.response?.data?.error?.message || "Không thể xoá thành viên");
     },
   });
 
@@ -152,27 +154,8 @@ export const BoardMembersDialog: React.FC<Props> = ({
   const handleConfirmAdd = async (role: Role3) => {
     if (!selectedUser) return;
 
-    // Step 1: add member
     addMemberMutation.mutate(
-      { email: selectedUser.email, role: role === "OWNER" ? "MEMBER" : (role as any) },
-      {
-        onSuccess: async () => {
-          // Step 2: if chosen ADMIN, try patch role
-          if (role === "ADMIN") {
-            // Find the member in the refreshed data; safest is to refetch then patch.
-            await queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
-            const next = queryClient.getQueryData<BoardDetail>([
-              "board",
-              boardId,
-              "detail",
-            ]);
-            const member = next?.members?.find((m) => m.user.email === selectedUser.email);
-            if (member) {
-              updateRoleMutation.mutate({ userId: member.userId, role: "ADMIN" });
-            }
-          }
-        },
-      }
+      { email: selectedUser.email, role: role === "OWNER" ? "MEMBER" : (role as any) }
     );
   };
 
@@ -180,8 +163,8 @@ export const BoardMembersDialog: React.FC<Props> = ({
     // Show workspace members not on board first; fallback to search results.
     const wsAsUsers: User[] = (candidatesFromWorkspace || []).map((m: WorkspaceMember) => ({
       id: m.userId,
-      email: m.user.email,
-      displayName: m.user.displayName,
+      email: m.email || "",
+      displayName: m.displayName || m.email || "",
     }));
 
     const merged = [...wsAsUsers];

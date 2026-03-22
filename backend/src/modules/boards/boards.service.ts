@@ -350,6 +350,33 @@ export class BoardsService {
     await boardsRepo.removeBoardMember(boardId, memberUserId);
     return { ok: true };
   }
+
+  async leaveBoard(userId: string, boardId: string) {
+    const board = await boardsRepo.findById(boardId);
+    if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, userId);
+    if (!wsMembership) {
+      throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+    }
+
+    const actorBoardMember = await boardsRepo.isBoardMember(boardId, userId);
+    if (!actorBoardMember) {
+      throw new ApiError(400, "BOARD_MEMBER_INVALID", "You are not a member of this board");
+    }
+
+    // Prevent leaving if you're the last OWNER.
+    if (actorBoardMember.role === "OWNER") {
+      const members = await boardsRepo.listBoardMembers(boardId);
+      const ownerCount = members.filter((m: any) => m.role === "OWNER").length;
+      if (ownerCount <= 1) {
+        throw new ApiError(400, "BOARD_OWNER_REQUIRED", "Board must have at least one OWNER");
+      }
+    }
+
+    await boardsRepo.removeBoardMember(boardId, userId);
+    return { ok: true };
+  }
 }
 
 export const boardsService = new BoardsService();

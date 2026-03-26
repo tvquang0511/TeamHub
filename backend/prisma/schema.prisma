@@ -47,6 +47,13 @@ enum activity_type {
   ASSIGNEE_REMOVED
   LABEL_ADDED
   LABEL_REMOVED
+  ATTACHMENT_ADDED
+  ATTACHMENT_REMOVED
+}
+
+enum card_attachment_type {
+  FILE
+  LINK
 }
 
 model users {
@@ -64,7 +71,8 @@ model users {
   boardMembers      board_members[]
   cardComments      card_comments[]
   cardAssignees     card_assignees[]
-  reminderJobs      reminder_jobs[]
+    cardAttachments   card_attachments[]
+    reminderJobs      reminder_jobs[]
   activities        activities[]
 
   @@map("users")
@@ -232,11 +240,42 @@ model cards {
   assignees   card_assignees[]
   cardLabels  card_labels[]
   checklists  checklists[]
+  attachments card_attachments[]
   reminderJobs reminder_jobs[]
   activities  activities[]
 
   @@index([listId, position], map: "idx_cards_list_position")
   @@map("cards")
+}
+
+model card_attachments {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  uploaderId String  @db.Uuid @map("uploader_id")
+
+  type      card_attachment_type
+
+  // FILE attachments (MinIO)
+  bucket    String?
+  objectKey String?  @map("object_key")
+  url       String?
+
+  fileName  String?  @map("file_name")
+  mimeType  String?  @map("mime_type")
+  size      Int?
+
+  // LINK attachments (external)
+  linkUrl   String?  @map("link_url")
+  linkTitle String?  @map("link_title")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card     cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  uploader users @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt, id], map: "idx_card_attachments_card_created_id")
+  @@index([uploaderId], map: "idx_card_attachments_uploader_id")
+  @@map("card_attachments")
 }
 
 model card_comments {

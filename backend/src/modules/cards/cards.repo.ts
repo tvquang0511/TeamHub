@@ -156,6 +156,61 @@ export class CardsRepo {
       },
     });
   }
+
+  async findCardWorkspaceAndBoard(cardId: string) {
+    return (prisma as any).cards.findUnique({
+      where: { id: cardId },
+      select: {
+        id: true,
+        archivedAt: true,
+        list: {
+          select: {
+            archivedAt: true,
+            board: {
+              select: { id: true, workspaceId: true, archivedAt: true, visibility: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async findLabel(labelId: string) {
+    return prisma.labels.findUnique({
+      where: { id: labelId },
+      select: { id: true, workspaceId: true, name: true, color: true },
+    });
+  }
+
+  async listLabelsByCard(cardId: string) {
+    return prisma.card_labels.findMany({
+      where: { cardId },
+      orderBy: [{ createdAt: "asc" }],
+      select: {
+        id: true,
+        createdAt: true,
+        label: { select: { id: true, workspaceId: true, name: true, color: true, createdAt: true } },
+      },
+    });
+  }
+
+  async attachLabel(cardId: string, labelId: string) {
+    return prisma.card_labels.create({
+      data: { cardId, labelId },
+      select: {
+        id: true,
+        createdAt: true,
+        label: { select: { id: true, workspaceId: true, name: true, color: true, createdAt: true } },
+      },
+    });
+  }
+
+  async detachLabel(cardId: string, labelId: string) {
+    return prisma.card_labels.delete({
+      where: { cardId_labelId: { cardId, labelId } },
+      select: { id: true },
+    });
+  }
 }
 
 export const cardsRepo = new CardsRepo();

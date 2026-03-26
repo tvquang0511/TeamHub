@@ -16,5 +16,10 @@ cardsRoutes.get("/:id", cardsController.get);
 cardsRoutes.patch("/:id", cardsController.update);
 cardsRoutes.delete("/:id", cardsController.delete);
 
+// Labels on card
+cardsRoutes.get("/:id/labels", cardsController.listLabels);
+cardsRoutes.post("/:id/labels/:labelId", cardsController.attachLabel);
+cardsRoutes.delete("/:id/labels/:labelId", cardsController.detachLabel);
+
 // Move/reorder using prev/next anchors
 cardsRoutes.post("/:id/move", cardsController.move);

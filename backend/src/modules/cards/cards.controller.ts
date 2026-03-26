@@ -54,6 +54,29 @@ export class CardsController {
     const result = await cardsService.delete(userId, cardId);
     res.status(200).json(result);
   };
+
+  listLabels = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const result = await cardsService.listLabels(userId, cardId);
+    res.status(200).json(result);
+  };
+
+  attachLabel = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const labelId = String(req.params.labelId);
+    const result = await cardsService.attachLabel(userId, cardId, labelId);
+    res.status(200).json(result);
+  };
+
+  detachLabel = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const labelId = String(req.params.labelId);
+    const result = await cardsService.detachLabel(userId, cardId, labelId);
+    res.status(200).json(result);
+  };
 }
 
 export const cardsController = new CardsController();

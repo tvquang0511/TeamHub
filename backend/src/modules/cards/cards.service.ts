@@ -210,6 +210,85 @@ export class CardsService {
     await cardsRepo.update(cardId, { archivedAt: new Date() });
     return { ok: true };
   }
+
+  async listLabels(userId: string, cardId: string) {
+    const card = await cardsRepo.findCardWorkspaceAndBoard(cardId);
+    if (!card || card.archivedAt || card.list.archivedAt || card.list.board.archivedAt) {
+      throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+    }
+
+    const workspaceId = card.list.board.workspaceId;
+    const membership = await cardsRepo.isWorkspaceMember(workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    if (card.list.board.visibility !== "WORKSPACE") {
+      const boardMember = await cardsRepo.isBoardMember(card.list.board.id, userId);
+      if (!boardMember) {
+        if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
+      }
+    }
+
+    const cardLabels = await cardsRepo.listLabelsByCard(cardId);
+    const labels = cardLabels.map((cl: any) => cl.label);
+    return { labels };
+  }
+
+  async attachLabel(userId: string, cardId: string, labelId: string) {
+    const card = await cardsRepo.findCardWorkspaceAndBoard(cardId);
+    if (!card || card.archivedAt || card.list.archivedAt || card.list.board.archivedAt) {
+      throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+    }
+
+    const workspaceId = card.list.board.workspaceId;
+    const membership = await cardsRepo.isWorkspaceMember(workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    // Must be board member to modify cards.
+    const boardMember = await cardsRepo.isBoardMember(card.list.board.id, userId);
+    if (!boardMember) throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+
+    const label = await cardsRepo.findLabel(labelId);
+    if (!label) throw new ApiError(404, "LABEL_NOT_FOUND", "Label not found");
+    if (label.workspaceId !== workspaceId) {
+      throw new ApiError(400, "LABEL_INVALID", "Label does not belong to the same workspace");
+    }
+
+    try {
+      const attached = await cardsRepo.attachLabel(cardId, labelId);
+      return { label: attached.label };
+    } catch (e: any) {
+      // Unique violation => already attached
+      if (e?.code === "P2002") {
+        return { ok: true };
+      }
+      throw e;
+    }
+  }
+
+  async detachLabel(userId: string, cardId: string, labelId: string) {
+    const card = await cardsRepo.findCardWorkspaceAndBoard(cardId);
+    if (!card || card.archivedAt || card.list.archivedAt || card.list.board.archivedAt) {
+      throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+    }
+
+    const workspaceId = card.list.board.workspaceId;
+    const membership = await cardsRepo.isWorkspaceMember(workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await cardsRepo.isBoardMember(card.list.board.id, userId);
+    if (!boardMember) throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+
+    // Idempotent delete
+    try {
+      await cardsRepo.detachLabel(cardId, labelId);
+    } catch (e: any) {
+      if (e?.code !== "P2025") throw e;
+    }
+
+    return { ok: true };
+  }
 }
 
 export const cardsService = new CardsService();

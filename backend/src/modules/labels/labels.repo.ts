@@ -1,20 +1,20 @@
 import prisma from "../../db/prisma";
 
 export const labelsRepo = {
-  isWorkspaceMember: async (workspaceId: string, userId: string) => {
-    return prisma.workspace_members.findUnique({
-      where: { workspaceId_userId: { workspaceId, userId } },
+  findBoardMember: async (boardId: string, userId: string) => {
+    return prisma.board_members.findUnique({
+      where: { boardId_userId: { boardId, userId } },
       select: { id: true, role: true },
     });
   },
 
-  listByWorkspace: async (workspaceId: string) => {
+  listByBoard: async (boardId: string) => {
     return prisma.labels.findMany({
-      where: { workspaceId },
+      where: { boardId },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       select: {
         id: true,
-        workspaceId: true,
+        boardId: true,
         name: true,
         color: true,
         createdAt: true,
@@ -22,16 +22,16 @@ export const labelsRepo = {
     });
   },
 
-  create: async (workspaceId: string, data: { name: string; color?: string | null }) => {
+  create: async (boardId: string, data: { name: string; color?: string | null }) => {
     return prisma.labels.create({
       data: {
-        workspaceId,
+        boardId,
         name: data.name,
         color: data.color ?? null,
       },
       select: {
         id: true,
-        workspaceId: true,
+        boardId: true,
         name: true,
         color: true,
         createdAt: true,
@@ -44,7 +44,7 @@ export const labelsRepo = {
       where: { id: labelId },
       select: {
         id: true,
-        workspaceId: true,
+        boardId: true,
         name: true,
         color: true,
         createdAt: true,
@@ -61,7 +61,7 @@ export const labelsRepo = {
       },
       select: {
         id: true,
-        workspaceId: true,
+        boardId: true,
         name: true,
         color: true,
         createdAt: true,

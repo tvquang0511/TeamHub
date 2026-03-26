@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -15,6 +15,8 @@ import type { BoardDetail } from "../../../types/api";
 
 export const BoardPage: React.FC = () => {
   const { boardId } = useParams<{ boardId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedCardId = searchParams.get("cardId") || "";
   const queryClient = useQueryClient();
 
   const { data: boardDetail, isLoading } = useQuery({
@@ -177,6 +179,12 @@ export const BoardPage: React.FC = () => {
     );
   }
 
+  const clearSelectedCard = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("cardId");
+    setSearchParams(next, { replace: true });
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div
@@ -200,6 +208,8 @@ export const BoardPage: React.FC = () => {
                     list={list}
                     boardId={boardId!}
                     onListDropCommit={commitListDrop}
+                    selectedCardId={selectedCardId}
+                    onCloseSelectedCard={clearSelectedCard}
                   />
                 ))}
               <AddListButton onAdd={handleCreateList} />

@@ -114,7 +114,7 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
             size="sm"
             disabled={createCardMutation.isPending}
           >
-            Thêm card
+            Thêm thẻ
           </Button>
           <Button
             type="button"
@@ -137,7 +137,7 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
       onClick={() => setIsAdding(true)}
     >
       <Plus className="mr-2 h-4 w-4" />
-      Thêm card
+      Thêm thẻ
     </Button>
   );
 };

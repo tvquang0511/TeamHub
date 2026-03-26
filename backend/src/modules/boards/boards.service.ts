@@ -237,7 +237,7 @@ export class BoardsService {
       boardsRepo.listListsByBoard(boardId),
       boardsRepo.listCardsByBoard(boardId),
       boardsRepo.listBoardMembers(boardId),
-      boardsRepo.listLabelsByWorkspace(board.workspaceId),
+      boardsRepo.listLabelsByBoard(boardId),
     ]);
 
     const actor = this.buildBoardActorPermissions({

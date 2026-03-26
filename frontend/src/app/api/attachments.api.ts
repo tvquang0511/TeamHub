@@ -1,6 +1,6 @@
 import { httpClient } from "./http";
 
-export type AttachmentType = "FILE" | "LINK";
+export type AttachmentType = "FILE" | "LINK" | "CARD";
 
 export type Attachment =
   | {
@@ -24,6 +24,16 @@ export type Attachment =
       linkTitle?: string;
       uploaderId?: string;
       createdAt?: string;
+    }
+  | {
+      id: string;
+      cardId: string;
+      type: "CARD";
+      linkUrl: string;
+      linkTitle?: string;
+      referencedCardId?: string;
+      uploaderId?: string;
+      createdAt?: string;
     };
 
 type ListEnvelope = { attachments: any[] };
@@ -39,16 +49,17 @@ type PresignUpload = {
 };
 
 const mapAttachment = (a: any): Attachment => {
-  if (a.type === "LINK") {
+  if (a.type === "LINK" || a.type === "CARD") {
     return {
       id: a.id,
       cardId: a.cardId,
-      type: "LINK",
+      type: a.type,
       linkUrl: a.linkUrl,
       linkTitle: a.linkTitle ?? undefined,
+      referencedCardId: a.referencedCardId ?? undefined,
       uploaderId: a.uploaderId ?? undefined,
       createdAt: a.createdAt ?? new Date().toISOString(),
-    };
+    } as Attachment;
   }
 
   return {
@@ -94,6 +105,11 @@ export const attachmentsApi = {
 
   createLink: async (cardId: string, data: { linkUrl: string; linkTitle?: string }) => {
     const res = await httpClient.post<{ attachment: any }>(`/attachments/cards/${cardId}/links`, data);
+    return mapAttachment(res.data.attachment);
+  },
+
+  createCardRef: async (cardId: string, data: { referencedCardId: string; linkTitle?: string }) => {
+    const res = await httpClient.post<{ attachment: any }>(`/attachments/cards/${cardId}/cards`, data);
     return mapAttachment(res.data.attachment);
   },
 

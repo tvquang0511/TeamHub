@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
-import { ArrowLeft, Users, Lock, Unlock, Palette } from "lucide-react";
+import { ArrowLeft, Users, Lock, Unlock, Palette, Tag } from "lucide-react";
 import { BoardMembersDialog } from "./BoardMembersDialog";
 import { BoardBackgroundDialog } from "./BoardBackgroundDialog";
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { boardsApi } from "../../../api/boards.api";
 import type { BoardDetail } from "../../../types/api";
+import { CreateLabelDialog } from "./CreateLabelDialog";
 
 interface BoardHeaderProps {
   board: BoardDetail;
@@ -18,6 +19,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
   const navigate = useNavigate();
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
+  const [isCreateLabelOpen, setIsCreateLabelOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Best-effort permission gating:
@@ -174,6 +176,16 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           <Button
             variant="secondary"
             size="sm"
+            onClick={() => setIsCreateLabelOpen(true)}
+            title="Tạo label cho board"
+          >
+            <Tag className="mr-2 h-4 w-4" />
+            Labels
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setIsMembersOpen(true)}
           >
             <Users className="mr-2 h-4 w-4" />
@@ -193,6 +205,12 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
         board={board}
         open={isBackgroundOpen}
         onOpenChange={setIsBackgroundOpen}
+      />
+
+      <CreateLabelDialog
+        boardId={board.id}
+        open={isCreateLabelOpen}
+        onOpenChange={setIsCreateLabelOpen}
       />
     </div>
   );

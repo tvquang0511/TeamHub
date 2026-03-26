@@ -19,6 +19,9 @@ attachmentsRoutes.post("/cards/:cardId/files", attachmentsController.commitFile)
 // LINK shortcut
 attachmentsRoutes.post("/cards/:cardId/links", attachmentsController.createLink);
 
+// CARD reference (attach another card)
+attachmentsRoutes.post("/cards/:cardId/cards", attachmentsController.createCardRef);
+
 // delete attachment
 attachmentsRoutes.delete("/:attachmentId", attachmentsController.delete);
 

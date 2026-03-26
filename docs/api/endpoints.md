@@ -380,8 +380,6 @@ Response
 
 Attachments belong to a **card**.
 
-- `FILE`: user uploads a file to MinIO (private). DB stores `{bucket, objectKey, fileName, mimeType, size}`.
-- `LINK`: user attaches an external URL shortcut.
 
 ### GET `/attachments/cards/:cardId`
 Auth: Bearer access token
@@ -390,6 +388,17 @@ Response
 ```json
 { "attachments": [ { "id": "uuid", "type": "FILE|LINK" } ] }
 ```
+
+#### Create card reference attachment
+
+Create an attachment on a card that references another card in the same board.
+
+- **POST** `/attachments/cards/:cardId/cards`
+
+Body:
+
+- `referencedCardId` (string, required)
+- `linkTitle` (string, optional)
 
 ### POST `/attachments/cards/:cardId/presign`
 Auth: Bearer access token
@@ -460,14 +469,14 @@ Response (201)
 
 ## 8) Labels
 
-Workspace-scoped labels (similar to Trello). Labels are created under a workspace, then attached to individual cards.
+Board-scoped labels (similar to Trello). Labels are created under a board, then attached to individual cards.
 
-### GET `/labels?workspaceId={workspaceId}`
+### GET `/labels?boardId={boardId}`
 Auth: Bearer access token
 
 Response
 ```json
-{ "labels": [ { "id": "uuid", "workspaceId": "uuid", "name": "Bug", "color": "#EF4444" } ] }
+{ "labels": [ { "id": "uuid", "boardId": "uuid", "name": "Bug", "color": "#EF4444" } ] }
 ```
 
 ### POST `/labels`
@@ -475,12 +484,12 @@ Auth: Bearer access token
 
 Request
 ```json
-{ "workspaceId": "uuid", "name": "Bug", "color": "#EF4444" }
+{ "boardId": "uuid", "name": "Bug", "color": "#EF4444" }
 ```
 
 Response (201)
 ```json
-{ "label": { "id": "uuid", "workspaceId": "uuid", "name": "Bug", "color": "#EF4444" } }
+{ "label": { "id": "uuid", "boardId": "uuid", "name": "Bug", "color": "#EF4444" } }
 ```
 
 ### PATCH `/labels/:id`
@@ -493,7 +502,7 @@ Request
 
 Response
 ```json
-{ "label": { "id": "uuid", "workspaceId": "uuid", "name": "High priority", "color": "#F59E0B" } }
+{ "label": { "id": "uuid", "boardId": "uuid", "name": "High priority", "color": "#F59E0B" } }
 ```
 
 ### DELETE `/labels/:id`

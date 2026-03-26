@@ -226,14 +226,14 @@ export class BoardsRepo {
     });
   }
 
-  async listLabelsByWorkspace(workspaceId: string) {
-    // Labels are workspace-scoped in schema.
+  async listLabelsByBoard(boardId: string) {
+    // Labels are board-scoped in schema.
     return prisma.labels.findMany({
-      where: { workspaceId },
+      where: { boardId },
       orderBy: [{ createdAt: "asc" }],
       select: {
         id: true,
-        workspaceId: true,
+        boardId: true,
         name: true,
         color: true,
         createdAt: true,

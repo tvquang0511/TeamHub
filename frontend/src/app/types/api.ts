@@ -116,7 +116,7 @@ export interface Label {
   id: string;
   name: string;
   color: string;
-  workspaceId: string;
+  boardId: string;
   createdAt?: string;
 }
 

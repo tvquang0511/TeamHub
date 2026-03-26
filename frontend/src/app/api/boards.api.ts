@@ -83,7 +83,7 @@ const mapCard = (c: any): Card => ({
   listId: c.listId,
   position: typeof c.position === "number" ? c.position : Number(c.position ?? 0),
   dueDate: c.dueAt ?? undefined,
-  labels: [],
+  labels: (c.labels || []).map(mapLabel),
   assignees: [],
   createdAt: c.createdAt ?? new Date().toISOString(),
   updatedAt: c.updatedAt ?? new Date().toISOString(),
@@ -92,8 +92,8 @@ const mapCard = (c: any): Card => ({
 const mapLabel = (l: any): Label => ({
   id: l.id,
   name: l.name,
-  color: l.color,
-  workspaceId: l.workspaceId ?? "",
+  color: l.color ?? "#64748B",
+  boardId: l.boardId ?? "",
   createdAt: l.createdAt ?? new Date().toISOString(),
 });
 

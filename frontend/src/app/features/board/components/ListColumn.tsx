@@ -27,6 +27,8 @@ type CardDragItem = {
 interface ListColumnProps {
   list: List;
   boardId: string;
+  selectedCardId?: string;
+  onCloseSelectedCard?: () => void;
   onListDropCommit?: (
     dragListId: string,
     dropTargetListId: string,
@@ -37,6 +39,8 @@ interface ListColumnProps {
 export const ListColumn: React.FC<ListColumnProps> = ({
   list,
   boardId,
+  selectedCardId,
+  onCloseSelectedCard,
   onListDropCommit,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -317,6 +321,8 @@ export const ListColumn: React.FC<ListColumnProps> = ({
             card={card}
             listId={list.id}
             boardId={boardId}
+            forceOpen={Boolean(selectedCardId && selectedCardId === card.id)}
+            onForceClose={selectedCardId && selectedCardId === card.id ? onCloseSelectedCard : undefined}
             onCardDropped={handleCardDropped}
           />
         ))}

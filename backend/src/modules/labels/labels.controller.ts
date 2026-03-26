@@ -5,8 +5,8 @@ import { createLabelInputSchema, labelsService, updateLabelInputSchema } from ".
 export class LabelsController {
   list = async (req: Request, res: Response) => {
     const userId = req.user!.id;
-    const workspaceId = String(req.query.workspaceId ?? "");
-    const result = await labelsService.list(userId, workspaceId);
+    const boardId = String(req.query.boardId ?? "");
+    const result = await labelsService.list(userId, boardId);
     res.status(200).json(result);
   };
 

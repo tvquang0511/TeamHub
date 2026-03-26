@@ -26,6 +26,11 @@ export const createLinkAttachmentInputSchema = z.object({
   linkTitle: z.string().max(500).optional(),
 });
 
+export const createCardAttachmentInputSchema = z.object({
+  referencedCardId: z.string().uuid(),
+  linkTitle: z.string().max(500).optional(),
+});
+
 export class AttachmentsService {
   private async assertCanWriteCard(userId: string, cardId: string) {
     const card = await cardsRepo.findById(cardId);
@@ -122,6 +127,38 @@ export class AttachmentsService {
       linkUrl: input.linkUrl,
       linkTitle: input.linkTitle ?? null,
     });
+
+    return { attachment };
+  }
+
+  async createCardRef(
+    userId: string,
+    cardId: string,
+    input: z.infer<typeof createCardAttachmentInputSchema>,
+  ) {
+    const { card } = await this.assertCanWriteCard(userId, cardId);
+
+    const ref = await cardsRepo.findById(input.referencedCardId);
+    if (!ref) throw new ApiError(404, "CARD_NOT_FOUND", "Referenced card not found");
+
+    // Same board constraint
+    if (ref.list.board.id !== card.list.board.id) {
+      throw new ApiError(400, "ATTACHMENT_INVALID", "Referenced card must be in the same board");
+    }
+
+    // Store a relative link the frontend can resolve (keeps env-agnostic)
+    const linkUrl = `/boards/${card.list.board.id}?cardId=${ref.id}`;
+  // User requested: don't prefix with "Card:"; default to referenced card title.
+  const linkTitle = input.linkTitle || ref.title;
+
+    const attachment = await attachmentsRepo.create({
+      cardId,
+      uploaderId: userId,
+      type: "CARD",
+      linkUrl,
+      linkTitle,
+      referencedCardId: ref.id,
+    } as any);
 
     return { attachment };
   }

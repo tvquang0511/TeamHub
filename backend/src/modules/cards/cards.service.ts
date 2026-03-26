@@ -251,8 +251,8 @@ export class CardsService {
 
     const label = await cardsRepo.findLabel(labelId);
     if (!label) throw new ApiError(404, "LABEL_NOT_FOUND", "Label not found");
-    if (label.workspaceId !== workspaceId) {
-      throw new ApiError(400, "LABEL_INVALID", "Label does not belong to the same workspace");
+    if (label.boardId !== card.list.board.id) {
+      throw new ApiError(400, "LABEL_INVALID", "Label does not belong to the same board");
     }
 
     try {

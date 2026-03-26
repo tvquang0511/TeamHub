@@ -1,9 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cardsApi } from "../../../api/cards.api";
 import { attachmentsApi, type Attachment } from "../../../api/attachments.api";
 import { labelsApi } from "../../../api/labels.api";
+import { LabelsPopover } from "./LabelsPopover";
+import { AttachmentsDialog } from "./AttachmentsDialog";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +16,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Textarea } from "../../../components/ui/textarea";
 import { Label } from "../../../components/ui/label";
-import { Calendar, Trash2 } from "lucide-react";
+import { Calendar, FileText, Link as LinkIcon, Route, Trash2 } from "lucide-react";
 // toast placeholder (wire real toast later)
 import type { BoardDetail, Card } from "../../../types/api";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
@@ -28,6 +30,8 @@ interface CardItemProps {
   card: Card;
   listId: string;
   boardId: string;
+  forceOpen?: boolean;
+  onForceClose?: () => void;
   onCardDropped?: (dragCardId: string, hoverCardId: string, hoverAbove: boolean) => void;
 }
 
@@ -35,13 +39,14 @@ export const CardItem: React.FC<CardItemProps> = ({
   card,
   listId,
   boardId,
+  forceOpen,
+  onForceClose,
   onCardDropped,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || "");
-  const [linkUrl, setLinkUrl] = useState("");
-  const [linkTitle, setLinkTitle] = useState("");
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -51,7 +56,10 @@ export const CardItem: React.FC<CardItemProps> = ({
     boardId,
     "detail",
   ]);
-  const workspaceLabels = boardDetail?.labels ?? [];
+  const boardLabels = boardDetail?.labels ?? [];
+  const canCreateLabels =
+    boardDetail?.actor?.boardRole === "OWNER" ||
+    boardDetail?.actor?.boardRole === "ADMIN";
 
   const { data: cardLabels = [], refetch: refetchCardLabels } = useQuery({
     queryKey: ["card", card.id, "labels"],
@@ -75,29 +83,12 @@ export const CardItem: React.FC<CardItemProps> = ({
     },
   });
 
-  const isLabelAttached = (labelId: string) => cardLabels.some((l) => l.id === labelId);
-
   const { data: attachments = [], refetch: refetchAttachments } = useQuery({
     queryKey: ["card", card.id, "attachments"],
     queryFn: () => attachmentsApi.listByCard(card.id),
     enabled: isModalOpen,
   });
 
-  const uploadAttachmentMutation = useMutation({
-    mutationFn: (file: File) => attachmentsApi.uploadFileToCard(card.id, file),
-    onSuccess: async () => {
-      await refetchAttachments();
-    },
-  });
-
-  const createLinkAttachmentMutation = useMutation({
-    mutationFn: (data: { linkUrl: string; linkTitle?: string }) => attachmentsApi.createLink(card.id, data),
-    onSuccess: async () => {
-      setLinkUrl("");
-      setLinkTitle("");
-      await refetchAttachments();
-    },
-  });
 
   const deleteAttachmentMutation = useMutation({
     mutationFn: (attachmentId: string) => attachmentsApi.delete(attachmentId),
@@ -119,6 +110,10 @@ export const CardItem: React.FC<CardItemProps> = ({
       isDragging: monitor.isDragging(),
     }),
   }));
+
+  useEffect(() => {
+    if (forceOpen) setIsModalOpen(true);
+  }, [forceOpen]);
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: "CARD",
@@ -268,7 +263,13 @@ export const CardItem: React.FC<CardItemProps> = ({
       </div>
 
       {/* Card Detail Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog
+        open={isModalOpen}
+        onOpenChange={(open) => {
+          setIsModalOpen(open);
+          if (!open && forceOpen) onForceClose?.();
+        }}
+      >
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Chi tiết</DialogTitle>
@@ -297,40 +298,33 @@ export const CardItem: React.FC<CardItemProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Labels</Label>
-                <div className="text-xs text-muted-foreground">
-                  {cardLabels.length} attached
-                </div>
+                <LabelsPopover
+                  boardId={boardId}
+                  cardId={card.id}
+                  boardLabels={boardLabels}
+                  attachedLabels={cardLabels}
+                  disabled={attachLabelMutation.isPending || detachLabelMutation.isPending}
+                  canCreate={canCreateLabels}
+                  onToggle={(labelId, nextAttached) => {
+                    if (nextAttached) attachLabelMutation.mutate(labelId);
+                    else detachLabelMutation.mutate(labelId);
+                  }}
+                />
               </div>
 
-              {workspaceLabels.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Workspace chưa có label nào.</div>
+              {cardLabels.length === 0 ? (
+                <div className="text-sm text-muted-foreground">Chưa gắn label nào.</div>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {workspaceLabels.map((l) => {
-                    const attached = isLabelAttached(l.id);
-                    return (
-                      <button
-                        key={l.id}
-                        type="button"
-                        className={
-                          "rounded px-2 py-1 text-xs text-white transition-opacity hover:opacity-90 " +
-                          (attached ? "ring-2 ring-black/20" : "opacity-70")
-                        }
-                        style={{ backgroundColor: l.color || "#64748B" }}
-                        onClick={() => {
-                          if (attached) {
-                            detachLabelMutation.mutate(l.id);
-                          } else {
-                            attachLabelMutation.mutate(l.id);
-                          }
-                        }}
-                        disabled={attachLabelMutation.isPending || detachLabelMutation.isPending}
-                        title={attached ? "Click để gỡ" : "Click để gắn"}
-                      >
-                        {l.name}
-                      </button>
-                    );
-                  })}
+                  {cardLabels.map((l) => (
+                    <span
+                      key={l.id}
+                      className="rounded px-2 py-1 text-xs text-white"
+                      style={{ backgroundColor: l.color || "#64748B" }}
+                    >
+                      {l.name}
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
@@ -338,51 +332,9 @@ export const CardItem: React.FC<CardItemProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Attachments</Label>
-                <div className="text-xs text-muted-foreground">{attachments.length} files/links</div>
-              </div>
-
-              <div className="flex flex-col gap-2 rounded-md border p-3">
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={linkUrl}
-                    onChange={(e) => setLinkUrl(e.target.value)}
-                    placeholder="Paste link (https://...)"
-                  />
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    disabled={!linkUrl.trim() || createLinkAttachmentMutation.isPending}
-                    onClick={() =>
-                      createLinkAttachmentMutation.mutate({
-                        linkUrl: linkUrl.trim(),
-                        linkTitle: linkTitle.trim() || undefined,
-                      })
-                    }
-                  >
-                    Add link
-                  </Button>
-                </div>
-
-                <Input
-                  value={linkTitle}
-                  onChange={(e) => setLinkTitle(e.target.value)}
-                  placeholder="(Optional) Link title"
-                />
-
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="file"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) uploadAttachmentMutation.mutate(f);
-                      e.currentTarget.value = "";
-                    }}
-                    disabled={uploadAttachmentMutation.isPending}
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    {uploadAttachmentMutation.isPending ? "Uploading..." : ""}
-                  </div>
-                </div>
+                <Button type="button" variant="secondary" size="sm" onClick={() => setAttachmentsOpen(true)}>
+                  Add
+                </Button>
               </div>
 
               {attachments.length === 0 ? (
@@ -390,27 +342,62 @@ export const CardItem: React.FC<CardItemProps> = ({
               ) : (
                 <div className="space-y-2">
                   {attachments.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between rounded border px-3 py-2">
-                      <div className="min-w-0">
-                        {a.type === "LINK" ? (
-                          <a
-                            href={a.linkUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block truncate text-sm underline"
-                          >
-                            {a.linkTitle || a.linkUrl}
-                          </a>
-                        ) : (
-                          <button
-                            type="button"
-                            className="block truncate text-left text-sm underline"
-                            onClick={() => downloadAttachment(a)}
-                          >
-                            {a.fileName || a.objectKey || a.id}
-                          </button>
-                        )}
-                        <div className="text-xs text-muted-foreground">{a.type}</div>
+                    <div key={a.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+                      <div className="flex min-w-0 items-start gap-2">
+                        <div className="mt-0.5 rounded bg-muted p-1">
+                          {a.type === "FILE" ? (
+                            <FileText className="h-4 w-4" />
+                          ) : a.type === "LINK" ? (
+                            <LinkIcon className="h-4 w-4" />
+                          ) : (
+                            <Route className="h-4 w-4" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          {a.type === "FILE" ? (
+                            <button
+                              type="button"
+                              className="block truncate text-left text-sm font-medium underline"
+                              onClick={() => downloadAttachment(a)}
+                              title="Download"
+                            >
+                              {a.fileName || a.objectKey || a.id}
+                            </button>
+                          ) : a.type === "LINK" ? (
+                            <a
+                              href={a.linkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block truncate text-sm font-medium underline"
+                              title={a.linkUrl}
+                            >
+                              {a.linkTitle || a.linkUrl}
+                            </a>
+                          ) : (
+                            <button
+                              type="button"
+                              className="block truncate text-left text-sm font-medium underline"
+                              title="Open referenced card"
+                              onClick={() => {
+                                const refId = a.referencedCardId;
+                                if (!refId) return;
+                                // Navigate to same board and open the card modal via query param
+                                window.location.assign(`/boards/${boardId}?cardId=${refId}`);
+                              }}
+                            >
+                              {a.linkTitle || "Card reference"}
+                            </button>
+                          )}
+
+                          <div className="text-xs text-muted-foreground">
+                            {a.type === "FILE"
+                              ? "File"
+                              : a.type === "LINK"
+                                ? "Link"
+                                : "Card"}
+                          </div>
+                        </div>
                       </div>
 
                       <Button
@@ -427,6 +414,15 @@ export const CardItem: React.FC<CardItemProps> = ({
               )}
             </div>
 
+            <AttachmentsDialog
+              open={attachmentsOpen}
+              onOpenChange={setAttachmentsOpen}
+              boardId={boardId}
+              cardId={card.id}
+              boardDetail={boardDetail}
+              onCreated={() => refetchAttachments()}
+            />
+
             <div className="flex justify-between pt-4">
               <Button
                 variant="destructive"
@@ -434,7 +430,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                 disabled={deleteCardMutation.isPending}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Xoá card
+                Xoá thẻ
               </Button>
               <div className="flex gap-2">
                 <Button

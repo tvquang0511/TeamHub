@@ -3,7 +3,7 @@ import prisma from "../../db/prisma";
 export type CreateAttachmentData = {
   cardId: string;
   uploaderId: string;
-  type: "FILE" | "LINK";
+  type: "FILE" | "LINK" | "CARD";
 
   // FILE
   bucket?: string | null;
@@ -16,6 +16,9 @@ export type CreateAttachmentData = {
   // LINK
   linkUrl?: string | null;
   linkTitle?: string | null;
+
+  // CARD
+  referencedCardId?: string | null;
 };
 
 export const attachmentsRepo = {
@@ -60,6 +63,8 @@ export const attachmentsRepo = {
 
         linkUrl: data.linkUrl ?? null,
         linkTitle: data.linkTitle ?? null,
+
+        referencedCardId: data.referencedCardId ?? null,
       },
       include: {
         uploader: { select: { id: true, email: true, displayName: true } },

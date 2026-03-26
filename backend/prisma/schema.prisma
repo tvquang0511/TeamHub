@@ -54,6 +54,7 @@ enum activity_type {
 enum card_attachment_type {
   FILE
   LINK
+  CARD
 }
 
 model users {
@@ -104,7 +105,6 @@ model workspaces {
   members   workspace_members[]
   invites   workspace_invites[]
   boards    boards[]
-  labels    labels[]
   activities activities[]
 
   @@map("workspaces")
@@ -181,6 +181,7 @@ model boards {
   members   board_members[]
   lists     lists[]
   messages  board_messages[]
+  labels    labels[]
   activities activities[]
 
   @@index([workspaceId], map: "idx_boards_workspace_id")
@@ -268,6 +269,9 @@ model card_attachments {
   linkUrl   String?  @map("link_url")
   linkTitle String?  @map("link_title")
 
+  // CARD attachments (reference to another card)
+  referencedCardId String? @db.Uuid @map("referenced_card_id")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   card     cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
@@ -308,16 +312,16 @@ model card_assignees {
 
 model labels {
   id          String   @id @default(uuid()) @db.Uuid
-  workspaceId String   @db.Uuid @map("workspace_id")
+  boardId     String   @db.Uuid @map("board_id")
 
   name        String
   color       String?
   createdAt   DateTime @default(now()) @map("created_at")
 
-  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  board     boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
   cardLabels card_labels[]
 
-  @@index([workspaceId], map: "idx_labels_workspace_id")
+  @@index([boardId], map: "idx_labels_board_id")
   @@map("labels")
 }
 

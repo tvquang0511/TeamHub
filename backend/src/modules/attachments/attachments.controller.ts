@@ -5,6 +5,7 @@ import {
   presignUploadInputSchema,
   commitFileAttachmentInputSchema,
   createLinkAttachmentInputSchema,
+  createCardAttachmentInputSchema,
 } from "./attachments.service";
 
 export class AttachmentsController {
@@ -36,6 +37,14 @@ export class AttachmentsController {
     const cardId = String(req.params.cardId);
     const input = createLinkAttachmentInputSchema.parse(req.body);
     const result = await attachmentsService.createLink(userId, cardId, input);
+    res.status(201).json(result);
+  };
+
+  createCardRef = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.cardId);
+    const input = createCardAttachmentInputSchema.parse(req.body);
+    const result = await attachmentsService.createCardRef(userId, cardId, input);
     res.status(201).json(result);
   };
 

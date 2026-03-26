@@ -178,7 +178,7 @@ export class CardsRepo {
   async findLabel(labelId: string) {
     return prisma.labels.findUnique({
       where: { id: labelId },
-      select: { id: true, workspaceId: true, name: true, color: true },
+      select: { id: true, boardId: true, name: true, color: true },
     });
   }
 
@@ -189,7 +189,7 @@ export class CardsRepo {
       select: {
         id: true,
         createdAt: true,
-        label: { select: { id: true, workspaceId: true, name: true, color: true, createdAt: true } },
+        label: { select: { id: true, boardId: true, name: true, color: true, createdAt: true } },
       },
     });
   }
@@ -200,7 +200,7 @@ export class CardsRepo {
       select: {
         id: true,
         createdAt: true,
-        label: { select: { id: true, workspaceId: true, name: true, color: true, createdAt: true } },
+        label: { select: { id: true, boardId: true, name: true, color: true, createdAt: true } },
       },
     });
   }

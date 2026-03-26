@@ -229,6 +229,7 @@ model cards {
   title       String
   description String?
   dueAt       DateTime? @map("due_at")
+  isDone      Boolean  @default(false) @map("is_done")
   position    Decimal  @db.Decimal(65, 30)
   archivedAt  DateTime? @map("archived_at")
 

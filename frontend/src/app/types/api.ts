@@ -116,7 +116,8 @@ export interface Label {
   id: string;
   name: string;
   color: string;
-  boardId: string;
+  workspaceId: string;
+  createdAt?: string;
 }
 
 export interface ApiError {

@@ -1,7 +1,9 @@
 import React, { useState, useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cardsApi } from "../../../api/cards.api";
+import { attachmentsApi, type Attachment } from "../../../api/attachments.api";
+import { labelsApi } from "../../../api/labels.api";
 import {
   Dialog,
   DialogContent,
@@ -38,9 +40,77 @@ export const CardItem: React.FC<CardItemProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || "");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
+
+  const boardDetail = queryClient.getQueryData<BoardDetail>([
+    "board",
+    boardId,
+    "detail",
+  ]);
+  const workspaceLabels = boardDetail?.labels ?? [];
+
+  const { data: cardLabels = [], refetch: refetchCardLabels } = useQuery({
+    queryKey: ["card", card.id, "labels"],
+    queryFn: () => labelsApi.listByCard(card.id),
+    enabled: isModalOpen,
+  });
+
+  const attachLabelMutation = useMutation({
+    mutationFn: (labelId: string) => labelsApi.attachToCard(card.id, labelId),
+    onSuccess: async () => {
+      await refetchCardLabels();
+      queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
+    },
+  });
+
+  const detachLabelMutation = useMutation({
+    mutationFn: (labelId: string) => labelsApi.detachFromCard(card.id, labelId),
+    onSuccess: async () => {
+      await refetchCardLabels();
+      queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
+    },
+  });
+
+  const isLabelAttached = (labelId: string) => cardLabels.some((l) => l.id === labelId);
+
+  const { data: attachments = [], refetch: refetchAttachments } = useQuery({
+    queryKey: ["card", card.id, "attachments"],
+    queryFn: () => attachmentsApi.listByCard(card.id),
+    enabled: isModalOpen,
+  });
+
+  const uploadAttachmentMutation = useMutation({
+    mutationFn: (file: File) => attachmentsApi.uploadFileToCard(card.id, file),
+    onSuccess: async () => {
+      await refetchAttachments();
+    },
+  });
+
+  const createLinkAttachmentMutation = useMutation({
+    mutationFn: (data: { linkUrl: string; linkTitle?: string }) => attachmentsApi.createLink(card.id, data),
+    onSuccess: async () => {
+      setLinkUrl("");
+      setLinkTitle("");
+      await refetchAttachments();
+    },
+  });
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: (attachmentId: string) => attachmentsApi.delete(attachmentId),
+    onSuccess: async () => {
+      await refetchAttachments();
+    },
+  });
+
+  const downloadAttachment = async (att: Attachment) => {
+    if (att.type !== "FILE") return;
+    const presign = await attachmentsApi.presignDownload(att.id);
+    window.open(presign.downloadUrl, "_blank", "noopener,noreferrer");
+  };
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "CARD",
@@ -222,6 +292,139 @@ export const CardItem: React.FC<CardItemProps> = ({
                 placeholder="Thêm mô tả chi tiết..."
                 rows={6}
               />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Labels</Label>
+                <div className="text-xs text-muted-foreground">
+                  {cardLabels.length} attached
+                </div>
+              </div>
+
+              {workspaceLabels.length === 0 ? (
+                <div className="text-sm text-muted-foreground">Workspace chưa có label nào.</div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {workspaceLabels.map((l) => {
+                    const attached = isLabelAttached(l.id);
+                    return (
+                      <button
+                        key={l.id}
+                        type="button"
+                        className={
+                          "rounded px-2 py-1 text-xs text-white transition-opacity hover:opacity-90 " +
+                          (attached ? "ring-2 ring-black/20" : "opacity-70")
+                        }
+                        style={{ backgroundColor: l.color || "#64748B" }}
+                        onClick={() => {
+                          if (attached) {
+                            detachLabelMutation.mutate(l.id);
+                          } else {
+                            attachLabelMutation.mutate(l.id);
+                          }
+                        }}
+                        disabled={attachLabelMutation.isPending || detachLabelMutation.isPending}
+                        title={attached ? "Click để gỡ" : "Click để gắn"}
+                      >
+                        {l.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Attachments</Label>
+                <div className="text-xs text-muted-foreground">{attachments.length} files/links</div>
+              </div>
+
+              <div className="flex flex-col gap-2 rounded-md border p-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="Paste link (https://...)"
+                  />
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    disabled={!linkUrl.trim() || createLinkAttachmentMutation.isPending}
+                    onClick={() =>
+                      createLinkAttachmentMutation.mutate({
+                        linkUrl: linkUrl.trim(),
+                        linkTitle: linkTitle.trim() || undefined,
+                      })
+                    }
+                  >
+                    Add link
+                  </Button>
+                </div>
+
+                <Input
+                  value={linkTitle}
+                  onChange={(e) => setLinkTitle(e.target.value)}
+                  placeholder="(Optional) Link title"
+                />
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadAttachmentMutation.mutate(f);
+                      e.currentTarget.value = "";
+                    }}
+                    disabled={uploadAttachmentMutation.isPending}
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    {uploadAttachmentMutation.isPending ? "Uploading..." : ""}
+                  </div>
+                </div>
+              </div>
+
+              {attachments.length === 0 ? (
+                <div className="text-sm text-muted-foreground">Chưa có attachment nào.</div>
+              ) : (
+                <div className="space-y-2">
+                  {attachments.map((a) => (
+                    <div key={a.id} className="flex items-center justify-between rounded border px-3 py-2">
+                      <div className="min-w-0">
+                        {a.type === "LINK" ? (
+                          <a
+                            href={a.linkUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block truncate text-sm underline"
+                          >
+                            {a.linkTitle || a.linkUrl}
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            className="block truncate text-left text-sm underline"
+                            onClick={() => downloadAttachment(a)}
+                          >
+                            {a.fileName || a.objectKey || a.id}
+                          </button>
+                        )}
+                        <div className="text-xs text-muted-foreground">{a.type}</div>
+                      </div>
+
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        onClick={() => deleteAttachmentMutation.mutate(a.id)}
+                        disabled={deleteAttachmentMutation.isPending}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-between pt-4">

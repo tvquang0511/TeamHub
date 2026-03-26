@@ -93,7 +93,8 @@ const mapLabel = (l: any): Label => ({
   id: l.id,
   name: l.name,
   color: l.color,
-  boardId: l.boardId ?? "",
+  workspaceId: l.workspaceId ?? "",
+  createdAt: l.createdAt ?? new Date().toISOString(),
 });
 
 export const boardsApi = {

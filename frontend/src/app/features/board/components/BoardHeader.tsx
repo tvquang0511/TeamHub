@@ -9,7 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { boardsApi } from "../../../api/boards.api";
 import type { BoardDetail } from "../../../types/api";
-import { CreateLabelDialog } from "./CreateLabelDialog";
+import { BoardLabelsDialog } from "./BoardLabelsDialog";
 
 interface BoardHeaderProps {
   board: BoardDetail;
@@ -19,7 +19,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
   const navigate = useNavigate();
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
-  const [isCreateLabelOpen, setIsCreateLabelOpen] = useState(false);
+  const [isLabelsOpen, setIsLabelsOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Best-effort permission gating:
@@ -176,8 +176,8 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setIsCreateLabelOpen(true)}
-            title="Tạo label cho board"
+            onClick={() => setIsLabelsOpen(true)}
+            title="Xem/Tạo labels cho board"
           >
             <Tag className="mr-2 h-4 w-4" />
             Labels
@@ -207,11 +207,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
         onOpenChange={setIsBackgroundOpen}
       />
 
-      <CreateLabelDialog
-        boardId={board.id}
-        open={isCreateLabelOpen}
-        onOpenChange={setIsCreateLabelOpen}
-      />
+      <BoardLabelsDialog boardId={board.id} open={isLabelsOpen} onOpenChange={setIsLabelsOpen} />
     </div>
   );
 };

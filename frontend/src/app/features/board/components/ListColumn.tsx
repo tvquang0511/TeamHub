@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2, Edit2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit2, Hand } from "lucide-react";
 import { toast } from "sonner";
 import type { BoardDetail, List } from "../../../types/api";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
@@ -271,7 +271,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
           className="-ml-1 flex h-8 w-6 items-center justify-center rounded hover:bg-black/5 cursor-grab active:cursor-grabbing"
           title="Kéo để sắp xếp list"
         >
-          <MoreHorizontal className="h-5 w-5 text-gray-600 rotate-90" />
+          <Hand className="h-5 w-5 text-gray-600" />
         </div>
         {isEditing ? (
           <Input

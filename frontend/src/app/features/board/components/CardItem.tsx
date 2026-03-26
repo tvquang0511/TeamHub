@@ -235,31 +235,29 @@ export const CardItem: React.FC<CardItemProps> = ({
           cardRef.current = node;
         }}
         onClick={() => setIsModalOpen(true)}
-        className={`cursor-pointer rounded-md bg-white p-3 shadow-sm transition-shadow hover:shadow-md ${
+        className={`cursor-pointer rounded-md bg-white p-2 shadow-sm transition-shadow hover:shadow-md ${
           isDragging ? "opacity-50" : ""
         } ${isOver ? "ring-2 ring-blue-400" : ""}
         }`}
       >
-        <p className="text-sm">{card.title}</p>
+        <p className="text-sm leading-5">{card.title}</p>
         {card.dueDate && (
           <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
             <Calendar className="h-3 w-3" />
             {new Date(card.dueDate).toLocaleDateString("vi-VN")}
           </div>
         )}
-        {card.labels && card.labels.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {card.labels.map((label) => (
-              <span
-                key={label.id}
-                className="rounded px-2 py-0.5 text-xs text-white"
-                style={{ backgroundColor: label.color }}
-              >
-                {label.name}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Trello-like label bars (fixed height so tile size stays consistent) */}
+        <div className="mt-1 flex h-2 flex-wrap gap-1">
+          {(card.labels || []).slice(0, 5).map((label) => (
+            <span
+              key={label.id}
+              className="h-2 w-10 rounded"
+              style={{ backgroundColor: label.color || "#64748B" }}
+              title={label.name}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Card Detail Modal */}

@@ -3,6 +3,14 @@ import { z } from "zod";
 
 import { cardsService, createCardInputSchema, updateCardInputSchema } from "./cards.service";
 
+const dueDateInputSchema = z.object({
+  dueAt: z.string().datetime().nullable(),
+});
+
+const doneInputSchema = z.object({
+  isDone: z.boolean(),
+});
+
 const moveCardInputSchema = z.object({
   // Destination listId optional: when omitted, reorder within current list
   listId: z.string().uuid().optional(),
@@ -37,6 +45,22 @@ export class CardsController {
     const cardId = String(req.params.id);
     const input = updateCardInputSchema.parse(req.body);
     const result = await cardsService.update(userId, cardId, input);
+    res.status(200).json(result);
+  };
+
+  setDueDate = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const input = dueDateInputSchema.parse(req.body);
+    const result = await cardsService.setDueDate(userId, cardId, input);
+    res.status(200).json(result);
+  };
+
+  setDone = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const input = doneInputSchema.parse(req.body);
+    const result = await cardsService.setDone(userId, cardId, input);
     res.status(200).json(result);
   };
 

@@ -7,6 +7,7 @@ export type CreateCardData = {
   title: string;
   description?: string | null;
   dueAt?: Date | null;
+  isDone?: boolean;
   position: Prisma.Decimal;
 };
 
@@ -39,12 +40,13 @@ export class CardsRepo {
   }
 
   async create(data: CreateCardData) {
-    return prisma.cards.create({
+    return (prisma as any).cards.create({
       data: {
         listId: data.listId,
         title: data.title,
         description: data.description ?? null,
         dueAt: data.dueAt ?? null,
+        isDone: data.isDone ?? false,
         position: data.position,
       },
       select: {
@@ -53,6 +55,7 @@ export class CardsRepo {
         title: true,
         description: true,
         dueAt: true,
+        isDone: true,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -62,7 +65,7 @@ export class CardsRepo {
   }
 
   async listByList(listId: string) {
-    return prisma.cards.findMany({
+    return (prisma as any).cards.findMany({
       where: { listId, archivedAt: null },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
       select: {
@@ -71,6 +74,7 @@ export class CardsRepo {
         title: true,
         description: true,
         dueAt: true,
+        isDone: true,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -88,6 +92,7 @@ export class CardsRepo {
         title: true,
         description: true,
         dueAt: true,
+        isDone: true,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -103,17 +108,19 @@ export class CardsRepo {
       title?: string;
       description?: string | null;
       dueAt?: Date | null;
+      isDone?: boolean;
       position?: Prisma.Decimal | null;
       archivedAt?: Date | null;
       listId?: string;
     },
   ) {
-    return prisma.cards.update({
+    return (prisma as any).cards.update({
       where: { id: cardId },
       data: {
         title: data.title,
         description: data.description ?? undefined,
         dueAt: data.dueAt ?? undefined,
+        isDone: data.isDone ?? undefined,
         position: data.position ?? undefined,
         archivedAt: data.archivedAt ?? undefined,
         listId: data.listId,
@@ -124,6 +131,7 @@ export class CardsRepo {
         title: true,
         description: true,
         dueAt: true,
+        isDone: true,
         position: true,
         archivedAt: true,
         createdAt: true,
@@ -140,7 +148,7 @@ export class CardsRepo {
   }
 
   async move(cardId: string, data: { listId?: string; position: Prisma.Decimal }) {
-    return prisma.cards.update({
+    return (prisma as any).cards.update({
       where: { id: cardId },
       data: { listId: data.listId, position: data.position },
       select: {
@@ -149,6 +157,7 @@ export class CardsRepo {
         title: true,
         description: true,
         dueAt: true,
+        isDone: true,
         position: true,
         archivedAt: true,
         createdAt: true,

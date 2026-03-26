@@ -14,6 +14,11 @@ cardsRoutes.post("/", cardsController.create);
 
 cardsRoutes.get("/:id", cardsController.get);
 cardsRoutes.patch("/:id", cardsController.update);
+
+// Dedicated endpoints for convenience (reminders/done toggle)
+cardsRoutes.patch("/:id/due-date", cardsController.setDueDate);
+cardsRoutes.patch("/:id/done", cardsController.setDone);
+
 cardsRoutes.delete("/:id", cardsController.delete);
 
 // Labels on card

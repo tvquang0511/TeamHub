@@ -17,6 +17,7 @@ export const updateCardInputSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(5000).nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
+  isDone: z.boolean().optional(),
   position: z.number().nullable().optional(),
   archived: z.boolean().optional(),
   // allow moving card to another list (within same workspace)
@@ -127,10 +128,13 @@ export class CardsService {
     const archivedAt = input.archived === undefined ? undefined : input.archived ? new Date() : null;
     const dueAt = input.dueAt === undefined ? undefined : input.dueAt === null ? null : new Date(input.dueAt);
 
+  const isDone = input.isDone === undefined ? undefined : input.isDone;
+
     const card = await cardsRepo.update(cardId, {
       title: input.title,
       description: input.description ?? undefined,
       dueAt,
+      isDone,
       position:
         input.position === undefined
           ? undefined
@@ -142,6 +146,14 @@ export class CardsService {
     });
 
     return { card };
+  }
+
+  async setDueDate(userId: string, cardId: string, input: { dueAt: string | null }) {
+    return this.update(userId, cardId, { dueAt: input.dueAt });
+  }
+
+  async setDone(userId: string, cardId: string, input: { isDone: boolean }) {
+    return this.update(userId, cardId, { isDone: input.isDone });
   }
 
   async move(
@@ -253,6 +265,12 @@ export class CardsService {
     if (!label) throw new ApiError(404, "LABEL_NOT_FOUND", "Label not found");
     if (label.boardId !== card.list.board.id) {
       throw new ApiError(400, "LABEL_INVALID", "Label does not belong to the same board");
+    }
+
+    // Limit: each card can have at most 5 labels (Trello-like)
+    const existing = await cardsRepo.listLabelsByCard(cardId);
+    if ((existing || []).length >= 5) {
+      throw new ApiError(400, "CARD_LABEL_LIMIT", "A card can have at most 5 labels");
     }
 
     try {

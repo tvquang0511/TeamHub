@@ -37,6 +37,7 @@ export function LabelsPopover(props: {
   const [newColor, setNewColor] = useState<string>(DEFAULT_COLORS[0]!);
 
   const attached = useMemo(() => new Set(props.attachedLabels.map((l) => l.id)), [props.attachedLabels]);
+  const attachedCount = props.attachedLabels.length;
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -86,6 +87,7 @@ export function LabelsPopover(props: {
             ) : (
               filtered.map((l) => {
                 const isOn = attached.has(l.id);
+                const wouldExceedLimit = !isOn && attachedCount >= 5;
                 return (
                   <button
                     key={l.id}
@@ -95,7 +97,8 @@ export function LabelsPopover(props: {
                       (isOn ? "bg-accent" : "")
                     }
                     onClick={() => props.onToggle(l.id, !isOn)}
-                    disabled={props.disabled}
+                    disabled={props.disabled || wouldExceedLimit}
+                    title={wouldExceedLimit ? "Mỗi card tối đa 5 labels" : undefined}
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <span

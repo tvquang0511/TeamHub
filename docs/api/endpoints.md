@@ -458,6 +458,74 @@ Response (201)
 { "attachment": { "id": "uuid", "type": "LINK", "linkUrl": "https://example.com/article" } }
 ```
 
+## 8) Labels
+
+Workspace-scoped labels (similar to Trello). Labels are created under a workspace, then attached to individual cards.
+
+### GET `/labels?workspaceId={workspaceId}`
+Auth: Bearer access token
+
+Response
+```json
+{ "labels": [ { "id": "uuid", "workspaceId": "uuid", "name": "Bug", "color": "#EF4444" } ] }
+```
+
+### POST `/labels`
+Auth: Bearer access token
+
+Request
+```json
+{ "workspaceId": "uuid", "name": "Bug", "color": "#EF4444" }
+```
+
+Response (201)
+```json
+{ "label": { "id": "uuid", "workspaceId": "uuid", "name": "Bug", "color": "#EF4444" } }
+```
+
+### PATCH `/labels/:id`
+Auth: Bearer access token
+
+Request
+```json
+{ "name": "High priority", "color": "#F59E0B" }
+```
+
+Response
+```json
+{ "label": { "id": "uuid", "workspaceId": "uuid", "name": "High priority", "color": "#F59E0B" } }
+```
+
+### DELETE `/labels/:id`
+Auth: Bearer access token
+
+Response
+```json
+{ "ok": true }
+```
+
+### GET `/cards/:id/labels`
+Auth: Bearer access token
+
+Response
+```json
+{ "labels": [ { "id": "uuid", "workspaceId": "uuid", "name": "Bug", "color": "#EF4444" } ] }
+```
+
+### POST `/cards/:id/labels/:labelId`
+Auth: Bearer access token
+
+Notes
+- Attach is idempotent: if already attached, server returns `{ "ok": true }`.
+
+### DELETE `/cards/:id/labels/:labelId`
+Auth: Bearer access token
+
+Response
+```json
+{ "ok": true }
+```
+
 ### DELETE `/attachments/:attachmentId`
 Auth: Bearer access token
 

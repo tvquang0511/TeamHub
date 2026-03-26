@@ -240,13 +240,20 @@ export class BoardsService {
       boardsRepo.listLabelsByBoard(boardId),
     ]);
 
+    // Normalize card.labels shape for API clients:
+    // Prisma returns [{ label: {...} }], we expose [{...}]
+    const normalizedCards = (cards as any[]).map((c) => ({
+      ...c,
+      labels: (c.cardLabels || []).map((cl: any) => cl.label),
+    }));
+
     const actor = this.buildBoardActorPermissions({
       workspaceRole: wsMembership.role,
       boardVisibility: board.visibility,
       boardMemberRole: boardMember?.role,
     });
 
-    return { board, lists, cards, members, labels, actor };
+    return { board, lists, cards: normalizedCards, members, labels, actor };
   }
 
   async update(userId: string, boardId: string, input: z.infer<typeof updateBoardInputSchema>) {

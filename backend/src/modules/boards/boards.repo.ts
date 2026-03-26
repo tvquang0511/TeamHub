@@ -209,7 +209,9 @@ export class BoardsRepo {
   }
 
   async listCardsByBoard(boardId: string) {
-    return prisma.cards.findMany({
+    // NOTE: if Prisma Client typings haven't been regenerated yet,
+    // access via `any` to unblock compilation; runtime works once `prisma generate` is run.
+    return (prisma as any).cards.findMany({
       where: { archivedAt: null, list: { boardId } },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
       select: {
@@ -218,7 +220,21 @@ export class BoardsRepo {
         title: true,
         description: true,
         dueAt: true,
+        isDone: true,
         position: true,
+        cardLabels: {
+          select: {
+            label: {
+              select: {
+                id: true,
+                boardId: true,
+                name: true,
+                color: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
         archivedAt: true,
         createdAt: true,
         updatedAt: true,

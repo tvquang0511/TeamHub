@@ -8,6 +8,9 @@ import { cardsRoutes } from '../modules/cards/cards.router';
 import usersRoutes from '../modules/users/users.router';
 import { attachmentsRoutes } from '../modules/attachments/attachments.router';
 import { labelsRoutes } from '../modules/labels/labels.router';
+import { checklistsRoutes } from '../modules/checklists/checklists.router';
+import { assigneesRoutes } from '../modules/assignees/assignees.router';
+import { commentsRoutes } from '../modules/comments/comments.router';
 
 const router = Router();
 
@@ -20,5 +23,8 @@ router.use('/cards', cardsRoutes);
 router.use('/users', usersRoutes);
 router.use('/attachments', attachmentsRoutes);
 router.use('/labels', labelsRoutes);
+router.use('/checklists', checklistsRoutes);
+router.use('/assignees', assigneesRoutes);
+router.use('/comments', commentsRoutes);
 
 export default router;

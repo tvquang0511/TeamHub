@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ApiError } from "../../common/errors/ApiError";
 import { attachmentsRepo } from "./attachments.repo";
 import { cardsRepo } from "../cards/cards.repo";
-import { presignPutObject, requireEnv } from "./attachments.minio";
+import { presignPutObject, requireEnv } from "./attachments.minio.put";
 import { presignGetObject } from "./attachments.minio.get";
 
 export const presignUploadInputSchema = z.object({

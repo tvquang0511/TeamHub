@@ -375,3 +375,93 @@ Response
 ```json
 { "card": { "id": "uuid", "listId": "uuid", "position": 1536 } }
 ```
+
+## 7) Attachments (private MinIO + URL shortcuts)
+
+Attachments belong to a **card**.
+
+- `FILE`: user uploads a file to MinIO (private). DB stores `{bucket, objectKey, fileName, mimeType, size}`.
+- `LINK`: user attaches an external URL shortcut.
+
+### GET `/attachments/cards/:cardId`
+Auth: Bearer access token
+
+Response
+```json
+{ "attachments": [ { "id": "uuid", "type": "FILE|LINK" } ] }
+```
+
+### POST `/attachments/cards/:cardId/presign`
+Auth: Bearer access token
+
+Purpose: create a presigned **PUT** URL for uploading a file directly to MinIO.
+
+Request
+```json
+{ "fileName": "hello.txt", "mimeType": "text/plain", "size": 12 }
+```
+
+Response
+```json
+{
+  "presign": {
+    "uploadUrl": "http://localhost:9000/teamhub/...?...",
+    "method": "PUT",
+    "headers": { "Content-Type": "text/plain" },
+    "bucket": "teamhub",
+    "objectKey": "cards/<cardId>/..._hello.txt",
+    "url": "http://localhost:9000/teamhub/...",
+    "expiresIn": 300
+  }
+}
+```
+
+Notes
+- Client must PUT the file to `uploadUrl` with the returned headers.
+- After upload, client must call **commit** endpoint below.
+
+### POST `/attachments/cards/:cardId/files`
+Auth: Bearer access token
+
+Purpose: create the DB record after uploading to MinIO.
+
+Request
+```json
+{ "bucket": "teamhub", "objectKey": "cards/<cardId>/...", "url": "http://...", "fileName": "hello.txt", "mimeType": "text/plain", "size": 12 }
+```
+
+Response (201)
+```json
+{ "attachment": { "id": "uuid", "type": "FILE", "bucket": "teamhub", "objectKey": "cards/<cardId>/..." } }
+```
+
+### POST `/attachments/:attachmentId/presign-download`
+Auth: Bearer access token
+
+Purpose: generate a presigned **GET** URL for downloading a private file.
+
+Response
+```json
+{ "presign": { "downloadUrl": "http://localhost:9000/teamhub/...?...", "method": "GET", "expiresIn": 300 } }
+```
+
+### POST `/attachments/cards/:cardId/links`
+Auth: Bearer access token
+
+Request
+```json
+{ "linkUrl": "https://example.com/article", "linkTitle": "Example Article" }
+```
+
+Response (201)
+```json
+{ "attachment": { "id": "uuid", "type": "LINK", "linkUrl": "https://example.com/article" } }
+```
+
+### DELETE `/attachments/:attachmentId`
+Auth: Bearer access token
+
+Response
+```json
+{ "ok": true }
+```

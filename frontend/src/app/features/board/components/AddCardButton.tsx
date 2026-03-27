@@ -39,7 +39,7 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
         description: vars.description ?? undefined,
         listId: vars.listId,
         position: maxPos + 1024,
-        dueDate: undefined,
+  dueAt: undefined,
         labels: [],
         assignees: [],
         createdAt: new Date().toISOString(),

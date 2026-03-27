@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Bell, Check, LogOut, User, X } from "lucide-react";
+import { Bell, Check, LogOut, User, UserCircle, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invitesApi } from "../../api/invites.api";
 
@@ -30,6 +30,10 @@ export const TopBar: React.FC = () => {
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleGoProfile = () => {
+    navigate("/profile");
   };
 
   const getInitials = (name: string) => {
@@ -167,6 +171,11 @@ export const TopBar: React.FC = () => {
                 <p className="text-sm font-medium">{user?.displayName}</p>
                 <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleGoProfile}>
+                <UserCircle className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />

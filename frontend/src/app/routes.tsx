@@ -9,6 +9,7 @@ import { AcceptInvitePage } from "./features/invites/pages/AcceptInvitePage";
 import { CreateWorkspaceInvitePage } from "./features/invites/pages/CreateWorkspaceInvitePage";
 import { CardDetailPage } from "./features/cards/pages/CardDetailPage";
 import { AppLayout } from "./layouts/AppLayout";
+import { ProfilePage } from "./features/users/pages/ProfilePage";
 
 export const router = createBrowserRouter([
   {
@@ -54,6 +55,10 @@ export const router = createBrowserRouter([
       {
         path: "cards/:cardId",
         Component: CardDetailPage,
+      },
+      {
+        path: "profile",
+        Component: ProfilePage,
       },
     ],
   },

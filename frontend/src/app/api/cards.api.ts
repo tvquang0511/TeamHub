@@ -15,7 +15,8 @@ const mapCard = (c: any): Card => ({
   description: c.description ?? undefined,
   listId: c.listId,
   position: typeof c.position === "number" ? c.position : Number(c.position ?? 0),
-  dueDate: c.dueAt ?? undefined,
+  dueAt: c.dueAt ?? undefined,
+  isDone: c.isDone ?? undefined,
   labels: [],
   assignees: [],
   createdAt: c.createdAt ?? new Date().toISOString(),
@@ -52,8 +53,19 @@ export const cardsApi = {
     const response = await httpClient.patch<CardEnvelope>(`/cards/${id}`, {
       title: data.title,
       description: data.description,
-      dueAt: data.dueDate,
+      dueAt: data.dueAt === undefined ? data.dueDate : data.dueAt,
+      isDone: data.isDone,
     });
+    return mapCard(response.data.card);
+  },
+
+  setDueDate: async (id: string, dueAt: string | null): Promise<Card> => {
+    const response = await httpClient.patch<CardEnvelope>(`/cards/${id}/due-date`, { dueAt });
+    return mapCard(response.data.card);
+  },
+
+  setDone: async (id: string, isDone: boolean): Promise<Card> => {
+    const response = await httpClient.patch<CardEnvelope>(`/cards/${id}/done`, { isDone });
     return mapCard(response.data.card);
   },
 

@@ -105,7 +105,10 @@ export interface Card {
   description?: string;
   listId: string;
   position: number;
-  dueDate?: string;
+  dueAt?: string;
+  isDone?: boolean;
+  checklistTotal?: number;
+  checklistDone?: number;
   labels?: Label[];
   assignees?: User[];
   createdAt: string;
@@ -171,7 +174,10 @@ export interface CreateCardRequest {
 export interface UpdateCardRequest {
   title?: string;
   description?: string;
+  /** @deprecated Use dueAt */
   dueDate?: string;
+  dueAt?: string | null;
+  isDone?: boolean;
 }
 
 export interface AddBoardMemberByEmailRequest {

@@ -1,14 +1,7 @@
 import crypto from "crypto";
 
 // Minimal presign implementation for S3-compatible (MinIO) using AWS Signature V4.
-// We avoid external deps to keep the backend lightweight.
-// This presign is for PUT object.
-
-export function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env ${name}`);
-  return v;
-}
+// This presign is for GET object.
 
 function hmac(key: Buffer | string, data: string): Buffer {
   return crypto.createHmac("sha256", key).update(data, "utf8").digest();
@@ -25,26 +18,23 @@ function getSigningKey(secretKey: string, dateStamp: string, region: string, ser
   return hmac(kService, "aws4_request");
 }
 
-export type PresignedPutResult = {
-  uploadUrl: string;
-  method: "PUT";
-  headers: Record<string, string>;
+export type PresignedGetResult = {
+  downloadUrl: string;
+  method: "GET";
   bucket: string;
   objectKey: string;
-  url: string; // public/base url (not signed), useful for storing
   expiresIn: number;
 };
 
-export function presignPutObject(params: {
+export function presignGetObject(params: {
   endpoint: string; // e.g. http://localhost:9000
   accessKeyId: string;
   secretAccessKey: string;
-  region: string; // MinIO ignores but SigV4 needs a value
+  region: string;
   bucket: string;
   objectKey: string;
-  contentType: string;
   expiresInSeconds?: number;
-}): PresignedPutResult {
+}): PresignedGetResult {
   const expiresIn = params.expiresInSeconds ?? 300;
 
   const now = new Date();
@@ -60,13 +50,11 @@ export function presignPutObject(params: {
   const endpointUrl = new URL(params.endpoint);
   const host = endpointUrl.host;
 
-  // Use path-style: /bucket/object
   const canonicalUri = `/${encodeURIComponent(params.bucket)}/${params.objectKey
     .split("/")
     .map(encodeURIComponent)
     .join("/")}`;
 
-  // We use unsigned payload for presigned URL (typical for S3 presign).
   const canonicalQuery: Record<string, string> = {
     "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
     "X-Amz-Credential": `${params.accessKeyId}/${credentialScope}`,
@@ -83,7 +71,7 @@ export function presignPutObject(params: {
   const canonicalHeaders = `host:${host}\n`;
   const payloadHash = "UNSIGNED-PAYLOAD";
   const canonicalRequest = [
-    "PUT",
+    "GET",
     canonicalUri,
     canonicalQueryString,
     canonicalHeaders,
@@ -102,20 +90,13 @@ export function presignPutObject(params: {
   const signature = crypto.createHmac("sha256", signingKey).update(stringToSign, "utf8").digest("hex");
 
   const finalQueryString = `${canonicalQueryString}&X-Amz-Signature=${signature}`;
-
-  const uploadUrl = `${endpointUrl.protocol}//${host}${canonicalUri}?${finalQueryString}`;
-
-  const baseUrl = `${endpointUrl.protocol}//${host}${canonicalUri}`;
+  const downloadUrl = `${endpointUrl.protocol}//${host}${canonicalUri}?${finalQueryString}`;
 
   return {
-    uploadUrl,
-    method: "PUT",
-    headers: {
-      "Content-Type": params.contentType,
-    },
+    downloadUrl,
+    method: "GET",
     bucket: params.bucket,
     objectKey: params.objectKey,
-    url: baseUrl,
     expiresIn,
   };
 }

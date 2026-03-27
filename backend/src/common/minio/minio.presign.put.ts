@@ -1,7 +1,13 @@
 import crypto from "crypto";
 
 // Minimal presign implementation for S3-compatible (MinIO) using AWS Signature V4.
-// This presign is for GET object.
+// This presign is for PUT object.
+
+export function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing env ${name}`);
+  return v;
+}
 
 function hmac(key: Buffer | string, data: string): Buffer {
   return crypto.createHmac("sha256", key).update(data, "utf8").digest();
@@ -18,23 +24,26 @@ function getSigningKey(secretKey: string, dateStamp: string, region: string, ser
   return hmac(kService, "aws4_request");
 }
 
-export type PresignedGetResult = {
-  downloadUrl: string;
-  method: "GET";
+export type PresignedPutResult = {
+  uploadUrl: string;
+  method: "PUT";
+  headers: Record<string, string>;
   bucket: string;
   objectKey: string;
+  url: string; // non-signed base URL (path-style)
   expiresIn: number;
 };
 
-export function presignGetObject(params: {
+export function presignPutObject(params: {
   endpoint: string; // e.g. http://localhost:9000
   accessKeyId: string;
   secretAccessKey: string;
-  region: string;
+  region: string; // MinIO ignores but SigV4 needs a value
   bucket: string;
   objectKey: string;
+  contentType: string;
   expiresInSeconds?: number;
-}): PresignedGetResult {
+}): PresignedPutResult {
   const expiresIn = params.expiresInSeconds ?? 300;
 
   const now = new Date();
@@ -50,6 +59,7 @@ export function presignGetObject(params: {
   const endpointUrl = new URL(params.endpoint);
   const host = endpointUrl.host;
 
+  // Use path-style: /bucket/object
   const canonicalUri = `/${encodeURIComponent(params.bucket)}/${params.objectKey
     .split("/")
     .map(encodeURIComponent)
@@ -71,7 +81,7 @@ export function presignGetObject(params: {
   const canonicalHeaders = `host:${host}\n`;
   const payloadHash = "UNSIGNED-PAYLOAD";
   const canonicalRequest = [
-    "GET",
+    "PUT",
     canonicalUri,
     canonicalQueryString,
     canonicalHeaders,
@@ -91,13 +101,18 @@ export function presignGetObject(params: {
 
   const finalQueryString = `${canonicalQueryString}&X-Amz-Signature=${signature}`;
 
-  const downloadUrl = `${endpointUrl.protocol}//${host}${canonicalUri}?${finalQueryString}`;
+  const uploadUrl = `${endpointUrl.protocol}//${host}${canonicalUri}?${finalQueryString}`;
+  const baseUrl = `${endpointUrl.protocol}//${host}${canonicalUri}`;
 
   return {
-    downloadUrl,
-    method: "GET",
+    uploadUrl,
+    method: "PUT",
+    headers: {
+      "Content-Type": params.contentType,
+    },
     bucket: params.bucket,
     objectKey: params.objectKey,
+    url: baseUrl,
     expiresIn,
   };
 }

@@ -21,12 +21,13 @@ export class AssigneesService {
 
   async list(userId: string, cardId: string) {
     await this.assertCardAndMembership(userId, cardId);
-    const assignees = await assigneesRepo.listByCard(cardId);
+    const assignees: any[] = (await assigneesRepo.listByCard(cardId)) as any;
     return {
       assignees: assignees.map((a) => ({
         id: a.user.id,
         email: a.user.email,
         displayName: a.user.displayName,
+        avatarUrl: (a.user as any).avatarUrl ?? undefined,
         assignedAt: a.createdAt,
       })),
     };
@@ -37,7 +38,15 @@ export class AssigneesService {
 
     try {
       const created = await assigneesRepo.assign(cardId, userId);
-      return { assignee: { id: created.user.id, email: created.user.email, displayName: created.user.displayName } };
+      const c: any = created as any;
+      return {
+        assignee: {
+          id: c.user.id,
+          email: c.user.email,
+          displayName: c.user.displayName,
+          avatarUrl: (c.user as any).avatarUrl ?? undefined,
+        },
+      };
     } catch (e: any) {
       // Unique violation => already assigned
       if (e?.code === "P2002") return { ok: true };
@@ -71,7 +80,15 @@ export class AssigneesService {
 
     try {
       const created = await assigneesRepo.assign(cardId, targetUserId);
-      return { assignee: { id: created.user.id, email: created.user.email, displayName: created.user.displayName } };
+      const c: any = created as any;
+      return {
+        assignee: {
+          id: c.user.id,
+          email: c.user.email,
+          displayName: c.user.displayName,
+          avatarUrl: (c.user as any).avatarUrl ?? undefined,
+        },
+      };
     } catch (e: any) {
       if (e?.code === "P2002") return { ok: true };
       throw e;

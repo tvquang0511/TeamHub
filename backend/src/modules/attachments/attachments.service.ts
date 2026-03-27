@@ -3,8 +3,8 @@ import { z } from "zod";
 import { ApiError } from "../../common/errors/ApiError";
 import { attachmentsRepo } from "./attachments.repo";
 import { cardsRepo } from "../cards/cards.repo";
-import { presignPutObject, requireEnv } from "./attachments.minio.put";
-import { presignGetObject } from "./attachments.minio.get";
+import { presignPutObject, requireEnv } from "../../common/minio/minio.presign.put";
+import { presignGetObject } from "../../common/minio/minio.presign.get";
 
 export const presignUploadInputSchema = z.object({
   fileName: z.string().min(1).max(500),

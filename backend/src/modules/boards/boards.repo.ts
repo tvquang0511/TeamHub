@@ -221,6 +221,24 @@ export class BoardsRepo {
         description: true,
         dueAt: true,
         isDone: true,
+        _count: {
+          select: {
+            checklists: true,
+          },
+        },
+        checklists: {
+          select: {
+            _count: {
+              select: {
+                items: true,
+              },
+            },
+            items: {
+              where: { isDone: true },
+              select: { id: true },
+            },
+          },
+        },
         position: true,
         cardLabels: {
           select: {

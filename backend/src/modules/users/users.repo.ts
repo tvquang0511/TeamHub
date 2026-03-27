@@ -1,6 +1,37 @@
 import prisma from '../../db/prisma';
 
 export const usersRepo = {
+  getById(userId: string) {
+    return prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        avatarUrl: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  },
+
+  updateProfile(userId: string, data: { displayName?: string; description?: string | null; avatarUrl?: string | null }) {
+    return prisma.users.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        avatarUrl: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  },
+
   searchByEmailPrefix(emailPrefix: string, limit = 10, excludeUserId?: string) {
     return prisma.users.findMany({
       where: {

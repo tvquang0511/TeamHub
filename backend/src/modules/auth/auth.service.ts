@@ -43,8 +43,13 @@ function parseJwtExpiresAt(token: string): Date {
   return new Date(decoded.exp * 1000);
 }
 
-function publicUser(user: { id: string; email: string; displayName: string }) {
-  return { id: user.id, email: user.email, displayName: user.displayName };
+function publicUser(user: { id: string; email: string; displayName: string; avatarUrl?: string | null }) {
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    avatarUrl: user.avatarUrl ?? null,
+  };
 }
 
 export const authService = {

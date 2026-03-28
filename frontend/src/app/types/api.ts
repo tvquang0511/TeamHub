@@ -4,7 +4,7 @@ export interface User {
   id: string;
   email: string;
   displayName: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   createdAt?: string;
 }
 
@@ -45,6 +45,7 @@ export interface WorkspaceMember {
   role: "OWNER" | "ADMIN" | "MEMBER";
   email?: string;
   displayName?: string;
+  avatarUrl?: string | null;
   joinedAt?: string;
 }
 

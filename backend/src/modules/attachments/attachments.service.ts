@@ -3,8 +3,9 @@ import { z } from "zod";
 import { ApiError } from "../../common/errors/ApiError";
 import { attachmentsRepo } from "./attachments.repo";
 import { cardsRepo } from "../cards/cards.repo";
-import { presignPutObject, requireEnv } from "../../common/minio/minio.presign.put";
+import { presignPutObject } from "../../common/minio/minio.presign.put";
 import { presignGetObject } from "../../common/minio/minio.presign.get";
+import env from "../../config/env";
 
 export const presignUploadInputSchema = z.object({
   fileName: z.string().min(1).max(500),
@@ -76,11 +77,11 @@ export class AttachmentsService {
   async presignUpload(userId: string, cardId: string, input: z.infer<typeof presignUploadInputSchema>) {
     await this.assertCanWriteCard(userId, cardId);
 
-    const endpoint = requireEnv("MINIO_ENDPOINT");
-    const accessKeyId = requireEnv("MINIO_ACCESS_KEY");
-    const secretAccessKey = requireEnv("MINIO_SECRET_KEY");
-    const bucket = process.env.MINIO_BUCKET || "teamhub";
-    const region = process.env.MINIO_REGION || "us-east-1";
+    const endpoint = env.MINIO_ENDPOINT;
+    const accessKeyId = env.MINIO_ACCESS_KEY;
+    const secretAccessKey = env.MINIO_SECRET_KEY;
+    const bucket = env.MINIO_BUCKET;
+    const region = env.MINIO_REGION;
 
     const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const objectKey = `cards/${cardId}/${Date.now()}_${safeFileName}`;
@@ -189,10 +190,10 @@ export class AttachmentsService {
       throw new ApiError(400, "ATTACHMENT_INVALID", "Attachment storage info missing");
     }
 
-    const endpoint = requireEnv("MINIO_ENDPOINT");
-    const accessKeyId = requireEnv("MINIO_ACCESS_KEY");
-    const secretAccessKey = requireEnv("MINIO_SECRET_KEY");
-    const region = process.env.MINIO_REGION || "us-east-1";
+  const endpoint = env.MINIO_ENDPOINT;
+  const accessKeyId = env.MINIO_ACCESS_KEY;
+  const secretAccessKey = env.MINIO_SECRET_KEY;
+  const region = env.MINIO_REGION;
 
     const presign = presignGetObject({
       endpoint,

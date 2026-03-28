@@ -14,7 +14,7 @@ import {
 } from "../../../components/ui/dialog";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
-import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
 import { Button } from "../../../components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import {
@@ -165,6 +165,7 @@ export const BoardMembersDialog: React.FC<Props> = ({
       id: m.userId,
       email: m.email || "",
       displayName: m.displayName || m.email || "",
+      avatarUrl: m.avatarUrl ?? null,
     }));
 
     const merged = [...wsAsUsers];
@@ -229,6 +230,9 @@ export const BoardMembersDialog: React.FC<Props> = ({
                           disabled={addMemberMutation.isPending || updateRoleMutation.isPending}
                         >
                           <Avatar>
+                            {u.avatarUrl ? (
+                              <AvatarImage src={u.avatarUrl} alt={u.displayName} />
+                            ) : null}
                             <AvatarFallback>{getInitials(u.displayName)}</AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
@@ -261,6 +265,9 @@ export const BoardMembersDialog: React.FC<Props> = ({
                         <div key={m.id} className="flex items-center justify-between gap-3 border-b p-3 last:border-b-0">
                           <div className="flex items-center gap-3">
                             <Avatar>
+                              {m.user.avatarUrl ? (
+                                <AvatarImage src={m.user.avatarUrl} alt={m.user.displayName} />
+                              ) : null}
                               <AvatarFallback>{getInitials(m.user.displayName)}</AvatarFallback>
                             </Avatar>
                             <div className="min-w-0">

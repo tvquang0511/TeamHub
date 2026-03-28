@@ -180,6 +180,7 @@ export class BoardsService {
         userId: m.userId,
         email: m.user?.email,
         displayName: m.user?.displayName,
+        avatarUrl: m.user?.avatarUrl ?? null,
         role: m.role,
         createdAt: m.createdAt,
       })),

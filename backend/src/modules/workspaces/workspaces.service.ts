@@ -103,6 +103,7 @@ export const workspacesService = {
         userId: m.userId,
         email: m.user.email,
         displayName: m.user.displayName,
+        avatarUrl: m.user.avatarUrl ?? null,
         role: m.role,
       })),
     };

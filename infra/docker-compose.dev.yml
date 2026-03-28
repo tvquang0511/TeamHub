@@ -36,8 +36,13 @@ services:
       - -c
       - |
         until mc alias set local http://minio:9000 teamhub teamhub-secret; do sleep 1; done
+        # Private bucket for attachments
         mc mb -p local/teamhub || true
         mc anonymous set none local/teamhub || true
+
+        # Public bucket for avatars (anonymous download allowed)
+        mc mb -p local/teamhub-public || true
+        mc anonymous set download local/teamhub-public || true
 
   # redis:
   #   image: redis:7

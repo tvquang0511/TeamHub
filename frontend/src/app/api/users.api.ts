@@ -2,7 +2,6 @@ import { httpClient } from "./http";
 import type { User } from "../types/api";
 
 export type UserProfile = User & {
-  avatarUrl?: string;
   description?: string | null;
 };
 

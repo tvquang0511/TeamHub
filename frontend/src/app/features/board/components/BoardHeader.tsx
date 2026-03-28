@@ -4,7 +4,7 @@ import { Button } from "../../../components/ui/button";
 import { ArrowLeft, Users, Lock, Unlock, Palette, Tag } from "lucide-react";
 import { BoardMembersDialog } from "./BoardMembersDialog";
 import { BoardBackgroundDialog } from "./BoardBackgroundDialog";
-import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { boardsApi } from "../../../api/boards.api";
@@ -156,6 +156,9 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           {ownerMember ? (
             <div className="flex -space-x-2">
               <Avatar className="border-2 border-white" title={`OWNER: ${ownerMember.user.displayName}`}>
+                {ownerMember.user.avatarUrl ? (
+                  <AvatarImage src={ownerMember.user.avatarUrl} alt={ownerMember.user.displayName} />
+                ) : null}
                 <AvatarFallback className="bg-blue-600 text-xs text-white">
                   {getInitials(ownerMember.user.displayName)}
                 </AvatarFallback>

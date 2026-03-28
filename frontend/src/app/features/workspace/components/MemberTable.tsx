@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../../components/ui/table";
-import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import {
@@ -129,6 +129,12 @@ export const MemberTable: React.FC<MemberTableProps> = ({
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar>
+                    {member.avatarUrl ? (
+                      <AvatarImage
+                        src={member.avatarUrl}
+                        alt={member.displayName || member.email || "User"}
+                      />
+                    ) : null}
                     <AvatarFallback>
                       {getInitials(member.displayName || member.email || "?")}
                     </AvatarFallback>

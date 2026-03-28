@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Bell, Check, LogOut, User, UserCircle, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invitesApi } from "../../api/invites.api";
@@ -160,6 +160,9 @@ export const TopBar: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar>
+                  {user?.avatarUrl ? (
+                    <AvatarImage src={user.avatarUrl} alt={user.displayName || "User"} />
+                  ) : null}
                   <AvatarFallback className="bg-blue-600 text-white">
                     {user?.displayName ? getInitials(user.displayName) : <User className="h-4 w-4" />}
                   </AvatarFallback>

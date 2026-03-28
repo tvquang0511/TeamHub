@@ -46,7 +46,7 @@ export class BoardsRepo {
     return (prisma as any).board_members.findMany({
       where: { boardId },
       include: {
-        user: { select: { id: true, email: true, displayName: true } },
+        user: { select: { id: true, email: true, displayName: true, avatarUrl: true } },
       },
       orderBy: { createdAt: "asc" },
     });

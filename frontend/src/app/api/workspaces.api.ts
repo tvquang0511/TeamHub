@@ -29,7 +29,14 @@ type WorkspaceResponse = {
 };
 
 type MembersResponse = {
-  members: Array<{ id: string; userId: string; displayName: string; role: "OWNER" | "ADMIN" | "MEMBER" }>;
+  members: Array<{
+    id: string;
+    userId: string;
+    displayName: string;
+    role: "OWNER" | "ADMIN" | "MEMBER";
+    email?: string;
+    avatarUrl?: string | null;
+  }>;
 };
 
 export const workspacesApi = {
@@ -110,8 +117,9 @@ export const workspacesApi = {
       userId: m.userId,
       workspaceId: id,
       role: m.role,
-      email: (m as any).email,
+      email: m.email,
       displayName: m.displayName,
+      avatarUrl: m.avatarUrl ?? null,
       joinedAt: new Date().toISOString(),
     }));
   },

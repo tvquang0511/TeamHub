@@ -51,7 +51,7 @@ export const usersRepo = {
           },
         ],
       },
-      select: { id: true, email: true, displayName: true },
+      select: { id: true, email: true, displayName: true, avatarUrl: true },
       take: Math.min(Math.max(limit, 1), 50),
       orderBy: { email: 'asc' },
     });
@@ -85,7 +85,7 @@ export const usersRepo = {
         },
       },
       select: {
-        user: { select: { id: true, email: true, displayName: true } },
+        user: { select: { id: true, email: true, displayName: true, avatarUrl: true } },
         role: true,
       },
       take: Math.min(Math.max(limit, 1), 50),

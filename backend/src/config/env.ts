@@ -24,6 +24,18 @@ const envSchema = z.object({
   AUTH_COOKIE_SAME_SITE: z.enum(['lax', 'strict', 'none']).default('lax'),
 
   BCRYPT_ROUNDS: z.coerce.number().int().min(8).max(15).default(10),
+
+  // MinIO / S3-compatible storage
+  MINIO_ENDPOINT: z.string().min(1),
+  MINIO_ACCESS_KEY: z.string().min(1),
+  MINIO_SECRET_KEY: z.string().min(1),
+  MINIO_REGION: z.string().min(1).default('us-east-1'),
+
+  // Private bucket for attachments (presigned GET/PUT)
+  MINIO_BUCKET: z.string().min(1).default('teamhub'),
+
+  // Public bucket for avatars (browser can GET directly)
+  MINIO_BUCKET_PUBLIC: z.string().min(1).default('teamhub-public'),
 });
 
 export const env = envSchema.parse(process.env);

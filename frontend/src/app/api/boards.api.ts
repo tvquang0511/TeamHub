@@ -62,6 +62,7 @@ const mapMember = (m: any): BoardMember => ({
     id: m.user?.id || m.userId,
     email: m.user?.email || "",
     displayName: m.user?.displayName || "",
+    avatarUrl: m.user?.avatarUrl ?? m.avatarUrl ?? null,
   },
   joinedAt: m.createdAt ?? new Date().toISOString(),
 });

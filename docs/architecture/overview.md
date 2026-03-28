@@ -20,12 +20,13 @@
    - Poll reminder_jobs và gửi SMTP
 5. **Nginx**
    - Reverse proxy: `/` -> frontend, `/api` -> backend, `/socket.io` -> backend
-6. (Optional) **Redis**
-   - Cache board detail (phase 2)
-   - Socket.IO Redis adapter (scale many instances)
-   - Rate limit chat
-7. (Optional) **RabbitMQ**
-   - Event bus (activity log async, notification pipeline)
+6. **Redis**
+   - Required for **BullMQ** (reminder/background jobs)
+   - (Optional) cache board detail (phase 2)
+   - (Optional) Socket.IO Redis adapter (scale many instances)
+   - (Optional) rate limit chat
+7. (Optional) **BullMQ**
+   - Background jobs (reminders, activity log async, notification pipeline)
 
 ## 3) Data flow (main)
 ### 3.1 Kanban CRUD + realtime
@@ -36,7 +37,8 @@
 
 ### 3.3 Reminder
 - Client set reminder -> DB insert ReminderJob(PENDING)
-- Worker poll -> send SMTP -> update status SENT/FAILED (+ retry)
+- API schedule job via BullMQ (delay until `remindAt`)
+- Worker consume job -> send SMTP -> update status SENT/FAILED (+ retry)
 
 ## 4) Suggested repo structure
 - Monorepo:

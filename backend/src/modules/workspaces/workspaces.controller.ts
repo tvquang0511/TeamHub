@@ -74,3 +74,15 @@ export const deleteWorkspace = async (req: Request, res: Response) => {
   const result = await workspacesService.deleteWorkspace(req.user!.id, id);
   return res.json(result);
 };
+
+export const initWorkspaceBackgroundUpload = async (req: Request, res: Response) => {
+  const { id: workspaceId } = idParamSchema.parse(req.params);
+  const result = await workspacesService.initBackgroundUpload(req.user!.id, workspaceId, req.body);
+  return res.json(result);
+};
+
+export const commitWorkspaceBackgroundUpload = async (req: Request, res: Response) => {
+  const { id: workspaceId } = idParamSchema.parse(req.params);
+  const result = await workspacesService.commitBackgroundUpload(req.user!.id, workspaceId, req.body);
+  return res.json(result);
+};

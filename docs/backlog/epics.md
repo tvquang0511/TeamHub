@@ -1,7 +1,7 @@
 # Backlog — Epics
 
 ## EPIC-01: Project bootstrap & DevOps
-- Docker compose: postgres/redis/rabbitmq/nginx
+- Docker compose: postgres/redis/nginx
 - Monorepo structure
 - ESLint/Prettier/TS configs
 - CI (later)
@@ -48,4 +48,4 @@
 
 ## EPIC-09: Activity log
 - Log minimal events sync (MVP)
-- RabbitMQ async pipeline (phase 2)
+- BullMQ async pipeline (phase 2)

@@ -12,7 +12,7 @@
 - ORM/DB: **Prisma** + **PostgreSQL**
 - Realtime: **Socket.IO**
 - Cache/đồng bộ realtime nhiều instance (giai đoạn nâng cao): **Redis**
-- Message queue / xử lý bất đồng bộ (giai đoạn nâng cao): **RabbitMQ**
+- Message queue / xử lý bất đồng bộ (giai đoạn nâng cao): **BullMQ (Redis-based)**
 - Email: **SMTP** (Nodemailer)
 - Deploy local: **Docker + docker-compose**
 
@@ -344,7 +344,7 @@
   - label added/removed
 - **Thiết kế**:
   - Có thể ghi trực tiếp khi xử lý API (MVP)
-  - Nâng cao: publish event sang RabbitMQ, worker ghi activity async.
+  - Nâng cao: publish event sang BullMQ, worker ghi activity async.
 
 ---
 
@@ -417,7 +417,7 @@
    - rate-limit chat
    - Socket.IO adapter để scale ngang (nhiều api instance)
 
-6. **RabbitMQ (nâng cao)**
+6. **BullMQ (nâng cao)**
    - event bus cho activity log/notifications
    - pipeline async (không bắt buộc MVP nhưng có trong thiết kế)
 
@@ -649,7 +649,7 @@ Chi tiết đầy đủ (request/response samples + flows): `docs/api/frontend-c
 
 ---
 
-## 11. Nâng cao (để áp dụng Redis + RabbitMQ đúng nghĩa)
+## 11. Nâng cao (để áp dụng Redis + BullMQ đúng nghĩa)
 
 ### 11.1. Redis (gợi ý triển khai)
 - Cache `GET /boards/:bid` (board detail):
@@ -660,20 +660,19 @@ Chi tiết đầy đủ (request/response samples + flows): `docs/api/frontend-c
 - Rate limit chat:
   - key: `rl:chat:{userId}:{workspaceId}`
 
-### 11.2. RabbitMQ (gợi ý triển khai)
-- Exchange: `events`
-- Routing keys:
-  - `card.moved`, `card.updated`, `comment.added`, `reminder.scheduled`
-- Consumer:
-  - activity-log writer
-  - notification sender (tương lai)
+### 11.2. BullMQ (gợi ý triển khai)
+- Dùng Redis làm backend, enqueue job theo loại:
+  - `activity.log.write` (phase 2)
+  - `notification.send` (tương lai)
+  - `reminder.send` (delay đến `remindAt`)
+- Worker consume theo queue + concurrency, và đảm bảo idempotency khi update DB.
 
-> MVP có thể không cần RabbitMQ, nhưng thiết kế sẵn đường đi để bạn “gắn vào” khi muốn.
+> MVP có thể chưa cần BullMQ, nhưng nếu đã chọn BullMQ thì Redis là bắt buộc.
 
 ---
 
 ## 12. Checklist triển khai (gợi ý thứ tự làm)
-1. Setup monorepo + docker-compose (postgres/redis/rabbitmq)
+1. Setup monorepo + docker-compose (postgres/redis)
 2. Prisma schema + migrations
 3. Auth JWT + refresh token
 4. Workspace + membership + invite email
@@ -688,7 +687,7 @@ Chi tiết đầy đủ (request/response samples + flows): `docs/api/frontend-c
 8. Reminder:
    - API set/cancel reminder
    - Worker poll + SMTP send
-9. (Nâng cao) Redis cache + RabbitMQ events + activity log async
+9. (Nâng cao) Redis cache + BullMQ jobs + activity log async
 
 ---
 

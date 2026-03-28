@@ -110,10 +110,6 @@ export class BoardsRepo {
       where: {
         workspaceId,
         archivedAt: null,
-        OR: [
-          { visibility: "WORKSPACE" as any },
-          { members: { some: { userId } } } as any,
-        ],
       },
       orderBy: [{ position: "asc" }, { createdAt: "asc" }],
       select: {
@@ -130,6 +126,10 @@ export class BoardsRepo {
         archivedAt: true,
         createdAt: true,
         updatedAt: true,
+        members: {
+          where: { userId },
+          select: { role: true },
+        },
       },
     });
   }

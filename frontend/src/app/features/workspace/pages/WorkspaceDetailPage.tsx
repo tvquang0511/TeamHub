@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { workspacesApi } from "../../../api/workspaces.api";
@@ -32,11 +32,13 @@ import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 import { ConfirmTypeDialog } from "../../../components/shared/ConfirmTypeDialog";
 import { useWorkspaceMutations } from "../../../hooks/useWorkspaceMutations";
 import { AddWorkspaceMemberCard } from "../components/AddWorkspaceMemberCard";
+import { useAuth } from "../../../providers/AuthProvider";
 
 export const WorkspaceDetailPage: React.FC = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isCreateBoardDialogOpen, setIsCreateBoardDialogOpen] = useState(false);
   const [confirmDeleteWorkspace, setConfirmDeleteWorkspace] = useState(false);
   const [confirmDeleteBoard, setConfirmDeleteBoard] = useState<{ open: boolean; boardId?: string; boardName?: string }>(
@@ -44,6 +46,7 @@ export const WorkspaceDetailPage: React.FC = () => {
   );
   const [newBoardName, setNewBoardName] = useState("");
   const [newBoardDescription, setNewBoardDescription] = useState("");
+  const backgroundFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const workspaceMutations = useWorkspaceMutations({ workspaceId });
 
@@ -64,6 +67,9 @@ export const WorkspaceDetailPage: React.FC = () => {
     queryFn: () => workspacesApi.getMembers(workspaceId!),
     enabled: !!workspaceId,
   });
+
+  const myWorkspaceRole = (members || []).find((m: any) => m.userId && user?.id && m.userId === user.id)?.role;
+  const canManageWorkspace = myWorkspaceRole === "OWNER" || myWorkspaceRole === "ADMIN";
 
   const createBoardMutation = useMutation({
     mutationFn: boardsApi.create,
@@ -97,6 +103,33 @@ export const WorkspaceDetailPage: React.FC = () => {
     },
   });
 
+  const backgroundMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const upload = await workspacesApi.initBackgroundUpload(workspaceId!, {
+        fileName: file.name,
+        contentType: file.type,
+      });
+
+      await fetch(upload.uploadUrl, {
+        method: "PUT",
+        headers: {
+          ...(upload.headers || {}),
+        },
+        body: file,
+      });
+
+      return workspacesApi.commitBackgroundUpload(workspaceId!, { objectKey: upload.objectKey });
+    },
+    onSuccess: (ws) => {
+      queryClient.setQueryData(["workspace", workspaceId], ws);
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      toast.success("Đã cập nhật ảnh nền workspace");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error?.message || "Không thể cập nhật ảnh nền");
+    },
+  });
+
   const handleCreateBoard = (e: React.FormEvent) => {
     e.preventDefault();
     createBoardMutation.mutate({
@@ -123,7 +156,12 @@ export const WorkspaceDetailPage: React.FC = () => {
     );
   }
 
-  const canDeleteBoardsInWorkspace = (members || []).some((m: any) => m.role === "OWNER" || m.role === "ADMIN");
+  const onPickBackground: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    backgroundMutation.mutate(file);
+    e.currentTarget.value = "";
+  };
 
   const deleteWorkspace = () => {
     if (!workspaceId) return;
@@ -156,21 +194,55 @@ export const WorkspaceDetailPage: React.FC = () => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Workspaces
         </Button>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{workspace.name}</h1>
-            {workspace.description && (
-              <p className="mt-2 text-gray-600">{workspace.description}</p>
-            )}
-          </div>
 
-          <Button
-            variant="destructive"
-            onClick={() => setConfirmDeleteWorkspace(true)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Xoá workspace
-          </Button>
+        <div className="overflow-hidden rounded-lg border bg-muted">
+          <div
+            className="h-44 w-full bg-cover bg-center"
+            style={
+              workspace.backgroundImageUrl
+                ? { backgroundImage: `url(${workspace.backgroundImageUrl})` }
+                : undefined
+            }
+          />
+          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="truncate text-3xl font-bold">{workspace.name}</h1>
+              {workspace.description ? (
+                <p className="mt-2 text-gray-600">{workspace.description}</p>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {canManageWorkspace ? (
+                <>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    disabled={backgroundMutation.isPending}
+                    onClick={() => backgroundFileInputRef.current?.click()}
+                  >
+                    {backgroundMutation.isPending ? "Đang upload…" : "Đổi ảnh nền"}
+                  </Button>
+                  <input
+                    ref={backgroundFileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    onChange={onPickBackground}
+                    disabled={backgroundMutation.isPending}
+                  />
+                </>
+              ) : null}
+
+              <Button
+                variant="destructive"
+                onClick={() => setConfirmDeleteWorkspace(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Xoá workspace
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -253,10 +325,22 @@ export const WorkspaceDetailPage: React.FC = () => {
           ) : boards && boards.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {boards.map((board) => (
+                (() => {
+                  const canReadBoard = board.actor?.canReadBoard ?? true;
+                  const isLockedPrivate = board.privacy === "PRIVATE" && !canReadBoard;
+                  const canDeleteBoard = board.actor?.canDeleteBoard ?? false;
+
+                  return (
                 <Card
                   key={board.id}
-                  className="cursor-pointer transition-shadow hover:shadow-lg"
-                  onClick={() => navigate(`/boards/${board.id}`)}
+                  className={
+                    "transition-shadow hover:shadow-lg " +
+                    (isLockedPrivate ? "cursor-not-allowed opacity-70 blur-sm" : "cursor-pointer")
+                  }
+                  onClick={() => {
+                    if (isLockedPrivate) return;
+                    navigate(`/boards/${board.id}`);
+                  }}
                   style={{
                     background: boardBackgroundToCss(board) ?? undefined,
                   }}
@@ -264,7 +348,7 @@ export const WorkspaceDetailPage: React.FC = () => {
                   <CardHeader>
                     <div className="flex items-start justify-between gap-3">
                       <CardTitle className="min-w-0 flex-1 truncate">{board.name}</CardTitle>
-                      {canDeleteBoardsInWorkspace ? (
+                      {canDeleteBoard ? (
                         <Button
                           variant="destructive"
                           size="sm"
@@ -283,7 +367,7 @@ export const WorkspaceDetailPage: React.FC = () => {
                           disabled
                           onClick={(e) => e.stopPropagation()}
                           className="opacity-40"
-                          title="Chỉ OWNER/ADMIN workspace mới có quyền xoá board"
+                          title="Bạn không có quyền xoá board"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -297,10 +381,12 @@ export const WorkspaceDetailPage: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-sm text-gray-500">
-                      {board.privacy === "PRIVATE" ? "Riêng tư" : "Workspace"}
+                      {board.privacy === "PRIVATE" ? "Private" : "Public"}
                     </div>
                   </CardContent>
                 </Card>
+                  );
+                })()
               ))}
             </div>
           ) : (

@@ -1,14 +1,13 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cardsApi } from "../../../api/cards.api";
-import { attachmentsApi, type Attachment } from "../../../api/attachments.api";
 import { labelsApi } from "../../../api/labels.api";
 import { commentsApi, type CardComment } from "../../../api/comments.api";
-import { assigneesApi, type CardAssignee } from "../../../api/assignees.api";
-import { checklistsApi, type Checklist } from "../../../api/checklists.api";
 import { LabelsPopover } from "./LabelsPopover";
-import { AttachmentsDialog } from "./AttachmentsDialog";
+import { CardAssigneesSection } from "./card-item/CardAssigneesSection";
+import { CardAttachmentsSection } from "./card-item/CardAttachmentsSection";
+import { CardChecklistsSection } from "./card-item/CardChecklistsSection";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +22,7 @@ import {
   Calendar,
   ChevronLeft,
   Check,
-  FileText,
-  Link as LinkIcon,
-  Plus,
-  Route,
   Trash2,
-  UserPlus,
 } from "lucide-react";
 // toast placeholder (wire real toast later)
 import type { BoardDetail, Card } from "../../../types/api";
@@ -57,16 +51,10 @@ export const CardItem: React.FC<CardItemProps> = ({
   onCardDropped,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
-  const [assigneesOpen, setAssigneesOpen] = useState(false);
-  const [assigneesSelected, setAssigneesSelected] = useState<CardAssignee | null>(null);
-  const [newChecklistTitle, setNewChecklistTitle] = useState("");
-  const [newItemTitles, setNewItemTitles] = useState<Record<string, string>>({});
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || "");
   const [dueAtInput, setDueAtInput] = useState<string>(card.dueAt ? card.dueAt.slice(0, 16) : "");
   const [commentDraft, setCommentDraft] = useState("");
-  const [assigneeEmail, setAssigneeEmail] = useState("");
   const [activePane, setActivePane] = useState<"main" | "comments">("main");
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -78,11 +66,9 @@ export const CardItem: React.FC<CardItemProps> = ({
     "detail",
   ]);
   const boardLabels = boardDetail?.labels ?? [];
+  const canWriteBoard = boardDetail?.actor?.canWriteBoard ?? true;
+  const isReadOnlyBoard = !canWriteBoard;
   const canCreateLabels =
-    boardDetail?.actor?.boardRole === "OWNER" ||
-    boardDetail?.actor?.boardRole === "ADMIN";
-
-  const canManageAssignees =
     boardDetail?.actor?.boardRole === "OWNER" ||
     boardDetail?.actor?.boardRole === "ADMIN";
 
@@ -108,33 +94,15 @@ export const CardItem: React.FC<CardItemProps> = ({
     },
   });
 
-  const { data: attachments = [], refetch: refetchAttachments } = useQuery({
-    queryKey: ["card", card.id, "attachments"],
-    queryFn: () => attachmentsApi.listByCard(card.id),
-    enabled: isModalOpen,
-  });
-
-
-  const deleteAttachmentMutation = useMutation({
-    mutationFn: (attachmentId: string) => attachmentsApi.delete(attachmentId),
-    onSuccess: async () => {
-      await refetchAttachments();
-    },
-  });
-
-  const downloadAttachment = async (att: Attachment) => {
-    if (att.type !== "FILE") return;
-    const presign = await attachmentsApi.presignDownload(att.id);
-    window.open(presign.downloadUrl, "_blank", "noopener,noreferrer");
-  };
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "CARD",
     item: { id: card.id, listId } satisfies CardDnDItem,
+    canDrag: canWriteBoard,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-  }));
+  }), [card.id, listId, canWriteBoard]);
 
   useEffect(() => {
     if (forceOpen) setIsModalOpen(true);
@@ -147,7 +115,9 @@ export const CardItem: React.FC<CardItemProps> = ({
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: "CARD",
+    canDrop: () => canWriteBoard,
     drop: (item: CardDnDItem, monitor) => {
+      if (!canWriteBoard) return;
       // Only trigger on actual drop, not hover
       if (item.id === card.id) return;
       if (!onCardDropped) return;
@@ -166,7 +136,7 @@ export const CardItem: React.FC<CardItemProps> = ({
     collect: (monitor) => ({
       isOver: monitor.isOver({ shallow: true }),
     }),
-  }));
+  }), [card.id, canWriteBoard, onCardDropped]);
 
   const updateCardMutation = useMutation({
     mutationFn: (data: { title?: string; description?: string }) =>
@@ -234,6 +204,7 @@ export const CardItem: React.FC<CardItemProps> = ({
 
   useEffect(() => {
     if (!isModalOpen) return;
+    if (!canWriteBoard) return;
 
     const t = setTimeout(() => {
       const next = dueAtInput?.trim() ? new Date(dueAtInput).toISOString() : null;
@@ -245,7 +216,7 @@ export const CardItem: React.FC<CardItemProps> = ({
     return () => clearTimeout(t);
     // Intentionally skip `card.dueAt` to avoid re-triggering after server writes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dueAtInput, isModalOpen]);
+  }, [dueAtInput, isModalOpen, canWriteBoard]);
 
   const setDoneMutation = useMutation({
     mutationFn: (isDone: boolean) => cardsApi.setDone(card.id, isDone),
@@ -286,97 +257,6 @@ export const CardItem: React.FC<CardItemProps> = ({
     },
   });
 
-  const { data: assignees = [], refetch: refetchAssignees } = useQuery({
-    queryKey: ["card", card.id, "assignees"],
-    queryFn: () => assigneesApi.listByCard(card.id),
-    enabled: isModalOpen,
-  });
-
-  const assignSelfMutation = useMutation({
-    mutationFn: () => assigneesApi.assignSelf(card.id),
-    onSuccess: async () => {
-      await refetchAssignees();
-    },
-  });
-
-  const unassignSelfMutation = useMutation({
-    mutationFn: () => assigneesApi.unassignSelf(card.id),
-    onSuccess: async () => {
-      await refetchAssignees();
-    },
-  });
-
-  const addByAdminMutation = useMutation({
-    mutationFn: async (email: string) => {
-      const members = boardDetail?.members ?? [];
-      const target = members.find((m: any) => (m.user?.email ?? m.email) === email);
-      if (!target) throw new Error("Member not found in this board");
-      return assigneesApi.addByAdmin(card.id, target.userId);
-    },
-    onSuccess: async () => {
-      setAssigneeEmail("");
-      await refetchAssignees();
-    },
-  });
-
-  const kickByAdminMutation = useMutation({
-    mutationFn: (userId: string) => assigneesApi.kickByAdmin(card.id, userId),
-    onSuccess: async () => {
-      await refetchAssignees();
-    },
-  });
-
-  const myUserId = (boardDetail as any)?.actor?.userId as string | undefined;
-  const isMeAssigned = Boolean(myUserId && (assignees || []).some((a: CardAssignee) => a.id === myUserId));
-
-  const { data: checklistsResp, refetch: refetchChecklists } = useQuery({
-    queryKey: ["card", card.id, "checklists"],
-    queryFn: () => checklistsApi.listByCard(card.id),
-    enabled: isModalOpen,
-  });
-
-  const checklists = checklistsResp?.checklists ?? [];
-
-  const createChecklistMutation = useMutation({
-    mutationFn: (title: string) => checklistsApi.createChecklist(card.id, { title }),
-    onSuccess: async () => {
-      setNewChecklistTitle("");
-      await refetchChecklists();
-    },
-  });
-
-  const deleteChecklistMutation = useMutation({
-    mutationFn: (checklistId: string) => checklistsApi.deleteChecklist(checklistId),
-    onSuccess: async () => {
-      await refetchChecklists();
-    },
-  });
-
-  const createItemMutation = useMutation({
-    mutationFn: ({ checklistId, title }: { checklistId: string; title: string }) =>
-      checklistsApi.createItem(checklistId, { title }),
-    onSuccess: async (_item, vars) => {
-      setNewItemTitles((m) => ({ ...m, [vars.checklistId]: "" }));
-      await refetchChecklists();
-    },
-  });
-
-  const toggleItemMutation = useMutation({
-    mutationFn: ({ itemId, isDone }: { itemId: string; isDone: boolean }) =>
-      checklistsApi.updateItem(itemId, { isDone }),
-    onSuccess: async () => {
-      await refetchChecklists();
-      queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
-    },
-  });
-
-  const deleteItemMutation = useMutation({
-    mutationFn: (itemId: string) => checklistsApi.deleteItem(itemId),
-    onSuccess: async () => {
-      await refetchChecklists();
-      queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
-    },
-  });
 
   const deleteCardMutation = useMutation({
     mutationFn: () => cardsApi.delete(card.id),
@@ -410,6 +290,10 @@ export const CardItem: React.FC<CardItemProps> = ({
   });
 
   const handleSave = () => {
+    if (!canWriteBoard) {
+      setIsModalOpen(false);
+      return;
+    }
     if (title.trim()) {
       updateCardMutation.mutate({
         title: title !== card.title ? title : undefined,
@@ -505,6 +389,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Tiêu đề card..."
+                        disabled={isReadOnlyBoard}
                       />
                     </div>
                     <div className="space-y-2">
@@ -515,6 +400,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Thêm mô tả chi tiết..."
                         rows={6}
+                        disabled={isReadOnlyBoard}
                       />
                     </div>
 
@@ -531,6 +417,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                   type="datetime-local"
                   value={dueAtInput}
                   onChange={(e) => setDueAtInput(e.target.value)}
+                  disabled={isReadOnlyBoard}
                 />
               </div>
               {card.dueAt ? (
@@ -548,9 +435,10 @@ export const CardItem: React.FC<CardItemProps> = ({
                   cardId={card.id}
                   boardLabels={boardLabels}
                   attachedLabels={cardLabels}
-                  disabled={attachLabelMutation.isPending || detachLabelMutation.isPending}
+                    disabled={isReadOnlyBoard || attachLabelMutation.isPending || detachLabelMutation.isPending}
                   canCreate={canCreateLabels}
                   onToggle={(labelId, nextAttached) => {
+                      if (isReadOnlyBoard) return;
                     if (nextAttached) attachLabelMutation.mutate(labelId);
                     else detachLabelMutation.mutate(labelId);
                   }}
@@ -574,355 +462,27 @@ export const CardItem: React.FC<CardItemProps> = ({
               )}
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Checklist</Label>
-              </div>
+            <CardChecklistsSection
+              boardId={boardId}
+              cardId={card.id}
+              enabled={isModalOpen}
+              disabled={isReadOnlyBoard}
+            />
 
-              <div className="flex items-center gap-2">
-                <Input
-                  value={newChecklistTitle}
-                  onChange={(e) => setNewChecklistTitle(e.target.value)}
-                  placeholder="Tạo checklist mới..."
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    const t = newChecklistTitle.trim();
-                    if (!t) return;
-                    createChecklistMutation.mutate(t);
-                  }}
-                  disabled={createChecklistMutation.isPending}
-                >
-                  Tạo
-                </Button>
-              </div>
+            <CardAttachmentsSection
+              boardId={boardId}
+              cardId={card.id}
+              enabled={isModalOpen}
+              disabled={isReadOnlyBoard}
+              boardDetail={boardDetail}
+            />
 
-              {checklists.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Chưa có checklist.</div>
-              ) : (
-                <div className="space-y-3">
-                  {checklists.map((cl: Checklist) => {
-                    const items = cl.items ?? [];
-                    const done = items.filter((i) => i.isDone).length;
-                    return (
-                      <div key={cl.id} className="rounded-md border p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-semibold">{cl.title}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {done}/{items.length} đã xong
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteChecklistMutation.mutate(cl.id)}
-                            disabled={deleteChecklistMutation.isPending}
-                          >
-                            Xoá
-                          </Button>
-                        </div>
-
-                        <div className="mt-3 space-y-2">
-                          {items.length === 0 ? (
-                            <div className="text-sm text-muted-foreground">Chưa có item.</div>
-                          ) : (
-                            items.map((it) => (
-                              <div key={it.id} className="flex items-center justify-between gap-2">
-                                <label className="flex min-w-0 flex-1 items-center gap-2">
-                                  <input
-                                    type="checkbox"
-                                    checked={it.isDone}
-                                    onChange={(e) => toggleItemMutation.mutate({ itemId: it.id, isDone: e.target.checked })}
-                                  />
-                                  <span className={`truncate text-sm ${it.isDone ? "line-through text-muted-foreground" : ""}`}>
-                                    {it.title}
-                                  </span>
-                                </label>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteItemMutation.mutate(it.id)}
-                                  disabled={deleteItemMutation.isPending}
-                                >
-                                  Xoá
-                                </Button>
-                              </div>
-                            ))
-                          )}
-
-                          <div className="flex items-center gap-2">
-                            <Input
-                              value={newItemTitles[cl.id] ?? ""}
-                              onChange={(e) => setNewItemTitles((m) => ({ ...m, [cl.id]: e.target.value }))}
-                              placeholder="Thêm item..."
-                            />
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={() => {
-                                const t = (newItemTitles[cl.id] ?? "").trim();
-                                if (!t) return;
-                                createItemMutation.mutate({ checklistId: cl.id, title: t });
-                              }}
-                              disabled={createItemMutation.isPending}
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Attachments</Label>
-                <Button type="button" variant="secondary" size="sm" onClick={() => setAttachmentsOpen(true)}>
-                  Add
-                </Button>
-              </div>
-
-              {attachments.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Chưa có attachment nào.</div>
-              ) : (
-                <div className="space-y-2">
-                  {attachments.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-                      <div className="flex min-w-0 items-start gap-2">
-                        <div className="mt-0.5 rounded bg-muted p-1">
-                          {a.type === "FILE" ? (
-                            <FileText className="h-4 w-4" />
-                          ) : a.type === "LINK" ? (
-                            <LinkIcon className="h-4 w-4" />
-                          ) : (
-                            <Route className="h-4 w-4" />
-                          )}
-                        </div>
-
-                        <div className="min-w-0">
-                          {a.type === "FILE" ? (
-                            <button
-                              type="button"
-                              className="block truncate text-left text-sm font-medium underline"
-                              onClick={() => downloadAttachment(a)}
-                              title="Download"
-                            >
-                              {a.fileName || a.objectKey || a.id}
-                            </button>
-                          ) : a.type === "LINK" ? (
-                            <a
-                              href={a.linkUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block truncate text-sm font-medium underline"
-                              title={a.linkUrl}
-                            >
-                              {a.linkTitle || a.linkUrl}
-                            </a>
-                          ) : (
-                            <button
-                              type="button"
-                              className="block truncate text-left text-sm font-medium underline"
-                              title="Open referenced card"
-                              onClick={() => {
-                                const refId = a.referencedCardId;
-                                if (!refId) return;
-                                // Navigate to same board and open the card modal via query param
-                                window.location.assign(`/boards/${boardId}?cardId=${refId}`);
-                              }}
-                            >
-                              {a.linkTitle || "Card reference"}
-                            </button>
-                          )}
-
-                          <div className="text-xs text-muted-foreground">
-                            {a.type === "FILE"
-                              ? "File"
-                              : a.type === "LINK"
-                                ? "Link"
-                                : "Card"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <Button
-                        variant="ghost"
-                        type="button"
-                        onClick={() => deleteAttachmentMutation.mutate(a.id)}
-                        disabled={deleteAttachmentMutation.isPending}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Thành viên</Label>
-                <Button type="button" size="sm" variant="outline" onClick={() => setAssigneesOpen(true)}>
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {(assignees || []).length === 0 ? (
-                <div className="text-sm text-muted-foreground">Chưa có ai được giao.</div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {(assignees || []).map((a: CardAssignee) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      className="h-8 w-8 overflow-hidden rounded-full border bg-muted"
-                      title={a.displayName}
-                      onClick={() => setAssigneesSelected(a)}
-                    >
-                      {a.avatarUrl ? (
-                        <img src={a.avatarUrl} alt={a.displayName} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs font-semibold">
-                          {(a.displayName || a.email || "?").slice(0, 1).toUpperCase()}
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Dialog open={Boolean(assigneesSelected)} onOpenChange={(o) => (!o ? setAssigneesSelected(null) : null)}>
-              <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                  <DialogTitle>Thông tin</DialogTitle>
-                </DialogHeader>
-                {assigneesSelected ? (
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 overflow-hidden rounded-full border bg-muted">
-                      {assigneesSelected.avatarUrl ? (
-                        <img
-                          src={assigneesSelected.avatarUrl}
-                          alt={assigneesSelected.displayName}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold">
-                          {(assigneesSelected.displayName || assigneesSelected.email || "?")
-                            .slice(0, 1)
-                            .toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold">{assigneesSelected.displayName}</div>
-                      <div className="truncate text-sm text-muted-foreground">{assigneesSelected.email}</div>
-                    </div>
-                  </div>
-                ) : null}
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={assigneesOpen} onOpenChange={setAssigneesOpen}>
-              <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Thành viên</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                    <div className="text-sm">Bạn</div>
-                    {isMeAssigned ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => unassignSelfMutation.mutate()}
-                        disabled={unassignSelfMutation.isPending}
-                      >
-                        Rời card
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="default"
-                        onClick={() => assignSelfMutation.mutate()}
-                        disabled={assignSelfMutation.isPending}
-                      >
-                        Tham gia
-                      </Button>
-                    )}
-                  </div>
-
-                  {canManageAssignees ? (
-                    <div className="space-y-2">
-                      <Label>Add member (OWNER/ADMIN)</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={assigneeEmail}
-                          onChange={(e) => setAssigneeEmail(e.target.value)}
-                          placeholder="Email member để add..."
-                        />
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => {
-                            const email = assigneeEmail.trim();
-                            if (!email) return;
-                            addByAdminMutation.mutate(email);
-                          }}
-                          disabled={addByAdminMutation.isPending}
-                          title="Add by admin"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {addByAdminMutation.isError ? (
-                        <div className="text-xs text-red-600">Không tìm thấy member trong board theo email này.</div>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  <div className="space-y-2">
-                    <Label>Đang được giao</Label>
-                    {(assignees || []).length === 0 ? (
-                      <div className="text-sm text-muted-foreground">Chưa có ai được giao.</div>
-                    ) : (
-                      <div className="space-y-2">
-                        {(assignees || []).map((a: CardAssignee) => (
-                          <div key={a.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-medium">{a.displayName}</div>
-                              <div className="truncate text-xs text-muted-foreground">{a.email}</div>
-                            </div>
-                            {canManageAssignees ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => kickByAdminMutation.mutate(a.id)}
-                                disabled={kickByAdminMutation.isPending}
-                              >
-                                Remove
-                              </Button>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <CardAssigneesSection
+              boardId={boardId}
+              cardId={card.id}
+              boardDetail={boardDetail}
+              enabled={isModalOpen}
+            />
 
             <button
               type="button"
@@ -935,15 +495,6 @@ export const CardItem: React.FC<CardItemProps> = ({
               </div>
               <div className="mt-1 text-xs text-muted-foreground">Bấm để xem và viết comment</div>
             </button>
-
-            <AttachmentsDialog
-              open={attachmentsOpen}
-              onOpenChange={setAttachmentsOpen}
-              boardId={boardId}
-              cardId={card.id}
-              boardDetail={boardDetail}
-              onCreated={() => refetchAttachments()}
-            />
 
                   </div>
                 </div>
@@ -968,6 +519,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                         value={commentDraft}
                         onChange={(e) => setCommentDraft(e.target.value)}
                         placeholder="Viết comment..."
+                        disabled={isReadOnlyBoard}
                       />
                       <Button
                         type="button"
@@ -976,7 +528,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                           if (!content) return;
                           createCommentMutation.mutate(content);
                         }}
-                        disabled={createCommentMutation.isPending}
+                        disabled={isReadOnlyBoard || createCommentMutation.isPending}
                       >
                         Gửi
                       </Button>
@@ -1000,7 +552,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => deleteCommentMutation.mutate(c.id)}
-                                disabled={deleteCommentMutation.isPending}
+                                disabled={isReadOnlyBoard || deleteCommentMutation.isPending}
                               >
                                 Xoá
                               </Button>
@@ -1020,7 +572,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                 <Button
                   variant="destructive"
                   onClick={() => setConfirmDelete(true)}
-                  disabled={deleteCardMutation.isPending}
+                  disabled={isReadOnlyBoard || deleteCardMutation.isPending}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Xoá thẻ
@@ -1031,7 +583,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                     size="sm"
                     variant={card.isDone ? "secondary" : "outline"}
                     onClick={() => setDoneMutation.mutate(!Boolean(card.isDone))}
-                    disabled={setDoneMutation.isPending}
+                    disabled={isReadOnlyBoard || setDoneMutation.isPending}
                     title="Hoàn thành"
                   >
                     <Check className="h-4 w-4" />
@@ -1039,7 +591,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                   <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                     Huỷ
                   </Button>
-                  <Button onClick={handleSave} disabled={updateCardMutation.isPending}>
+                  <Button onClick={handleSave} disabled={isReadOnlyBoard || updateCardMutation.isPending}>
                     Lưu thay đổi
                   </Button>
                 </div>
@@ -1057,7 +609,10 @@ export const CardItem: React.FC<CardItemProps> = ({
         confirmText="Xoá"
         destructive
         loading={deleteCardMutation.isPending}
-        onConfirm={() => deleteCardMutation.mutate()}
+        onConfirm={() => {
+          if (isReadOnlyBoard) return;
+          deleteCardMutation.mutate();
+        }}
       />
     </>
   );

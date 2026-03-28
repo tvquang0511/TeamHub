@@ -6,6 +6,7 @@ import type {
   CreateWorkspaceRequest,
   Board,
 } from "../types/api";
+import { mapBoardFromApi } from "./boards.api";
 
 type ListMyWorkspacesResponse = {
   workspaces: Array<{
@@ -23,6 +24,7 @@ type WorkspaceResponse = {
     id: string;
     name: string;
     description?: string | null;
+    backgroundImageUrl?: string | null;
     createdAt?: string;
     updatedAt?: string;
   };
@@ -48,6 +50,7 @@ export const workspacesApi = {
       id: w.id,
       name: w.name,
       description: w.description ?? undefined,
+      backgroundImageUrl: (w as any).backgroundImageUrl ?? null,
       createdAt: w.createdAt || new Date().toISOString(),
       updatedAt: w.updatedAt || new Date().toISOString(),
       ownerId: "",
@@ -62,6 +65,7 @@ export const workspacesApi = {
       id: ws.id,
       name: ws.name,
       description: ws.description ?? undefined,
+      backgroundImageUrl: ws.backgroundImageUrl ?? null,
       createdAt: ws.createdAt || new Date().toISOString(),
       updatedAt: ws.updatedAt || new Date().toISOString(),
       ownerId: "",
@@ -79,6 +83,7 @@ export const workspacesApi = {
       id: ws.id,
       name: ws.name,
       description: ws.description ?? data.description,
+      backgroundImageUrl: ws.backgroundImageUrl ?? null,
       createdAt: ws.createdAt || new Date().toISOString(),
       updatedAt: ws.updatedAt || new Date().toISOString(),
       ownerId: "",
@@ -174,9 +179,44 @@ export const workspacesApi = {
   // Get workspace boards
   getBoards: async (workspaceId: string): Promise<Board[]> => {
     // Backend boards listing is filtered by workspaceId via query param.
-    const response = await httpClient.get<{ boards: Board[] }>('/boards', {
+    const response = await httpClient.get<{ boards: any[] }>('/boards', {
       params: { workspaceId },
     });
-    return response.data.boards;
+    return (response.data.boards || []).map(mapBoardFromApi);
+  },
+
+  initBackgroundUpload: async (
+    workspaceId: string,
+    payload: { fileName: string; contentType: string }
+  ) => {
+    const res = await httpClient.post<{
+      upload: {
+        uploadUrl: string;
+        method: "PUT";
+        headers: Record<string, string>;
+        bucket: string;
+        objectKey: string;
+        url: string;
+        expiresIn: number;
+      };
+    }>(`/workspaces/${workspaceId}/background/init`, payload);
+    return res.data.upload;
+  },
+
+  commitBackgroundUpload: async (
+    workspaceId: string,
+    payload: { objectKey: string }
+  ): Promise<Workspace> => {
+    const res = await httpClient.post<WorkspaceResponse>(`/workspaces/${workspaceId}/background/commit`, payload);
+    const ws = res.data.workspace;
+    return {
+      id: ws.id,
+      name: ws.name,
+      description: ws.description ?? undefined,
+      backgroundImageUrl: ws.backgroundImageUrl ?? null,
+      createdAt: ws.createdAt || new Date().toISOString(),
+      updatedAt: ws.updatedAt || new Date().toISOString(),
+      ownerId: "",
+    };
   },
 };

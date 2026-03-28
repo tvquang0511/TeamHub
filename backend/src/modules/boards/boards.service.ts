@@ -128,7 +128,20 @@ export class BoardsService {
     }
 
     const boards = await boardsRepo.listByWorkspaceVisibleToUser(workspaceId, userId);
-    return { boards };
+    return {
+      boards: (boards as any[]).map((b) => {
+        const boardMemberRole = Array.isArray(b.members) && b.members.length > 0 ? b.members[0]?.role : undefined;
+        const actor = this.buildBoardActorPermissions({
+          workspaceRole: membership.role,
+          boardVisibility: b.visibility,
+          boardMemberRole,
+        });
+
+        // Don't leak the board member relation in list payload; keep only actor.
+        const { members: _members, ...rest } = b as any;
+        return { ...rest, actor };
+      }),
+    };
   }
 
   async get(userId: string, boardId: string) {

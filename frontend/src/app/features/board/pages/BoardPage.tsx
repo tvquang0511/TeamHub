@@ -80,6 +80,7 @@ export const BoardPage: React.FC = () => {
   });
 
   const handleCreateList = (name: string) => {
+    if (!canWriteBoard) return;
     if (boardId) {
       createListMutation.mutate({ name, boardId });
     }
@@ -135,6 +136,7 @@ export const BoardPage: React.FC = () => {
     dropTargetListId: string,
     intent: "before" | "after" = "before",
   ) => {
+    if (!canWriteBoard) return;
     if (!boardId) return;
     const key = ["board", boardId, "detail"] as const;
     const current = queryClient.getQueryData<BoardDetail>(key);
@@ -179,6 +181,8 @@ export const BoardPage: React.FC = () => {
     );
   }
 
+  const canWriteBoard = boardDetail.actor?.canWriteBoard ?? true;
+
   const clearSelectedCard = () => {
     const next = new URLSearchParams(searchParams);
     next.delete("cardId");
@@ -210,9 +214,10 @@ export const BoardPage: React.FC = () => {
                     onListDropCommit={commitListDrop}
                     selectedCardId={selectedCardId}
                     onCloseSelectedCard={clearSelectedCard}
+                    canWrite={canWriteBoard}
                   />
                 ))}
-              <AddListButton onAdd={handleCreateList} />
+              <AddListButton onAdd={handleCreateList} canWrite={canWriteBoard} />
             </div>
           </div>
           <ScrollBar orientation="horizontal" />

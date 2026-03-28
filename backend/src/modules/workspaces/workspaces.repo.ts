@@ -20,7 +20,10 @@ export const workspacesRepo = {
     }
   },
 
-  updateWorkspace(id: string, data: { name?: string; description?: string | null }) {
+  updateWorkspace(
+    id: string,
+    data: { name?: string; description?: string | null; backgroundImageUrl?: string | null },
+  ) {
     return prisma.workspaces.update({ where: { id }, data });
   },
 

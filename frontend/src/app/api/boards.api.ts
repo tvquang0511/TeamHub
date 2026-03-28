@@ -34,15 +34,19 @@ type BoardDetailEnvelope = {
   cards: any[];
   members: any[];
   labels: any[];
+  actor?: any;
 };
 
-const mapBoard = (b: any): Board => {
+export const mapBoardFromApi = (b: any): Board => {
   return {
     id: b.id,
     name: b.name,
     description: b.description ?? undefined,
     workspaceId: b.workspaceId,
-    privacy: b.visibility === "WORKSPACE" ? "WORKSPACE" : "PRIVATE",
+    privacy:
+      (b.privacy ?? (b.visibility === "WORKSPACE" ? "WORKSPACE" : "PRIVATE")) === "WORKSPACE"
+        ? "WORKSPACE"
+        : "PRIVATE",
     // Prefer camelCase from backend; fallback to snake_case if an older/alternate serializer is used.
     backgroundColor: (b.backgroundColor ?? b.background_color) ?? undefined,
     backgroundLeftColor: (b.backgroundLeftColor ?? b.background_left_color) ?? undefined,
@@ -50,18 +54,19 @@ const mapBoard = (b: any): Board => {
     backgroundSplitPct: (b.backgroundSplitPct ?? b.background_split_pct) ?? undefined,
     createdAt: b.createdAt ?? new Date().toISOString(),
     updatedAt: b.updatedAt ?? new Date().toISOString(),
+    actor: b.actor ?? undefined,
   };
 };
 
 const mapMember = (m: any): BoardMember => ({
   id: m.id,
   userId: m.userId,
-  boardId: m.boardId,
+  boardId: m.boardId ?? m.board_id ?? "",
   role: m.role,
   user: {
     id: m.user?.id || m.userId,
-    email: m.user?.email || "",
-    displayName: m.user?.displayName || "",
+    email: m.user?.email ?? m.email ?? "",
+    displayName: m.user?.displayName ?? m.displayName ?? "",
     avatarUrl: m.user?.avatarUrl ?? m.avatarUrl ?? null,
   },
   joinedAt: m.createdAt ?? new Date().toISOString(),
@@ -109,7 +114,7 @@ export const boardsApi = {
   // Get board detail (includes lists, cards, members, labels)
   getDetail: async (id: string): Promise<BoardDetail> => {
     const response = await httpClient.get<BoardDetailEnvelope>(`/boards/${id}/detail`);
-    const { board, lists, cards, members, labels } = response.data;
+    const { board, lists, cards, members, labels, actor } = response.data;
 
     const mappedCards = (cards || []).map(mapCard);
     const cardsByList = new Map<string, Card[]>();
@@ -124,18 +129,18 @@ export const boardsApi = {
     );
 
     return {
-      ...mapBoard(board),
+      ...mapBoardFromApi(board),
       lists: mappedLists.sort((a, b) => a.position - b.position),
       members: (members || []).map(mapMember),
       labels: (labels || []).map(mapLabel),
-      actor: board?.actor,
+      actor: actor ?? board?.actor,
     };
   },
 
   // Get board by ID
   getById: async (id: string): Promise<Board> => {
     const response = await httpClient.get<BoardEnvelope>(`/boards/${id}`);
-    return mapBoard(response.data.board);
+    return mapBoardFromApi(response.data.board);
   },
 
   // Create board
@@ -151,7 +156,7 @@ export const boardsApi = {
       backgroundSplitPct: data.backgroundSplitPct,
       position: undefined,
     });
-    return mapBoard(response.data.board);
+    return mapBoardFromApi(response.data.board);
   },
 
   // Update board
@@ -179,7 +184,7 @@ export const boardsApi = {
       archived: undefined,
       position: undefined,
     });
-    return mapBoard(response.data.board);
+    return mapBoardFromApi(response.data.board);
   },
 
   updateVisibility: async (
@@ -190,7 +195,7 @@ export const boardsApi = {
       `/boards/${id}/visibility`,
       { visibility }
     );
-    return mapBoard(response.data.board);
+    return mapBoardFromApi(response.data.board);
   },
 
   updateBackground: async (
@@ -221,7 +226,7 @@ export const boardsApi = {
             : data.backgroundSplitPct,
       }
     );
-    return mapBoard(response.data.board);
+    return mapBoardFromApi(response.data.board);
   },
 
   // Delete board

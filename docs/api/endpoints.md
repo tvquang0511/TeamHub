@@ -542,3 +542,39 @@ Response
 ```json
 { "ok": true }
 ```
+
+## 9) Reminders (BullMQ + Redis)
+
+Reminders are per-user. A reminder schedules an email at `remindAt`.
+
+### GET `/cards/:id/reminders`
+Auth: Bearer access token
+
+Response
+```json
+{ "reminders": [ { "id": "uuid", "cardId": "uuid", "userId": "uuid", "remindAt": "iso", "status": "PENDING" } ] }
+```
+
+### PUT `/cards/:id/reminders`
+Auth: Bearer access token
+
+Request
+```json
+{ "remindAt": "2026-03-28T10:00:00.000Z" }
+```
+
+Response (201)
+```json
+{ "reminder": { "id": "uuid", "cardId": "uuid", "userId": "uuid", "remindAt": "iso", "status": "PENDING" } }
+```
+
+Notes
+- Implementation may enqueue a **delayed BullMQ job** (stored in Redis) for `remindAt`.
+
+### DELETE `/cards/:id/reminders/:reminderJobId`
+Auth: Bearer access token
+
+Response
+```json
+{ "ok": true }
+```

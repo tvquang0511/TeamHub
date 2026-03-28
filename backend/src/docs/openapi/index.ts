@@ -7,6 +7,7 @@ import { buildBoardsSchemas, boardsPaths } from './paths/boards.paths';
 import { buildListsSchemas, listsPaths } from './paths/lists.paths';
 import { buildCardsSchemas, cardsPaths } from './paths/cards.paths';
 import { usersPaths } from './paths/users.paths';
+import { buildRemindersSchemas, remindersPaths } from './paths/reminders.paths';
 
 /**
  * Modular OpenAPI entrypoint.
@@ -21,6 +22,7 @@ export function buildOpenApiDocument() {
   const boardsSchemas = buildBoardsSchemas();
   const listsSchemas = buildListsSchemas();
   const cardsSchemas = buildCardsSchemas();
+  const remindersSchemas = buildRemindersSchemas();
 
   return {
     openapi: '3.0.3',
@@ -44,6 +46,7 @@ export function buildOpenApiDocument() {
       { name: 'Boards' },
       { name: 'Lists' },
       { name: 'Cards' },
+      { name: 'Reminders' },
     ],
     components: {
       schemas: {
@@ -54,6 +57,7 @@ export function buildOpenApiDocument() {
         ...boardsSchemas,
         ...listsSchemas,
         ...cardsSchemas,
+        ...remindersSchemas,
       },
       securitySchemes: {
         bearerAuth: {
@@ -72,6 +76,7 @@ export function buildOpenApiDocument() {
       ...boardsPaths,
       ...listsPaths,
       ...cardsPaths,
+      ...remindersPaths,
     },
   };
 }

@@ -18,8 +18,8 @@ node "Backend" as backend {
 }
 
 database "PostgreSQL" as pg
-queue "RabbitMQ\n(optional - advanced)" as mq
-node "Redis\n(optional - advanced)" as redis
+queue "BullMQ\n(optional - advanced)" as mq
+node "Redis" as redis
 cloud "SMTP Provider" as smtp
 
 browser --> net
@@ -32,8 +32,8 @@ worker --> pg : poll/schedule reminders
 worker --> smtp : send email
 
 ' advanced path
-worker --> mq : publish jobs (optional)
 api --> mq : enqueue reminder (optional)
+worker --> mq : consume jobs (optional)
 sio --> redis : adapter/pubsub (optional)
 
 @enduml

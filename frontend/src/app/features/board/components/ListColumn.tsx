@@ -27,6 +27,7 @@ type CardDragItem = {
 interface ListColumnProps {
   list: List;
   boardId: string;
+  canWrite?: boolean;
   selectedCardId?: string;
   onCloseSelectedCard?: () => void;
   onListDropCommit?: (
@@ -39,6 +40,7 @@ interface ListColumnProps {
 export const ListColumn: React.FC<ListColumnProps> = ({
   list,
   boardId,
+  canWrite = true,
   selectedCardId,
   onCloseSelectedCard,
   onListDropCommit,
@@ -51,10 +53,11 @@ export const ListColumn: React.FC<ListColumnProps> = ({
   const [{ isListDragging }, dragList] = useDrag(() => ({
     type: "LIST",
     item: { id: list.id },
+    canDrag: canWrite,
     collect: (monitor) => ({
       isListDragging: monitor.isDragging(),
     }),
-  }));
+  }), [list.id, canWrite]);
 
   const updateListMutation = useMutation({
     mutationFn: (name: string) => listsApi.update(list.id, { name }),
@@ -130,6 +133,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
    * Handle card drop: compute prev/next and call API
    */
   const handleCardDropped = (dragCardId: string, hoverCardId: string, hoverAbove: boolean) => {
+    if (!canWrite) return;
     const key = ["board", boardId, "detail"] as const;
     const current = queryClient.getQueryData<BoardDetail>(key);
     if (!current) return;
@@ -166,7 +170,9 @@ export const ListColumn: React.FC<ListColumnProps> = ({
   // End-of-list drop zone (allows "drop to end" without hovering a card)
   const [{ isOverEnd }, dropEnd] = useDrop(() => ({
     accept: "CARD",
+    canDrop: () => canWrite,
     drop: (item: CardDragItem) => {
+      if (!canWrite) return;
       // Drop at end of list
       const lastCard = sortedCards[sortedCards.length - 1];
       if (!lastCard) {
@@ -187,11 +193,13 @@ export const ListColumn: React.FC<ListColumnProps> = ({
     collect: (monitor) => ({
       isOverEnd: monitor.isOver({ shallow: true }),
     }),
-  }));
+  }), [sortedCards, list.id, canWrite]);
 
   const [{ isOverCard }, dropCard] = useDrop(() => ({
     accept: "CARD",
+    canDrop: () => canWrite,
     drop: (item: { id: string; listId: string }) => {
+      if (!canWrite) return;
       // This drop handler catches drops within the list area (not on specific card)
       if (item.listId === list.id && sortedCards.length > 0) {
         // Within same list, just move to end
@@ -201,11 +209,13 @@ export const ListColumn: React.FC<ListColumnProps> = ({
     collect: (monitor) => ({
       isOverCard: monitor.isOver({ shallow: true }),
     }),
-  }));
+  }), [list.id, sortedCards, canWrite]);
 
   const [{ isOverList }, dropList] = useDrop(() => ({
     accept: "LIST",
+    canDrop: () => canWrite,
     drop: (item: { id: string }, monitor) => {
+      if (!canWrite) return;
       // Prevent nested drops firing twice
       if (monitor.didDrop()) return;
       if (!onListDropCommit) return;
@@ -229,9 +239,10 @@ export const ListColumn: React.FC<ListColumnProps> = ({
     collect: (monitor) => ({
       isOverList: monitor.isOver({ shallow: true }),
     }),
-  }));
+  }), [list.id, onListDropCommit, canWrite]);
 
   const handleSaveName = () => {
+    if (!canWrite) return;
     if (listName.trim() && listName !== list.name) {
       updateListMutation.mutate(listName);
     } else {
@@ -268,8 +279,11 @@ export const ListColumn: React.FC<ListColumnProps> = ({
           ref={(node) => {
             dragList(node);
           }}
-          className="-ml-1 flex h-8 w-6 items-center justify-center rounded hover:bg-black/5 cursor-grab active:cursor-grabbing"
-          title="Kéo để sắp xếp list"
+          className={
+            "-ml-1 flex h-8 w-6 items-center justify-center rounded " +
+            (canWrite ? "hover:bg-black/5 cursor-grab active:cursor-grabbing" : "cursor-not-allowed opacity-50")
+          }
+          title={canWrite ? "Kéo để sắp xếp list" : "Board đang ở chế độ chỉ xem"}
         >
           <Hand className="h-5 w-5 text-gray-600" />
         </div>
@@ -284,8 +298,11 @@ export const ListColumn: React.FC<ListColumnProps> = ({
           />
         ) : (
           <h3
-            className="flex-1 cursor-pointer font-semibold"
-            onClick={() => setIsEditing(true)}
+            className={"flex-1 font-semibold " + (canWrite ? "cursor-pointer" : "cursor-default")}
+            onClick={() => {
+              if (!canWrite) return;
+              setIsEditing(true);
+            }}
           >
             {list.name}
           </h3>
@@ -293,18 +310,19 @@ export const ListColumn: React.FC<ListColumnProps> = ({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={!canWrite}>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsEditing(true)}>
+            <DropdownMenuItem onClick={() => setIsEditing(true)} disabled={!canWrite}>
               <Edit2 className="mr-2 h-4 w-4" />
               Đổi tên
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => setConfirmDelete(true)}
               className="text-red-600"
+              disabled={!canWrite}
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Xoá list
@@ -341,7 +359,7 @@ export const ListColumn: React.FC<ListColumnProps> = ({
 
       {/* Add Card Button */}
       <div className="p-3 pt-0">
-        <AddCardButton listId={list.id} boardId={boardId} />
+        <AddCardButton listId={list.id} boardId={boardId} canWrite={canWrite} />
       </div>
 
       <ConfirmDialog

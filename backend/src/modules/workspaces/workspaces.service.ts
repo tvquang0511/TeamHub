@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { ApiError } from '../../common/errors/ApiError';
 import { workspacesRepo } from './workspaces.repo';
 import { workspace_member_role } from '@prisma/client';
+import env from '../../config/env';
+import { presignPutObject } from '../../common/minio/minio.presign.put';
 
 export const createWorkspaceInputSchema = z.object({
   name: z.string().min(1).max(200),
@@ -13,10 +15,20 @@ export const updateWorkspaceInputSchema = z.object({
   description: z.string().max(1000).nullable().optional(),
 });
 
+const workspaceBgInitBodySchema = z.object({
+  fileName: z.string().min(1).max(500),
+  contentType: z.string().min(1).max(200),
+});
+
+const workspaceBgCommitBodySchema = z.object({
+  objectKey: z.string().min(1).max(2000),
+});
+
 function publicWorkspace(ws: {
   id: string;
   name: string;
   description?: string | null;
+  backgroundImageUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }) {
@@ -24,6 +36,7 @@ function publicWorkspace(ws: {
     id: ws.id,
     name: ws.name,
     description: ws.description ?? null,
+    backgroundImageUrl: ws.backgroundImageUrl ?? null,
     createdAt: ws.createdAt,
     updatedAt: ws.updatedAt,
   };
@@ -164,5 +177,70 @@ export const workspacesService = {
 
     await workspacesRepo.removeMember(workspaceId, userId);
     return { ok: true };
+  },
+
+  async initBackgroundUpload(actorId: string, workspaceId: string, rawBody: unknown) {
+    const { fileName, contentType } = workspaceBgInitBodySchema.parse(rawBody);
+
+    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
+    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
+    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
+      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
+    }
+
+    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(contentType)) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Unsupported background content type');
+    }
+
+    const endpoint = env.MINIO_ENDPOINT;
+    const accessKeyId = env.MINIO_ACCESS_KEY;
+    const secretAccessKey = env.MINIO_SECRET_KEY;
+    const region = env.MINIO_REGION;
+    const bucket = env.MINIO_BUCKET_PUBLIC;
+
+    const ext = fileName.includes('.') ? fileName.split('.').pop()!.toLowerCase() : 'jpg';
+    const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 10) || 'jpg';
+    const objectKey = `workspace-backgrounds/${workspaceId}/${Date.now()}.${safeExt}`;
+
+    const presigned = presignPutObject({
+      endpoint,
+      accessKeyId,
+      secretAccessKey,
+      region,
+      bucket,
+      objectKey,
+      contentType,
+      expiresInSeconds: 300,
+    });
+
+    return { upload: presigned };
+  },
+
+  async commitBackgroundUpload(actorId: string, workspaceId: string, rawBody: unknown) {
+    const { objectKey } = workspaceBgCommitBodySchema.parse(rawBody);
+
+    if (!objectKey.startsWith(`workspace-backgrounds/${workspaceId}/`)) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid workspace background objectKey');
+    }
+
+    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
+    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
+    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
+      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
+    }
+
+    const bucket = env.MINIO_BUCKET_PUBLIC;
+    const endpoint = env.MINIO_ENDPOINT;
+
+    const baseUrl = new URL(endpoint);
+    const encodedPath = ['/', encodeURIComponent(bucket), '/', objectKey
+      .split('/')
+      .map(encodeURIComponent)
+      .join('/')
+    ].join('');
+    const backgroundImageUrl = new URL(encodedPath, baseUrl).toString();
+
+    const ws = await workspacesRepo.updateWorkspace(workspaceId, { backgroundImageUrl });
+    return { workspace: publicWorkspace(ws) };
   },
 };

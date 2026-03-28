@@ -33,6 +33,7 @@ export interface Workspace {
   id: string;
   name: string;
   description?: string;
+  backgroundImageUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   ownerId: string;
@@ -61,15 +62,9 @@ export interface Board {
   backgroundSplitPct?: number;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface BoardDetail extends Board {
-  lists: List[];
-  members: BoardMember[];
-  labels?: Label[];
   actor?: {
     workspaceRole?: "OWNER" | "ADMIN" | "MEMBER";
-    boardRole?: "OWNER" | "ADMIN" | "MEMBER";
+    boardRole?: "OWNER" | "ADMIN" | "MEMBER" | null;
     isWorkspaceMember?: boolean;
     isBoardMember?: boolean;
     canReadBoard?: boolean;
@@ -78,7 +73,14 @@ export interface BoardDetail extends Board {
     canDeleteBoard?: boolean;
     canArchiveBoard?: boolean;
     canLeaveBoard?: boolean;
+    readOnlyReason?: string | null;
   };
+}
+
+export interface BoardDetail extends Board {
+  lists: List[];
+  members: BoardMember[];
+  labels?: Label[];
 }
 
 export interface BoardMember {

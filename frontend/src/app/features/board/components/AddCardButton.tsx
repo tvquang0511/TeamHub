@@ -10,11 +10,13 @@ import type { BoardDetail } from "../../../types/api";
 interface AddCardButtonProps {
   listId: string;
   boardId: string;
+  canWrite?: boolean;
 }
 
 export const AddCardButton: React.FC<AddCardButtonProps> = ({
   listId,
   boardId,
+  canWrite = true,
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [cardTitle, setCardTitle] = useState("");
@@ -102,6 +104,7 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
           onChange={(e) => setCardTitle(e.target.value)}
           placeholder="Nhập tiêu đề card..."
           autoFocus
+          disabled={!canWrite}
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               handleCancel();
@@ -112,7 +115,7 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
           <Button
             type="submit"
             size="sm"
-            disabled={createCardMutation.isPending}
+            disabled={createCardMutation.isPending || !canWrite}
           >
             Thêm thẻ
           </Button>
@@ -135,6 +138,8 @@ export const AddCardButton: React.FC<AddCardButtonProps> = ({
       size="sm"
       className="w-full justify-start text-gray-600"
       onClick={() => setIsAdding(true)}
+      disabled={!canWrite}
+      title={!canWrite ? "Board đang ở chế độ chỉ xem" : undefined}
     >
       <Plus className="mr-2 h-4 w-4" />
       Thêm thẻ

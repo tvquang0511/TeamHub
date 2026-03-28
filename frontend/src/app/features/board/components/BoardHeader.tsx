@@ -27,6 +27,8 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
   // - Fallback to canWriteBoard for older actor payloads
   const canToggleVisibility =
     (board.actor as any)?.canUpdateBoardSettings ?? board.actor?.canWriteBoard ?? false;
+  const canUpdateBoardSettings =
+    (board.actor as any)?.canUpdateBoardSettings ?? board.actor?.canWriteBoard ?? false;
   const visibility = board.privacy === "WORKSPACE" ? "WORKSPACE" : "PRIVATE";
 
   const toggleDisabledReason = useMemo(() => {
@@ -171,6 +173,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
             size="sm"
             onClick={() => setIsBackgroundOpen(true)}
             title="Đổi màu nền board"
+            disabled={!canUpdateBoardSettings}
           >
             <Palette className="mr-2 h-4 w-4" />
             Màu nền
@@ -181,6 +184,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
             size="sm"
             onClick={() => setIsLabelsOpen(true)}
             title="Xem/Tạo labels cho board"
+            disabled={!canUpdateBoardSettings}
           >
             <Tag className="mr-2 h-4 w-4" />
             Labels

@@ -144,7 +144,7 @@ export const BoardMembersDialog: React.FC<Props> = ({
     return () => clearTimeout(timeoutId);
   }, [searchQuery, open, workspaceId]);
 
-  const canManage = boardDetail?.actor?.canManageBoardMembers ?? true;
+  const canManage = boardDetail?.actor?.canManageBoardMembers ?? false;
 
   const openConfirm = (u: User) => {
     setSelectedUser(u);

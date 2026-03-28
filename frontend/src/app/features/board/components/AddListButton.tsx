@@ -5,9 +5,10 @@ import { Plus, X } from "lucide-react";
 
 interface AddListButtonProps {
   onAdd: (name: string) => void;
+  canWrite?: boolean;
 }
 
-export const AddListButton: React.FC<AddListButtonProps> = ({ onAdd }) => {
+export const AddListButton: React.FC<AddListButtonProps> = ({ onAdd, canWrite = true }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [listName, setListName] = useState("");
 
@@ -27,13 +28,14 @@ export const AddListButton: React.FC<AddListButtonProps> = ({ onAdd }) => {
 
   if (isAdding) {
     return (
-      <div className="min-w-[280px] max-w-[280px] rounded-lg bg-gray-100 p-3">
+      <div className="min-w-70 max-w-70 rounded-lg bg-gray-100 p-3">
         <form onSubmit={handleSubmit} className="space-y-2">
           <Input
             value={listName}
             onChange={(e) => setListName(e.target.value)}
             placeholder="Nhập tên list..."
             autoFocus
+            disabled={!canWrite}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
                 handleCancel();
@@ -41,7 +43,7 @@ export const AddListButton: React.FC<AddListButtonProps> = ({ onAdd }) => {
             }}
           />
           <div className="flex gap-2">
-            <Button type="submit" size="sm">
+            <Button type="submit" size="sm" disabled={!canWrite}>
               Thêm list
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={handleCancel}>
@@ -56,8 +58,10 @@ export const AddListButton: React.FC<AddListButtonProps> = ({ onAdd }) => {
   return (
     <Button
       variant="ghost"
-      className="min-w-[280px] max-w-[280px] justify-start bg-white/20 text-white hover:bg-white/30"
+      className="min-w-70 max-w-70 justify-start bg-white/20 text-white hover:bg-white/30"
       onClick={() => setIsAdding(true)}
+      disabled={!canWrite}
+      title={!canWrite ? "Board đang ở chế độ chỉ xem" : undefined}
     >
       <Plus className="mr-2 h-4 w-4" />
       Thêm list

@@ -12,6 +12,9 @@ Import these collections:
 - `TeamHub - 30 Boards.postman_collection.json`
 - `TeamHub - 40 Lists.postman_collection.json`
 - `TeamHub - 50 Cards.postman_collection.json`
+- `TeamHub - 55 Labels.postman_collection.json`
+- `TeamHub - 60 Attachments.postman_collection.json`
+- `TeamHub - 70 Reminders.postman_collection.json`
 
 ## Import order (recommended)
 
@@ -36,6 +39,16 @@ Recommended import/run order:
 5) **Cards**
 - Create card (captures `cardId`)
 
+5.1) **Labels**
+- Create label (captures `labelId`)
+
+5.2) **Attachments**
+- Presign upload (captures `bucket`, `objectKey`, `objectUrl`, `uploadUrl`)
+- Commit file attachment (captures `attachmentId`)
+
+5.3) **Reminders**
+- Set reminder (captures `reminderJobId`)
+
 6) **Invites**
 - Create invite (captures `inviteToken`)
 - Register/Login invited user (in Auth)
@@ -48,6 +61,7 @@ These collections rely on these common variables:
 - `baseUrl` (default: `http://localhost:4000/api`)
 - `accessToken`, `refreshToken`
 - `workspaceId`, `boardId`, `listId`, `cardId`
+- `labelId`, `attachmentId`, `reminderJobId`
 - `inviteEmail`, `invitePassword`, `inviteDisplayName`
 - `inviteAccessToken`, `inviteRefreshToken`, `inviteToken`
 

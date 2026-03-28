@@ -2,12 +2,15 @@ import { httpClient } from "./http";
 import type {
   Card,
   CreateCardRequest,
+  ReminderJob,
   UpdateCardRequest,
   MoveCardRequest,
 } from "../types/api";
 
 type CardEnvelope = { card: any };
 type CardsEnvelope = { cards: any[] };
+type RemindersEnvelope = { reminders: ReminderJob[] };
+type ReminderEnvelope = { reminder: ReminderJob };
 
 const mapCard = (c: any): Card => ({
   id: c.id,
@@ -82,5 +85,20 @@ export const cardsApi = {
       nextId: data.nextCardId ?? null,
     });
     return mapCard(response.data.card);
+  },
+
+  // Reminders (per-user)
+  listReminders: async (cardId: string): Promise<ReminderJob[]> => {
+    const response = await httpClient.get<RemindersEnvelope>(`/cards/${cardId}/reminders`);
+    return response.data.reminders ?? [];
+  },
+
+  setReminder: async (cardId: string, remindAt: string): Promise<ReminderJob> => {
+    const response = await httpClient.put<ReminderEnvelope>(`/cards/${cardId}/reminders`, { remindAt });
+    return response.data.reminder;
+  },
+
+  cancelReminder: async (cardId: string, reminderJobId: string): Promise<void> => {
+    await httpClient.delete(`/cards/${cardId}/reminders/${reminderJobId}`);
   },
 };

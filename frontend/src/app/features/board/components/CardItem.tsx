@@ -54,11 +54,15 @@ export const CardItem: React.FC<CardItemProps> = ({
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || "");
   const [dueAtInput, setDueAtInput] = useState<string>(card.dueAt ? card.dueAt.slice(0, 16) : "");
+  const [remindAtInput, setRemindAtInput] = useState<string>("");
   const [commentDraft, setCommentDraft] = useState("");
   const [activePane, setActivePane] = useState<"main" | "comments">("main");
   const queryClient = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
+
+  const dueAtInputRef = useRef<HTMLInputElement | null>(null);
+  const remindAtInputRef = useRef<HTMLInputElement | null>(null);
 
   const boardDetail = queryClient.getQueryData<BoardDetail>([
     "board",
@@ -202,6 +206,37 @@ export const CardItem: React.FC<CardItemProps> = ({
     },
   });
 
+  const { data: reminders = [], refetch: refetchReminders } = useQuery({
+    queryKey: ["card", card.id, "reminders"],
+    queryFn: () => cardsApi.listReminders(card.id),
+    enabled: isModalOpen,
+  });
+
+  const pendingReminders = (reminders || []).filter((r) => r.status === "PENDING");
+  const activeReminder = pendingReminders.sort(
+    (a, b) => new Date(a.remindAt).getTime() - new Date(b.remindAt).getTime(),
+  )[0];
+
+  // Initialize reminder input when modal opens or when backend returns reminders.
+  useEffect(() => {
+    if (!isModalOpen) return;
+    setRemindAtInput(activeReminder?.remindAt ? activeReminder.remindAt.slice(0, 16) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isModalOpen, activeReminder?.id]);
+
+  const setReminderMutation = useMutation({
+    mutationFn: (remindAtIso: string) => cardsApi.setReminder(card.id, remindAtIso),
+    onSuccess: async () => {
+      await refetchReminders();
+    },
+  });
+
+  const cancelReminderMutation = useMutation({
+    mutationFn: async (reminderJobId: string) => {
+      await cardsApi.cancelReminder(card.id, reminderJobId);
+    },
+  });
+
   useEffect(() => {
     if (!isModalOpen) return;
     if (!canWriteBoard) return;
@@ -217,6 +252,48 @@ export const CardItem: React.FC<CardItemProps> = ({
     // Intentionally skip `card.dueAt` to avoid re-triggering after server writes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dueAtInput, isModalOpen, canWriteBoard]);
+
+  // Keep reminder <= dueAt (if dueAt is set).
+  useEffect(() => {
+    if (!isModalOpen) return;
+    if (!dueAtInput?.trim() || !remindAtInput?.trim()) return;
+    if (remindAtInput > dueAtInput) {
+      setRemindAtInput(dueAtInput);
+    }
+  }, [dueAtInput, remindAtInput, isModalOpen]);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    // Read-only board: allow viewing reminders but don't mutate.
+    if (isReadOnlyBoard) return;
+
+    const t = setTimeout(async () => {
+      const current = activeReminder?.remindAt ? activeReminder.remindAt.slice(0, 16) : "";
+      if ((remindAtInput ?? "") === current) return;
+
+      // Clear => cancel existing pending reminders
+      if (!remindAtInput?.trim()) {
+        await Promise.all(pendingReminders.map((r) => cancelReminderMutation.mutateAsync(r.id)));
+        await refetchReminders();
+        return;
+      }
+
+      // Enforce remindAt <= dueAt (if dueAt is set)
+      if (dueAtInput?.trim() && remindAtInput > dueAtInput) {
+        return;
+      }
+
+      // Keep single reminder per card in UI: cancel existing pending ones first.
+      await Promise.all(pendingReminders.map((r) => cancelReminderMutation.mutateAsync(r.id)));
+
+      const remindAtIso = new Date(remindAtInput).toISOString();
+      await setReminderMutation.mutateAsync(remindAtIso);
+      await refetchReminders();
+    }, 500);
+
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remindAtInput, isModalOpen, isReadOnlyBoard]);
 
   const setDoneMutation = useMutation({
     mutationFn: (isDone: boolean) => cardsApi.setDone(card.id, isDone),
@@ -404,27 +481,95 @@ export const CardItem: React.FC<CardItemProps> = ({
                       />
                     </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Ngày đến hạn</Label>
-                {setDueDateMutation.isPending ? (
-                  <div className="text-xs text-muted-foreground">Đang lưu…</div>
-                ) : null}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Ngày đến hạn</Label>
+                  {setDueDateMutation.isPending ? (
+                    <div className="text-xs text-muted-foreground">Đang lưu…</div>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={dueAtInputRef}
+                    type="datetime-local"
+                    value={dueAtInput}
+                    onChange={(e) => setDueAtInput(e.target.value)}
+                    disabled={isReadOnlyBoard}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      const el = dueAtInputRef.current;
+                      // `showPicker` is supported in Chromium.
+                      (el as any)?.showPicker?.();
+                      el?.focus();
+                    }}
+                    disabled={isReadOnlyBoard}
+                    title="Mở lịch"
+                  >
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+                {card.dueAt ? (
+                  <div className="text-xs text-muted-foreground">
+                    Đang đặt: {new Date(card.dueAt).toLocaleString("vi-VN")}
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Chưa đặt ngày đến hạn.</div>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="datetime-local"
-                  value={dueAtInput}
-                  onChange={(e) => setDueAtInput(e.target.value)}
-                  disabled={isReadOnlyBoard}
-                />
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Reminder</Label>
+                  {setReminderMutation.isPending || cancelReminderMutation.isPending ? (
+                    <div className="text-xs text-muted-foreground">Đang lưu…</div>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={remindAtInputRef}
+                    type="datetime-local"
+                    value={remindAtInput}
+                    max={dueAtInput?.trim() ? dueAtInput : undefined}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      if (dueAtInput?.trim() && next && next > dueAtInput) {
+                        setRemindAtInput(dueAtInput);
+                        return;
+                      }
+                      setRemindAtInput(next);
+                    }}
+                    disabled={isReadOnlyBoard || !dueAtInput?.trim()}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      const el = remindAtInputRef.current;
+                      (el as any)?.showPicker?.();
+                      el?.focus();
+                    }}
+                    disabled={isReadOnlyBoard || !dueAtInput?.trim()}
+                    title="Mở lịch"
+                  >
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+                {activeReminder ? (
+                  <div className="text-xs text-muted-foreground">
+                    Đang đặt: {new Date(activeReminder.remindAt).toLocaleString("vi-VN")}
+                  </div>
+                ) : dueAtInput?.trim() ? (
+                  <div className="text-xs text-muted-foreground">Chưa đặt reminder.</div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Đặt ngày đến hạn trước.</div>
+                )}
               </div>
-              {card.dueAt ? (
-                <div className="text-xs text-muted-foreground">Đang đặt: {new Date(card.dueAt).toLocaleString("vi-VN")}</div>
-              ) : (
-                <div className="text-xs text-muted-foreground">Chưa đặt ngày đến hạn.</div>
-              )}
             </div>
 
             <div className="space-y-2">

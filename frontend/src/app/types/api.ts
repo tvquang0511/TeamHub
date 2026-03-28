@@ -118,6 +118,18 @@ export interface Card {
   updatedAt: string;
 }
 
+export interface ReminderJob {
+  id: string;
+  cardId: string;
+  userId: string;
+  remindAt: string;
+  status: "PENDING" | "SENT" | "CANCELED" | "FAILED";
+  attempts: number;
+  lastError?: string | null;
+  sentAt?: string | null;
+  createdAt: string;
+}
+
 export interface Label {
   id: string;
   name: string;

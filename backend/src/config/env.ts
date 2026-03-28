@@ -5,6 +5,9 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
   DATABASE_URL: z.string().min(1),
 
+  // Redis (BullMQ)
+  REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
+
   // CORS
   // Comma-separated list of allowed origins for browser clients.
   // Example: "http://localhost:5173,http://127.0.0.1:5173"
@@ -42,6 +45,7 @@ export const env = envSchema.parse(process.env);
 
 export const PORT = env.PORT;
 export const DATABASE_URL = env.DATABASE_URL;
+export const REDIS_URL = env.REDIS_URL;
 
 export default env;
 

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
 import { computeBetweenPosition } from "../../common/utils/position";
+import { enqueueReminderJob, removeReminderJob } from "../../integrations/queue/reminders.queue";
 import { cardsRepo } from "./cards.repo";
 
 export const createCardInputSchema = z.object({
@@ -154,6 +155,55 @@ export class CardsService {
 
   async setDone(userId: string, cardId: string, input: { isDone: boolean }) {
     return this.update(userId, cardId, { isDone: input.isDone });
+  }
+
+  private async assertCanReadCard(userId: string, cardId: string) {
+    const card = await cardsRepo.findCardWorkspaceAndBoard(cardId);
+    if (!card || card.archivedAt || card.list.archivedAt || card.list.board.archivedAt) {
+      throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+    }
+
+    const workspaceId = card.list.board.workspaceId;
+    const membership = await cardsRepo.isWorkspaceMember(workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    if (card.list.board.visibility !== "WORKSPACE") {
+      const boardMember = await cardsRepo.isBoardMember(card.list.board.id, userId);
+      if (!boardMember) {
+        if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+          throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+        }
+      }
+    }
+  }
+
+  async listReminders(userId: string, cardId: string) {
+    await this.assertCanReadCard(userId, cardId);
+    const reminders = await cardsRepo.listReminderJobsForUser(cardId, userId);
+    return { reminders };
+  }
+
+  async setReminder(userId: string, cardId: string, input: { remindAt: string }) {
+    await this.assertCanReadCard(userId, cardId);
+
+    const remindAt = new Date(input.remindAt);
+    const reminder = await cardsRepo.upsertReminderJobForUser({ cardId, userId, remindAt });
+
+    await enqueueReminderJob({ reminderJobId: reminder.id, remindAt: reminder.remindAt });
+
+    return { reminder };
+  }
+
+  async cancelReminder(userId: string, cardId: string, reminderJobId: string) {
+    await this.assertCanReadCard(userId, cardId);
+
+    const exists = await cardsRepo.findReminderJobForUserById({ reminderJobId, cardId, userId });
+    if (!exists) throw new ApiError(404, "REMINDER_NOT_FOUND", "Reminder not found");
+
+    await cardsRepo.cancelReminderJobForUser({ reminderJobId, cardId, userId });
+    await removeReminderJob(reminderJobId);
+
+    return { ok: true };
   }
 
   async move(

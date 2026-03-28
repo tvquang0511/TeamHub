@@ -18,6 +18,10 @@ const moveCardInputSchema = z.object({
   nextId: z.string().uuid().nullable().optional(),
 });
 
+const setReminderInputSchema = z.object({
+  remindAt: z.string().datetime(),
+});
+
 export class CardsController {
   create = async (req: Request, res: Response) => {
     const userId = req.user!.id;
@@ -61,6 +65,29 @@ export class CardsController {
     const cardId = String(req.params.id);
     const input = doneInputSchema.parse(req.body);
     const result = await cardsService.setDone(userId, cardId, input);
+    res.status(200).json(result);
+  };
+
+  listReminders = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const result = await cardsService.listReminders(userId, cardId);
+    res.status(200).json(result);
+  };
+
+  setReminder = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const input = setReminderInputSchema.parse(req.body);
+    const result = await cardsService.setReminder(userId, cardId, input);
+    res.status(201).json(result);
+  };
+
+  cancelReminder = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const reminderJobId = String(req.params.reminderJobId);
+    const result = await cardsService.cancelReminder(userId, cardId, reminderJobId);
     res.status(200).json(result);
   };
 

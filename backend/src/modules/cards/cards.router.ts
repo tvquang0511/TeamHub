@@ -19,6 +19,11 @@ cardsRoutes.patch("/:id", cardsController.update);
 cardsRoutes.patch("/:id/due-date", cardsController.setDueDate);
 cardsRoutes.patch("/:id/done", cardsController.setDone);
 
+// Reminders (per-user)
+cardsRoutes.get("/:id/reminders", cardsController.listReminders);
+cardsRoutes.put("/:id/reminders", cardsController.setReminder);
+cardsRoutes.delete("/:id/reminders/:reminderJobId", cardsController.cancelReminder);
+
 cardsRoutes.delete("/:id", cardsController.delete);
 
 // Labels on card

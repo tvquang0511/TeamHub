@@ -220,6 +220,66 @@ export class CardsRepo {
       select: { id: true },
     });
   }
+
+  private readonly reminderSelect = {
+    id: true,
+    cardId: true,
+    userId: true,
+    remindAt: true,
+    status: true,
+    attempts: true,
+    lastError: true,
+    sentAt: true,
+    createdAt: true,
+  } as const;
+
+  async listReminderJobsForUser(cardId: string, userId: string) {
+    return prisma.reminder_jobs.findMany({
+      where: { cardId, userId },
+      orderBy: [{ remindAt: 'asc' }, { createdAt: 'asc' }],
+      select: this.reminderSelect,
+    });
+  }
+
+  async upsertReminderJobForUser(params: { cardId: string; userId: string; remindAt: Date }) {
+    return prisma.reminder_jobs.upsert({
+      where: {
+        cardId_userId_remindAt: {
+          cardId: params.cardId,
+          userId: params.userId,
+          remindAt: params.remindAt,
+        },
+      },
+      create: {
+        cardId: params.cardId,
+        userId: params.userId,
+        remindAt: params.remindAt,
+        status: 'PENDING',
+      },
+      update: {
+        status: 'PENDING',
+        attempts: 0,
+        lastError: null,
+        sentAt: null,
+      },
+      select: this.reminderSelect,
+    });
+  }
+
+  async findReminderJobForUserById(params: { reminderJobId: string; cardId: string; userId: string }) {
+    return prisma.reminder_jobs.findFirst({
+      where: { id: params.reminderJobId, cardId: params.cardId, userId: params.userId },
+      select: { id: true, status: true },
+    });
+  }
+
+  async cancelReminderJobForUser(params: { reminderJobId: string; cardId: string; userId: string }) {
+    // Idempotent-ish: if already SENT/CANCELED/FAILED, this is a no-op.
+    await prisma.reminder_jobs.updateMany({
+      where: { id: params.reminderJobId, cardId: params.cardId, userId: params.userId, status: 'PENDING' },
+      data: { status: 'CANCELED' },
+    });
+  }
 }
 
 export const cardsRepo = new CardsRepo();

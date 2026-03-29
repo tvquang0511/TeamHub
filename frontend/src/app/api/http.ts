@@ -64,7 +64,13 @@ httpClient.interceptors.response.use(
     };
 
     const url = originalRequest?.url || "";
-    const isAuthEndpoint = url.includes("/auth/login") || url.includes("/auth/register") || url.includes("/auth/refresh") || url.includes("/auth/logout");
+    const isAuthEndpoint =
+      url.includes("/auth/login") ||
+      url.includes("/auth/register") ||
+      url.includes("/auth/refresh") ||
+      url.includes("/auth/logout") ||
+      url.includes("/auth/forgot-password") ||
+      url.includes("/auth/reset-password");
     const errorCode = error.response?.data?.error?.code;
 
     // If error is 401 and we haven't retried yet

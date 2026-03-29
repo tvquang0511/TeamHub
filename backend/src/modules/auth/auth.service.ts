@@ -4,6 +4,7 @@ import { decode, sign, verify, type Secret } from 'jsonwebtoken';
 import { env } from '../../config/env';
 import { ApiError } from '../../common/errors/ApiError';
 import { authRepo } from './auth.repo';
+import { enqueuePasswordResetEmailJob } from '../../integrations/queue/emails.queue';
 
 type JwtAccessPayload = {
   sub: string;
@@ -33,6 +34,11 @@ function signRefreshToken(user: { id: string }) {
 
 function hashToken(token: string) {
   return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function makeResetToken() {
+  // 256-bit token, url-safe
+  return crypto.randomBytes(32).toString('base64url');
 }
 
 function parseJwtExpiresAt(token: string): Date {
@@ -167,5 +173,58 @@ export const authService = {
       throw new ApiError(401, 'AUTH_TOKEN_INVALID', 'User no longer exists');
     }
     return { user: publicUser(user) };
+  },
+
+  async forgotPassword(input: { email: string; requestedIp?: string | null; userAgent?: string | null }) {
+    const email = input.email.toLowerCase();
+    const user = await authRepo.findUserByEmail(email);
+
+    // Always return ok: don't leak whether email exists.
+    if (!user) {
+      return { ok: true };
+    }
+
+    // Keep only one active token per user for simplicity.
+    await authRepo.markAllActivePasswordResetTokensUsed(user.id);
+
+    const token = makeResetToken();
+    const tokenHash = hashToken(token);
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    await authRepo.createPasswordResetToken({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+      requestedIp: input.requestedIp ?? null,
+      userAgent: input.userAgent ?? null,
+    });
+
+    const resetUrl = `${env.APP_WEB_URL.replace(/\/$/, '')}/reset-password#token=${encodeURIComponent(token)}`;
+
+    await enqueuePasswordResetEmailJob({
+      to: user.email,
+      email: user.email,
+      resetUrl,
+      expiresAtIso: expiresAt.toISOString(),
+    });
+
+    return { ok: true };
+  },
+
+  async resetPassword(input: { token: string; newPassword: string }) {
+    const tokenHash = hashToken(input.token);
+    const prt = await authRepo.findValidPasswordResetToken(tokenHash);
+    if (!prt) {
+      throw new ApiError(400, 'AUTH_RESET_TOKEN_INVALID', 'Reset token invalid or expired');
+    }
+
+    const newHash = await bcrypt.hash(input.newPassword, env.BCRYPT_ROUNDS);
+    await authRepo.updateUserPasswordHash(prt.userId, newHash);
+    await authRepo.markPasswordResetTokenUsed(prt.id);
+
+    // Security: revoke all refresh tokens so user must re-login.
+    await authRepo.revokeAllRefreshTokensForUser(prt.userId);
+
+    return { ok: true };
   },
 };

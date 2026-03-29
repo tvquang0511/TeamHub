@@ -48,6 +48,23 @@ const LogoutResponseSchema = z.object({
   ok: z.boolean(),
 });
 
+const ForgotPasswordRequestSchema = z.object({
+  email: z.string().email(),
+});
+
+const ForgotPasswordResponseSchema = z.object({
+  ok: z.boolean(),
+});
+
+const ResetPasswordRequestSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(6),
+});
+
+const ResetPasswordResponseSchema = z.object({
+  ok: z.boolean(),
+});
+
 export function buildAuthSchemas() {
   return {
     RegisterRequest: toSchema(RegisterRequestSchema, 'RegisterRequest'),
@@ -58,6 +75,10 @@ export function buildAuthSchemas() {
     RefreshResponse: toSchema(RefreshResponseSchema, 'RefreshResponse'),
     MeResponse: toSchema(MeResponseSchema, 'MeResponse'),
     LogoutResponse: toSchema(LogoutResponseSchema, 'LogoutResponse'),
+    ForgotPasswordRequest: toSchema(ForgotPasswordRequestSchema, 'ForgotPasswordRequest'),
+    ForgotPasswordResponse: toSchema(ForgotPasswordResponseSchema, 'ForgotPasswordResponse'),
+    ResetPasswordRequest: toSchema(ResetPasswordRequestSchema, 'ResetPasswordRequest'),
+    ResetPasswordResponse: toSchema(ResetPasswordResponseSchema, 'ResetPasswordResponse'),
   };
 }
 
@@ -269,6 +290,101 @@ export const authPaths = {
                   value: { ok: true },
                 },
               },
+            },
+          },
+        },
+      },
+    },
+  },
+
+  '/auth/forgot-password': {
+    post: {
+      tags: ['Auth'],
+      summary: 'Forgot password (send reset email)',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ForgotPasswordRequest' },
+            examples: {
+              sample: {
+                summary: 'Forgot password payload',
+                value: {
+                  email: 'user@mail.com',
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'OK (always ok=true to avoid leaking whether email exists)',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ForgotPasswordResponse' },
+              examples: {
+                sample: {
+                  summary: 'OK',
+                  value: { ok: true },
+                },
+              },
+            },
+          },
+        },
+        '400': {
+          description: 'Validation error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
+          },
+        },
+      },
+    },
+  },
+
+  '/auth/reset-password': {
+    post: {
+      tags: ['Auth'],
+      summary: 'Reset password using token',
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ResetPasswordRequest' },
+            examples: {
+              sample: {
+                summary: 'Reset password payload',
+                value: {
+                  token: 'token-from-email',
+                  newPassword: 'newPassword123',
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ResetPasswordResponse' },
+              examples: {
+                sample: {
+                  summary: 'OK',
+                  value: { ok: true },
+                },
+              },
+            },
+          },
+        },
+        '400': {
+          description: 'Invalid/expired token or validation error',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
             },
           },
         },

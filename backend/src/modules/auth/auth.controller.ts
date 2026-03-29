@@ -19,6 +19,15 @@ const refreshBodySchema = z.object({
   refreshToken: z.string().min(1),
 });
 
+const forgotPasswordBodySchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordBodySchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(6),
+});
+
 function setRefreshCookie(res: Response, refreshToken: string) {
   const maxAgeMs = 7 * 24 * 60 * 60 * 1000; // client-side maxAge; server still validates JWT exp
   res.cookie(env.AUTH_COOKIE_NAME, refreshToken, {
@@ -127,4 +136,22 @@ export const me = async (req: Request, res: Response) => {
   // authJwt middleware is applied in router
   const result = await authService.me(req.user!.id);
   return res.json(result.user);
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+  const input = forgotPasswordBodySchema.parse(req.body);
+
+  await authService.forgotPassword({
+    email: input.email,
+    requestedIp: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+
+  return res.json({ ok: true });
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  const input = resetPasswordBodySchema.parse(req.body);
+  const result = await authService.resetPassword(input);
+  return res.json(result);
 };

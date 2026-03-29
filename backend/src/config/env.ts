@@ -13,6 +13,10 @@ const envSchema = z.object({
   // Example: "http://localhost:5173,http://127.0.0.1:5173"
   CORS_ORIGIN: z.string().optional(),
 
+  // Public web URL for links in emails (password reset, etc.)
+  // Example: "http://localhost:5173" or "https://app.teamhub.com"
+  APP_WEB_URL: z.string().min(1).default('http://localhost:5173'),
+
   JWT_ACCESS_SECRET: z.string().min(1),
   JWT_REFRESH_SECRET: z.string().min(1),
   JWT_ACCESS_TTL: z.string().min(1).default('15m'),

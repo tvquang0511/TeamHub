@@ -43,4 +43,65 @@ export const authRepo = {
       data: { revokedAt: new Date() },
     });
   },
+
+  revokeAllRefreshTokensForUser(userId: string) {
+    return prisma.refresh_tokens.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  },
+
+  createPasswordResetToken(data: {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+    requestedIp?: string | null;
+    userAgent?: string | null;
+  }) {
+    // NOTE: If Prisma Client hasn't been regenerated yet, TS may not know this model.
+    return prisma.password_reset_tokens.create({
+      data: {
+        userId: data.userId,
+        tokenHash: data.tokenHash,
+        expiresAt: data.expiresAt,
+        requestedIp: data.requestedIp ?? null,
+        userAgent: data.userAgent ?? null,
+      },
+    });
+  },
+
+  markAllActivePasswordResetTokensUsed(userId: string) {
+    return prisma.password_reset_tokens.updateMany({
+      where: {
+        userId,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { usedAt: new Date() },
+    });
+  },
+
+  findValidPasswordResetToken(tokenHash: string) {
+    return prisma.password_reset_tokens.findFirst({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  },
+
+  markPasswordResetTokenUsed(id: string) {
+    return prisma.password_reset_tokens.update({
+      where: { id },
+      data: { usedAt: new Date() },
+    });
+  },
+
+  updateUserPasswordHash(userId: string, passwordHash: string) {
+    return prisma.users.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+  },
 };

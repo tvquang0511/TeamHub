@@ -41,7 +41,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="mb-4 flex justify-center">
@@ -81,6 +81,14 @@ export const LoginPage: React.FC = () => {
                 required
                 autoComplete="current-password"
               />
+              <div className="text-right text-sm">
+                <Link
+                  to="/forgot-password"
+                  className="font-medium text-blue-600 hover:underline"
+                >
+                  Quên mật khẩu?
+                </Link>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">

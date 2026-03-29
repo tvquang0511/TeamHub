@@ -38,4 +38,14 @@ export const authApi = {
     const response = await httpClient.get<User>("/auth/me");
     return response.data;
   },
+
+  forgotPassword: async (data: { email: string }): Promise<{ ok: boolean }> => {
+    const response = await httpClient.post<{ ok: boolean }>("/auth/forgot-password", data);
+    return response.data;
+  },
+
+  resetPassword: async (data: { token: string; newPassword: string }): Promise<{ ok: boolean }> => {
+    const response = await httpClient.post<{ ok: boolean }>("/auth/reset-password", data);
+    return response.data;
+  },
 };

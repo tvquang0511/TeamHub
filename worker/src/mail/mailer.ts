@@ -1,5 +1,6 @@
 import env from '../config/env';
 import { buildReminderEmail } from './templates/reminder';
+import { buildPasswordResetEmail } from './templates/passwordReset';
 
 type AnyTransporter = {
 	sendMail: (options: any) => Promise<any>;
@@ -80,6 +81,29 @@ export async function sendReminderEmail(params: {
 		boardName: params.boardName,
 		cardTitle: params.cardTitle,
 		dueAt: params.dueAt,
+	});
+
+	await getTransporter().sendMail({
+		from: cfg.from,
+		to: params.to,
+		subject,
+		text,
+		html,
+	});
+}
+
+export async function sendPasswordResetEmail(params: {
+	to: string;
+	email: string;
+	resetUrl: string;
+	expiresAt: Date;
+}) {
+	const cfg = requireSmtpConfig();
+
+	const { subject, text, html } = buildPasswordResetEmail({
+		email: params.email,
+		resetUrl: params.resetUrl,
+		expiresAt: params.expiresAt,
 	});
 
 	await getTransporter().sendMail({

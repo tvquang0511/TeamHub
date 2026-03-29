@@ -24,9 +24,10 @@ import {
   Check,
   Trash2,
 } from "lucide-react";
-// toast placeholder (wire real toast later)
+import { toast } from "sonner";
 import type { BoardDetail, Card } from "../../../types/api";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
+import { getToastErrorMessage } from "../../../lib/apiError";
 
 type CardDnDItem = {
   id: string;
@@ -88,6 +89,9 @@ export const CardItem: React.FC<CardItemProps> = ({
       await refetchCardLabels();
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
     },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể gắn label"));
+    },
   });
 
   const detachLabelMutation = useMutation({
@@ -95,6 +99,9 @@ export const CardItem: React.FC<CardItemProps> = ({
     onSuccess: async () => {
       await refetchCardLabels();
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể gỡ label"));
     },
   });
 
@@ -169,9 +176,10 @@ export const CardItem: React.FC<CardItemProps> = ({
       queryClient.setQueryData<BoardDetail>(key, { ...previous, lists });
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (error: unknown, _vars, ctx) => {
       const key = ["board", boardId, "detail"] as const;
       if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+      toast.error(getToastErrorMessage(error, "Không thể lưu thay đổi"));
     },
     onSuccess: (updated) => {
       const key = ["board", boardId, "detail"] as const;
@@ -185,7 +193,7 @@ export const CardItem: React.FC<CardItemProps> = ({
       });
 
       queryClient.setQueryData<BoardDetail>(key, { ...current, lists });
-      // toast: updated
+      toast.success("Đã lưu thay đổi");
     },
   });
 
@@ -203,6 +211,9 @@ export const CardItem: React.FC<CardItemProps> = ({
 
       queryClient.setQueryData<BoardDetail>(key, { ...current, lists });
       setDueAtInput(updated.dueAt ? updated.dueAt.slice(0, 16) : "");
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể cập nhật ngày đến hạn"));
     },
   });
 
@@ -229,11 +240,17 @@ export const CardItem: React.FC<CardItemProps> = ({
     onSuccess: async () => {
       await refetchReminders();
     },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể đặt reminder"));
+    },
   });
 
   const cancelReminderMutation = useMutation({
     mutationFn: async (reminderJobId: string) => {
       await cardsApi.cancelReminder(card.id, reminderJobId);
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể huỷ reminder"));
     },
   });
 
@@ -308,6 +325,10 @@ export const CardItem: React.FC<CardItemProps> = ({
       });
 
       queryClient.setQueryData<BoardDetail>(key, { ...current, lists });
+      toast.success(updated.isDone ? "Đã đánh dấu Done" : "Đã bỏ đánh dấu Done");
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể cập nhật trạng thái Done"));
     },
   });
 
@@ -325,12 +346,18 @@ export const CardItem: React.FC<CardItemProps> = ({
       setCommentDraft("");
       await refetchComments();
     },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể tạo comment"));
+    },
   });
 
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: string) => commentsApi.delete(commentId),
     onSuccess: async () => {
       await refetchComments();
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể xoá comment"));
     },
   });
 
@@ -356,19 +383,20 @@ export const CardItem: React.FC<CardItemProps> = ({
       queryClient.setQueryData<BoardDetail>(key, { ...previous, lists: nextLists });
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (error: unknown, _vars, ctx) => {
       const key = ["board", boardId, "detail"] as const;
       if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+      toast.error(getToastErrorMessage(error, "Không thể xoá card"));
     },
     onSuccess: () => {
-      // toast: deleted
+      toast.success("Đã xoá card");
       setConfirmDelete(false);
     },
   });
 
   const handleSave = () => {
     if (!canWriteBoard) {
-      setIsModalOpen(false);
+      toast.error("Bạn không đủ quyền để chỉnh sửa card");
       return;
     }
     if (title.trim()) {
@@ -627,6 +655,7 @@ export const CardItem: React.FC<CardItemProps> = ({
               cardId={card.id}
               boardDetail={boardDetail}
               enabled={isModalOpen}
+              disabled={isReadOnlyBoard}
             />
 
             <button
@@ -716,8 +745,15 @@ export const CardItem: React.FC<CardItemProps> = ({
               <div className="flex justify-between">
                 <Button
                   variant="destructive"
-                  onClick={() => setConfirmDelete(true)}
-                  disabled={isReadOnlyBoard || deleteCardMutation.isPending}
+                  onClick={() => {
+                    if (isReadOnlyBoard) {
+                      toast.error("Bạn không đủ quyền để xoá card");
+                      return;
+                    }
+                    setConfirmDelete(true);
+                  }}
+                  disabled={deleteCardMutation.isPending}
+                  className={isReadOnlyBoard ? "opacity-50" : undefined}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Xoá thẻ
@@ -727,8 +763,15 @@ export const CardItem: React.FC<CardItemProps> = ({
                     type="button"
                     size="sm"
                     variant={card.isDone ? "secondary" : "outline"}
-                    onClick={() => setDoneMutation.mutate(!Boolean(card.isDone))}
-                    disabled={isReadOnlyBoard || setDoneMutation.isPending}
+                    onClick={() => {
+                      if (isReadOnlyBoard) {
+                        toast.error("Bạn không đủ quyền để cập nhật card");
+                        return;
+                      }
+                      setDoneMutation.mutate(!Boolean(card.isDone));
+                    }}
+                    disabled={setDoneMutation.isPending}
+                    className={isReadOnlyBoard ? "opacity-50" : undefined}
                     title="Hoàn thành"
                   >
                     <Check className="h-4 w-4" />
@@ -736,7 +779,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                   <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                     Huỷ
                   </Button>
-                  <Button onClick={handleSave} disabled={isReadOnlyBoard || updateCardMutation.isPending}>
+                  <Button onClick={handleSave} disabled={updateCardMutation.isPending} className={isReadOnlyBoard ? "opacity-50" : undefined}>
                     Lưu thay đổi
                   </Button>
                 </div>
@@ -755,7 +798,10 @@ export const CardItem: React.FC<CardItemProps> = ({
         destructive
         loading={deleteCardMutation.isPending}
         onConfirm={() => {
-          if (isReadOnlyBoard) return;
+          if (isReadOnlyBoard) {
+            toast.error("Bạn không đủ quyền để xoá card");
+            return;
+          }
           deleteCardMutation.mutate();
         }}
       />

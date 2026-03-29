@@ -22,20 +22,21 @@ import {
 import { MoreHorizontal, Shield, ShieldCheck, LogOut, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import type { WorkspaceMember } from "../../../types/api";
+import { getToastErrorMessage } from "../../../lib/apiError";
 
 interface MemberTableProps {
   members: WorkspaceMember[];
   workspaceId: string;
+  canManage: boolean;
 }
 
 export const MemberTable: React.FC<MemberTableProps> = ({
   members,
   workspaceId,
+  canManage,
 }) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  // TODO: wire actual permission from workspace detail/current user.
-  const canManage = true;
 
   const updateRoleMutation = useMutation({
     mutationFn: (input: { userId: string; role: "ADMIN" | "MEMBER" }) =>
@@ -47,7 +48,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       toast.success("Đã cập nhật vai trò thành viên");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error?.message || "Không thể cập nhật vai trò");
+      toast.error(getToastErrorMessage(error, "Không thể cập nhật vai trò"));
     },
   });
 
@@ -59,7 +60,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       navigate("/workspaces");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error?.message || "Không thể rời workspace");
+      toast.error(getToastErrorMessage(error, "Không thể rời workspace"));
     },
   });
 
@@ -73,7 +74,7 @@ export const MemberTable: React.FC<MemberTableProps> = ({
       toast.success("Đã xoá thành viên khỏi workspace");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.error?.message || "Không thể xoá thành viên");
+      toast.error(getToastErrorMessage(error, "Không thể xoá thành viên"));
     },
   });
 
@@ -165,14 +166,19 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() =>
-                          updateRoleMutation.mutate({
-                            userId: member.userId,
-                            role: member.role === "ADMIN" ? "MEMBER" : "ADMIN",
-                          })
-                        }
-                        disabled={!canManage || updateRoleMutation.isPending}
-                        className={!canManage ? "opacity-50 pointer-events-none" : undefined}
+                            onClick={(e) => {
+                              if (!canManage) {
+                                e.preventDefault();
+                                toast.error("Bạn không đủ quyền để đổi vai trò thành viên");
+                                return;
+                              }
+                              updateRoleMutation.mutate({
+                                userId: member.userId,
+                                role: member.role === "ADMIN" ? "MEMBER" : "ADMIN",
+                              });
+                            }}
+                            disabled={updateRoleMutation.isPending}
+                            className={!canManage ? "opacity-50" : undefined}
                       >
                         {member.role === "ADMIN" ? (
                           <>
@@ -187,9 +193,17 @@ export const MemberTable: React.FC<MemberTableProps> = ({
                         )}
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onClick={() => removeMemberMutation.mutate(member.userId)}
+                        onClick={(e) => {
+                          if (!canManage) {
+                            e.preventDefault();
+                            toast.error("Bạn không đủ quyền để xoá thành viên");
+                            return;
+                          }
+                          removeMemberMutation.mutate(member.userId);
+                        }}
                         className="text-red-600"
-                        disabled={!canManage || removeMemberMutation.isPending}
+                        disabled={removeMemberMutation.isPending}
+                        title={!canManage ? "Bạn không có quyền" : undefined}
                       >
                         <UserMinus className="mr-2 h-4 w-4" />
                         Xoá khỏi workspace

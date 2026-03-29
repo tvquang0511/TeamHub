@@ -126,12 +126,16 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-white hover:bg-white/20"
+              className={
+                "h-8 text-white hover:bg-white/20 " +
+                (!canToggleVisibility ? "opacity-50" : "")
+              }
               onClick={() => {
                 // Always attempt the API call so we can surface the real backend reason (403/404)
                 // instead of feeling like the button is dead.
                 if (!canToggleVisibility) {
-                  console.debug("[BoardHeader] toggle visibility blocked by actor", board.actor);
+                  toast.error(toggleDisabledReason ?? "Bạn không đủ quyền đổi visibility của board");
+                  return;
                 }
                 toggleVisibilityMutation.mutate();
               }}
@@ -171,9 +175,15 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setIsBackgroundOpen(true)}
+            onClick={() => {
+              if (!canUpdateBoardSettings) {
+                toast.error("Bạn không đủ quyền để đổi màu nền board");
+                return;
+              }
+              setIsBackgroundOpen(true);
+            }}
             title="Đổi màu nền board"
-            disabled={!canUpdateBoardSettings}
+            className={!canUpdateBoardSettings ? "opacity-50" : undefined}
           >
             <Palette className="mr-2 h-4 w-4" />
             Màu nền
@@ -182,9 +192,15 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => setIsLabelsOpen(true)}
+            onClick={() => {
+              if (!canUpdateBoardSettings) {
+                toast.error("Bạn không đủ quyền để quản lý labels");
+                return;
+              }
+              setIsLabelsOpen(true);
+            }}
             title="Xem/Tạo labels cho board"
-            disabled={!canUpdateBoardSettings}
+            className={!canUpdateBoardSettings ? "opacity-50" : undefined}
           >
             <Tag className="mr-2 h-4 w-4" />
             Labels

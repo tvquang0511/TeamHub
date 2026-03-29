@@ -236,7 +236,14 @@ export const WorkspaceDetailPage: React.FC = () => {
 
               <Button
                 variant="destructive"
-                onClick={() => setConfirmDeleteWorkspace(true)}
+                onClick={() => {
+                  if (!canManageWorkspace) {
+                    toast.error("Bạn không đủ quyền để xoá workspace");
+                    return;
+                  }
+                  setConfirmDeleteWorkspace(true);
+                }}
+                className={!canManageWorkspace ? "opacity-50" : undefined}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Xoá workspace
@@ -364,8 +371,10 @@ export const WorkspaceDetailPage: React.FC = () => {
                         <Button
                           variant="destructive"
                           size="sm"
-                          disabled
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toast.error("Bạn không đủ quyền để xoá board");
+                          }}
                           className="opacity-40"
                           title="Bạn không có quyền xoá board"
                         >
@@ -413,9 +422,13 @@ export const WorkspaceDetailPage: React.FC = () => {
             <div className="text-center">Đang tải thành viên...</div>
           ) : (
             <div className="space-y-4">
-              <AddWorkspaceMemberCard workspaceId={workspaceId!} existingMembers={members || []} />
+              <AddWorkspaceMemberCard
+                workspaceId={workspaceId!}
+                existingMembers={members || []}
+                canManage={canManageWorkspace}
+              />
               {members && members.length > 0 ? (
-                <MemberTable members={members} workspaceId={workspaceId!} />
+                <MemberTable members={members} workspaceId={workspaceId!} canManage={canManageWorkspace} />
               ) : (
                 <Card className="border-dashed">
                   <CardContent className="py-12 text-center text-sm text-gray-600">

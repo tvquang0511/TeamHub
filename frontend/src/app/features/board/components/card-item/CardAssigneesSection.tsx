@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Plus, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 
 import { assigneesApi, type CardAssignee } from "../../../../api/assignees.api";
 import { boardsApi } from "../../../../api/boards.api";
@@ -14,14 +15,16 @@ import {
 import { Label } from "../../../../components/ui/label";
 import { useAuth } from "../../../../providers/AuthProvider";
 import type { BoardDetail, BoardMember } from "../../../../types/api";
+import { getToastErrorMessage } from "../../../../lib/apiError";
 
 export function CardAssigneesSection(props: {
   boardId: string;
   cardId: string;
   boardDetail?: BoardDetail;
   enabled: boolean;
+  disabled?: boolean;
 }) {
-  const { boardId, cardId, boardDetail, enabled } = props;
+  const { boardId, cardId, boardDetail, enabled, disabled } = props;
   const { user } = useAuth();
 
   const [assigneesOpen, setAssigneesOpen] = useState(false);
@@ -59,6 +62,10 @@ export function CardAssigneesSection(props: {
     mutationFn: () => assigneesApi.assignSelf(cardId),
     onSuccess: async () => {
       await refetchAssignees();
+      toast.success("Đã tham gia card");
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể tham gia card"));
     },
   });
 
@@ -66,6 +73,10 @@ export function CardAssigneesSection(props: {
     mutationFn: () => assigneesApi.unassignSelf(cardId),
     onSuccess: async () => {
       await refetchAssignees();
+      toast.success("Đã rời card");
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể rời card"));
     },
   });
 
@@ -73,6 +84,10 @@ export function CardAssigneesSection(props: {
     mutationFn: (userId: string) => assigneesApi.addByAdmin(cardId, userId),
     onSuccess: async () => {
       await refetchAssignees();
+      toast.success("Đã thêm thành viên vào card");
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể thêm thành viên"));
     },
   });
 
@@ -80,6 +95,10 @@ export function CardAssigneesSection(props: {
     mutationFn: (userId: string) => assigneesApi.kickByAdmin(cardId, userId),
     onSuccess: async () => {
       await refetchAssignees();
+      toast.success("Đã gỡ thành viên khỏi card");
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể gỡ thành viên"));
     },
   });
 
@@ -96,6 +115,7 @@ export function CardAssigneesSection(props: {
             variant="outline"
             onClick={() => setAssigneesOpen(true)}
             title={canManageAssignees ? "Quản lý thành viên" : "Xem thành viên"}
+            className={disabled ? "opacity-50" : undefined}
           >
             {canManageAssignees ? <Plus className="mr-2 h-4 w-4" /> : null}
             Thành viên
@@ -175,7 +195,13 @@ export function CardAssigneesSection(props: {
                   type="button"
                   size="sm"
                   variant="default"
-                  onClick={() => assignSelfMutation.mutate()}
+                  onClick={() => {
+                    if (disabled) {
+                      toast.error("Bạn không đủ quyền để cập nhật card");
+                      return;
+                    }
+                    assignSelfMutation.mutate();
+                  }}
                   disabled={assignSelfMutation.isPending}
                 >
                   Tham gia
@@ -215,8 +241,15 @@ export function CardAssigneesSection(props: {
                                 type="button"
                                 variant="secondary"
                                 size="sm"
-                                onClick={() => addByAdminMutation.mutate(m.userId)}
+                                onClick={() => {
+                                  if (disabled) {
+                                    toast.error("Bạn không đủ quyền để cập nhật card");
+                                    return;
+                                  }
+                                  addByAdminMutation.mutate(m.userId);
+                                }}
                                 disabled={addByAdminMutation.isPending}
+                                className={disabled ? "opacity-50" : undefined}
                               >
                                 <UserPlus className="h-4 w-4" />
                                 Thêm
@@ -249,8 +282,19 @@ export function CardAssigneesSection(props: {
                           type="button"
                           size="sm"
                           variant="secondary"
-                          onClick={() => unassignSelfMutation.mutate()}
-                          disabled={!canSelfAssign || unassignSelfMutation.isPending}
+                          onClick={() => {
+                            if (disabled) {
+                              toast.error("Bạn không đủ quyền để cập nhật card");
+                              return;
+                            }
+                            if (!canSelfAssign) {
+                              toast.error("Bạn không đủ quyền để rời card");
+                              return;
+                            }
+                            unassignSelfMutation.mutate();
+                          }}
+                          disabled={unassignSelfMutation.isPending}
+                          className={(!canSelfAssign || disabled) ? "opacity-50" : undefined}
                         >
                           Rời card
                         </Button>
@@ -259,8 +303,15 @@ export function CardAssigneesSection(props: {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => kickByAdminMutation.mutate(a.id)}
+                          onClick={() => {
+                            if (disabled) {
+                              toast.error("Bạn không đủ quyền để cập nhật card");
+                              return;
+                            }
+                            kickByAdminMutation.mutate(a.id);
+                          }}
                           disabled={kickByAdminMutation.isPending}
+                          className={disabled ? "opacity-50" : undefined}
                         >
                           Gỡ
                         </Button>

@@ -21,6 +21,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Bell, Check, LogOut, User, UserCircle, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invitesApi } from "../../api/invites.api";
+import { toast } from "sonner";
+import { getToastErrorMessage } from "../../lib/apiError";
 
 export const TopBar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -56,9 +58,10 @@ export const TopBar: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invites", "inbox", "workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      toast.success("Đã chấp nhận lời mời");
     },
     onError: (error: any) => {
-      console.error(error.response?.data?.error?.message || "Không thể chấp nhận lời mời");
+      toast.error(getToastErrorMessage(error, "Không thể chấp nhận lời mời"));
     },
   });
 
@@ -66,9 +69,10 @@ export const TopBar: React.FC = () => {
     mutationFn: (inviteId: string) => invitesApi.declineWorkspaceInviteInbox(inviteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invites", "inbox", "workspaces"] });
+      toast.success("Đã từ chối lời mời");
     },
     onError: (error: any) => {
-      console.error(error.response?.data?.error?.message || "Không thể từ chối lời mời");
+      toast.error(getToastErrorMessage(error, "Không thể từ chối lời mời"));
     },
   });
 

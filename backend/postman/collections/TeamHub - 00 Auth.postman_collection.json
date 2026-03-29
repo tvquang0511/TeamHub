@@ -8,10 +8,12 @@
     { "key": "baseUrl", "value": "http://localhost:4000/api" },
     { "key": "email", "value": "user@mail.com" },
     { "key": "password", "value": "password123" },
+    { "key": "newPassword", "value": "newPassword123" },
     { "key": "displayName", "value": "Quang" },
     { "key": "inviteEmail", "value": "invited@mail.com" },
     { "key": "invitePassword", "value": "password123" },
-    { "key": "inviteDisplayName", "value": "Invited User" }
+    { "key": "inviteDisplayName", "value": "Invited User" },
+    { "key": "resetToken", "value": "" }
   ],
   "item": [
     {
@@ -133,6 +135,30 @@
         "body": {
           "mode": "raw",
           "raw": "{}"
+        }
+      }
+    },
+    {
+      "name": "Forgot password (send email)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["auth", "forgot-password"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Reset password (manual token)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["auth", "reset-password"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}"
         }
       }
     }

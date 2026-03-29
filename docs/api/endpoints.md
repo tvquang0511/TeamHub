@@ -55,6 +55,32 @@ Response
 { "user": { "id": "uuid", "email": "user@mail.com", "displayName": "Quang" } }
 ```
 
+### POST `/auth/forgot-password`
+Request
+```json
+{ "email": "user@mail.com" }
+```
+Response (200)
+```json
+{ "ok": true }
+```
+Notes
+- Always returns `{ ok: true }` to avoid leaking whether an email exists.
+- Server sends a reset email (via BullMQ worker).
+
+### POST `/auth/reset-password`
+Request
+```json
+{ "token": "token-from-email", "newPassword": "newPassword123" }
+```
+Response (200)
+```json
+{ "ok": true }
+```
+Notes
+- Token is delivered via email link. The web app uses `#token=...` (URL fragment) to reduce token leakage via logs/referrers.
+- API still expects the token in JSON body.
+
 ## 2) Workspaces
 ### POST `/workspaces`
 Request

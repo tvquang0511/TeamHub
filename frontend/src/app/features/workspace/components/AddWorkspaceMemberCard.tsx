@@ -8,17 +8,21 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
 import { Search, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 import type { User, WorkspaceMember } from "../../../types/api";
 import { ConfirmWithRoleDialog, type Role3 } from "../../../components/shared/ConfirmWithRoleDialog";
+import { getToastErrorMessage } from "../../../lib/apiError";
 
 type Props = {
   workspaceId: string;
   existingMembers?: WorkspaceMember[];
+  canManage: boolean;
 };
 
 export const AddWorkspaceMemberCard: React.FC<Props> = ({
   workspaceId,
   existingMembers,
+  canManage,
 }) => {
   const queryClient = useQueryClient();
 
@@ -38,13 +42,14 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
       workspacesApi.addMemberByEmail(workspaceId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "members"] });
+      toast.success("Đã thêm thành viên vào workspace");
       setConfirmOpen(false);
       setSelected(null);
       setSearchQuery("");
       setResults([]);
     },
     onError: (error: any) => {
-      console.error(error.response?.data?.error?.message || "Không thể thêm thành viên");
+      toast.error(getToastErrorMessage(error, "Không thể thêm thành viên"));
     },
   });
 
@@ -78,6 +83,10 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
       .slice(0, 2);
 
   const openConfirm = (u: User) => {
+    if (!canManage) {
+      toast.error("Bạn không đủ quyền để thêm thành viên vào workspace");
+      return;
+    }
     setSelected(u);
     setConfirmOpen(true);
   };
@@ -110,6 +119,11 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
               className="pl-10"
             />
           </div>
+          {!canManage ? (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              Chỉ OWNER/ADMIN của workspace mới có thể thêm thành viên.
+            </div>
+          ) : null}
 
           {searchQuery ? (
             <div className="mt-2 rounded-md border">
@@ -124,7 +138,10 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
                         key={u.id}
                         onClick={() => openConfirm(u)}
                         disabled={already || addMemberMutation.isPending}
-                        className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        className={
+                          "flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 " +
+                          (!canManage ? "opacity-60" : "")
+                        }
                       >
                         <Avatar>
                           <AvatarFallback>{getInitials(u.displayName)}</AvatarFallback>

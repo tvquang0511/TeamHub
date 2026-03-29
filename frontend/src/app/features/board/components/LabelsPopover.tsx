@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus, Tag } from "lucide-react";
+import { toast } from "sonner";
 
 import type { BoardDetail, Label } from "../../../types/api";
 import { labelsApi } from "../../../api/labels.api";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../../../components/ui/popover";
+import { getToastErrorMessage } from "../../../lib/apiError";
 
 const DEFAULT_COLORS = [
   "#EF4444", // red
@@ -66,6 +68,10 @@ export function LabelsPopover(props: {
       setNewName("");
       // Convenience: auto-attach right after create
       props.onToggle(created.id, true);
+      toast.success("Đã tạo label");
+    },
+    onError: (error: unknown) => {
+      toast.error(getToastErrorMessage(error, "Không thể tạo label"));
     },
   });
 

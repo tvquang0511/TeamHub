@@ -1,4 +1,5 @@
 import env from '../config/env';
+import { buildReminderEmail } from './templates/reminder';
 
 type AnyTransporter = {
 	sendMail: (options: any) => Promise<any>;
@@ -74,36 +75,12 @@ export async function sendReminderEmail(params: {
 }) {
 	const cfg = requireSmtpConfig();
 
-	const dueAtText = params.dueAt
-		? params.dueAt.toLocaleString('vi-VN', {
-				timeZone: env.APP_TIMEZONE,
-				hour12: false,
-			})
-		: 'Chưa đặt';
-
-	const subject = `[TeamHub] Nhắc nhở: ${params.cardTitle} (tới hạn: ${dueAtText})`;
-
-	const text = [
-		`Workspace: ${params.workspaceName}`,
-		`Board: ${params.boardName}`,
-		`Card: ${params.cardTitle}`,
-		`Tới hạn (dueAt): ${dueAtText} (${env.APP_TIMEZONE})`,
-		'',
-		'---',
-		'TeamHub',
-	].join('\n');
-
-	const html = `
-		<div style="font-family: Arial, sans-serif; line-height: 1.5;">
-			<h3>Nhắc nhở công việc</h3>
-			<p><strong>Workspace:</strong> ${escapeHtml(params.workspaceName)}</p>
-			<p><strong>Board:</strong> ${escapeHtml(params.boardName)}</p>
-			<p><strong>Card:</strong> ${escapeHtml(params.cardTitle)}</p>
-			<p><strong>Tới hạn (dueAt):</strong> ${escapeHtml(dueAtText)} (${escapeHtml(env.APP_TIMEZONE)})</p>
-			<hr />
-			<p>TeamHub</p>
-		</div>
-	`.trim();
+	const { subject, text, html } = buildReminderEmail({
+		workspaceName: params.workspaceName,
+		boardName: params.boardName,
+		cardTitle: params.cardTitle,
+		dueAt: params.dueAt,
+	});
 
 	await getTransporter().sendMail({
 		from: cfg.from,
@@ -112,13 +89,4 @@ export async function sendReminderEmail(params: {
 		text,
 		html,
 	});
-}
-
-function escapeHtml(input: string) {
-	return input
-		.replaceAll('&', '&amp;')
-		.replaceAll('<', '&lt;')
-		.replaceAll('>', '&gt;')
-		.replaceAll('"', '&quot;')
-		.replaceAll("'", '&#39;');
 }

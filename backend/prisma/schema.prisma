@@ -175,6 +175,8 @@ model board_messages {
 
   content   String
   createdAt DateTime @default(now()) @map("created_at")
+  editedAt  DateTime? @map("edited_at")
+  deletedAt DateTime? @map("deleted_at")
 
   board  boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
   sender users  @relation("BoardMessageSender", fields: [senderId], references: [id], onDelete: Cascade)

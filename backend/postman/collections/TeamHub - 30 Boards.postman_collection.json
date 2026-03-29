@@ -64,6 +64,19 @@
       }
     },
     {
+      "name": "Messages - List (chat history)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/messages?limit=30",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "messages"],
+          "query": [{ "key": "limit", "value": "30" }]
+        }
+      }
+    },
+    {
       "name": "Update visibility",
       "request": {
         "method": "PATCH",

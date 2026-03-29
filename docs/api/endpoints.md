@@ -328,6 +328,33 @@ Response (one-shot payload)
 }
 ```
 
+### GET `/boards/:bid/messages`
+Auth: Bearer access token
+
+Notes
+- Board chat is **strictly** for board members (workspace `OWNER|ADMIN` who are not board members must not read chat).
+- Newest messages first.
+- Pagination: returns `nextCursor` (message id). Pass it back as `?cursor=...` to load older messages.
+
+Response (200)
+```json
+{
+  "messages": [
+    {
+      "id": "uuid",
+      "boardId": "uuid",
+      "senderId": "uuid",
+      "content": "Hello",
+      "createdAt": "iso",
+      "editedAt": null,
+      "deletedAt": null,
+      "sender": { "id": "uuid", "displayName": "Quang", "avatarUrl": null }
+    }
+  ],
+  "nextCursor": "uuid-or-null"
+}
+```
+
 ### POST `/lists`
 Request
 ```json

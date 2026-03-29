@@ -17,13 +17,13 @@
 ```json
 { "boardId": "uuid" }
 ```
-**Auth**: user must be member of board (or be allowed by board visibility policy)  
+**Auth**: user must be **member of board** (chat is not readable by workspace OWNER/ADMIN unless they are board members)
 **Ack**
 ```json
 { "ok": true }
 ```
 
-### 3.2 `chat:send`
+### 3.2 `chat:message:send`
 **Payload**
 ```json
 { "boardId": "uuid", "content": "string" }
@@ -33,53 +33,84 @@
 - limit length (e.g. 2000 chars)
 - rate limit optional (Redis phase 2)
 
+### 3.3 `chat:message:edit`
+**Payload**
+```json
+{ "boardId": "uuid", "messageId": "uuid", "content": "string" }
+```
+**Rules**
+- only author
+- only within 20 minutes of `createdAt`
+- message must not be deleted
+
+### 3.4 `chat:message:delete`
+**Payload**
+```json
+{ "boardId": "uuid", "messageId": "uuid" }
+```
+**Rules**
+- only author
+- only within 20 minutes of `createdAt`
+
 ## 4) Server -> Client events (minimum)
 
-### 4.1 `chat:new_message`
+### 4.1 `chat:message:new`
 ```json
 {
   "message": {
     "id": "uuid",
     "boardId": "uuid",
     "senderId": "uuid",
-    "senderDisplayName": "string",
     "content": "string",
-    "createdAt": "iso"
+    "createdAt": "iso",
+    "editedAt": null,
+    "deletedAt": null,
+    "sender": { "id": "uuid", "displayName": "string", "avatarUrl": null }
   }
 }
 ```
 
-### 4.2 `board:list_created`
+### 4.2 `chat:message:updated`
+```json
+{ "message": { "id": "uuid", "editedAt": "iso", "content": "string" } }
+```
+
+### 4.3 `chat:message:deleted`
+```json
+{ "boardId": "uuid", "messageId": "uuid" }
+```
+
+### 4.4 `board:list_created`
 ```json
 { "list": { "id": "uuid", "boardId": "uuid", "name": "string", "position": 1024 } }
 ```
 
-### 4.3 `board:list_updated`
+### 4.5 `board:list_updated`
 ```json
 { "list": { "id": "uuid", "name": "string" } }
 ```
 
-### 4.4 `board:list_reordered`
+### 4.6 `board:list_reordered`
 ```json
 { "listId": "uuid", "position": 2048 }
 ```
 
-### 4.5 `board:card_created`
+### 4.7 `board:card_created`
 ```json
 { "card": { "id": "uuid", "listId": "uuid", "title": "string", "position": 1024 } }
 ```
 
-### 4.6 `board:card_updated`
+### 4.8 `board:card_updated`
 ```json
 { "card": { "id": "uuid", "title": "string", "description": "string|null", "dueAt": "iso|null" } }
 ```
 
-### 4.7 `board:card_moved`
+### 4.9 `board:card_moved`
 ```json
 { "cardId": "uuid", "fromListId": "uuid", "toListId": "uuid", "position": 1536 }
 ```
 
-### 4.8 `board:comment_added`
+### 4.10 `board:comment_added`
 ```json
 {
   "comment": {
@@ -92,7 +123,7 @@
 }
 ```
 
-### 4.9 `board:rebalance_done` (optional)
+### 4.11 `board:rebalance_done` (optional)
 ```json
 { "listId": "uuid" }
 ```

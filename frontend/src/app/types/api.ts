@@ -199,3 +199,25 @@ export interface AddBoardMemberByEmailRequest {
   email: string;
   role?: "ADMIN" | "MEMBER";
 }
+
+export interface BoardMessageSender {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface BoardMessage {
+  id: string;
+  boardId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
+  sender: BoardMessageSender;
+}
+
+export interface ListBoardMessagesResponse {
+  messages: BoardMessage[];
+  nextCursor: string | null;
+}

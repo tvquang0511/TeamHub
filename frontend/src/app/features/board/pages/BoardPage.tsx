@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DndProvider } from "react-dnd";
@@ -12,12 +12,17 @@ import { AddListButton } from "../components/AddListButton";
 import { ScrollArea, ScrollBar } from "../../../components/ui/scroll-area";
 import { toast } from "sonner";
 import type { BoardDetail } from "../../../types/api";
+import { BoardChatPanel } from "../components/BoardChatPanel";
+import { Sheet, SheetContent, SheetTrigger } from "../../../components/ui/sheet";
+import { Button } from "../../../components/ui/button";
+import { MessageCircle } from "lucide-react";
 
 export const BoardPage: React.FC = () => {
   const { boardId } = useParams<{ boardId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedCardId = searchParams.get("cardId") || "";
   const queryClient = useQueryClient();
+  const [chatOpen, setChatOpen] = useState(false);
 
   const { data: boardDetail, isLoading } = useQuery({
     queryKey: ["board", boardId, "detail"],
@@ -201,27 +206,47 @@ export const BoardPage: React.FC = () => {
       >
         <BoardHeader board={boardDetail} />
 
-        <ScrollArea className="flex-1">
-          <div className="h-full w-max">
-            <div className="flex h-full gap-4 p-6">
-              {boardDetail.lists
-                .sort((a, b) => a.position - b.position)
-                .map((list) => (
-                  <ListColumn
-                    key={list.id}
-                    list={list}
-                    boardId={boardId!}
-                    onListDropCommit={commitListDrop}
-                    selectedCardId={selectedCardId}
-                    onCloseSelectedCard={clearSelectedCard}
-                    canWrite={canWriteBoard}
-                  />
-                ))}
-              <AddListButton onAdd={handleCreateList} canWrite={canWriteBoard} />
+        <div className="flex min-h-0 flex-1">
+          <ScrollArea className="min-w-0 flex-1">
+            <div className="h-full w-max">
+              <div className="flex h-full gap-4 p-6">
+                {boardDetail.lists
+                  .sort((a, b) => a.position - b.position)
+                  .map((list) => (
+                    <ListColumn
+                      key={list.id}
+                      list={list}
+                      boardId={boardId!}
+                      onListDropCommit={commitListDrop}
+                      selectedCardId={selectedCardId}
+                      onCloseSelectedCard={clearSelectedCard}
+                      canWrite={canWriteBoard}
+                    />
+                  ))}
+                <AddListButton onAdd={handleCreateList} canWrite={canWriteBoard} />
+              </div>
             </div>
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+
+        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+          <SheetTrigger asChild>
+            <div className="fixed right-4 bottom-4 z-40">
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 gap-2 border shadow-sm"
+              >
+                <MessageCircle className="size-4" />
+                <span>Chat</span>
+              </Button>
+            </div>
+          </SheetTrigger>
+          <SheetContent side="right" className="p-0">
+            <BoardChatPanel board={boardDetail} variant="sheet" />
+          </SheetContent>
+        </Sheet>
       </div>
     </DndProvider>
   );

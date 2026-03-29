@@ -13,9 +13,28 @@ const BoardSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
+const BoardMessageSenderSchema = z.object({
+  id: z.string().uuid(),
+  displayName: z.string(),
+  avatarUrl: z.string().nullable(),
+});
+
+const BoardMessageSchema = z.object({
+  id: z.string().uuid(),
+  boardId: z.string().uuid(),
+  senderId: z.string().uuid(),
+  content: z.string(),
+  createdAt: z.string().datetime(),
+  editedAt: z.string().datetime().nullable(),
+  deletedAt: z.string().datetime().nullable(),
+  sender: BoardMessageSenderSchema,
+});
+
 export function buildBoardsSchemas() {
   return {
     Board: toSchema(BoardSchema, "Board"),
+    BoardMessageSender: toSchema(BoardMessageSenderSchema, "BoardMessageSender"),
+    BoardMessage: toSchema(BoardMessageSchema, "BoardMessage"),
   };
 }
 
@@ -260,6 +279,53 @@ export const boardsPaths = {
                   labels: { type: "array", items: { type: "object" } },
                 },
                 required: ["board", "lists", "cards", "members", "labels"],
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  "/boards/{id}/messages": {
+    get: {
+      tags: ["Boards"],
+      summary: "List board chat messages (board members only)",
+      description:
+        "Returns newest messages first. Use nextCursor for pagination (pass as cursor to fetch older messages).",
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+        {
+          name: "cursor",
+          in: "query",
+          required: false,
+          schema: { type: "string", format: "uuid" },
+          description: "Message id cursor (fetch messages older than this message)",
+        },
+        {
+          name: "limit",
+          in: "query",
+          required: false,
+          schema: { type: "integer", minimum: 1, maximum: 100, default: 30 },
+        },
+      ],
+      responses: {
+        200: {
+          description: "OK",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  messages: { type: "array", items: { $ref: "#/components/schemas/BoardMessage" } },
+                  nextCursor: { type: "string", format: "uuid", nullable: true },
+                },
+                required: ["messages", "nextCursor"],
               },
             },
           },

@@ -3,6 +3,8 @@ import type {
   Board,
   BoardDetail,
   BoardMember,
+  BoardMessage,
+  ListBoardMessagesResponse,
   Card,
   Label,
   List,
@@ -36,6 +38,8 @@ type BoardDetailEnvelope = {
   labels: any[];
   actor?: any;
 };
+
+type BoardMessagesEnvelope = { messages: any[]; nextCursor: string | null };
 
 export const mapBoardFromApi = (b: any): Board => {
   return {
@@ -110,6 +114,21 @@ const mapLabel = (l: any): Label => ({
   createdAt: l.createdAt ?? new Date().toISOString(),
 });
 
+const mapBoardMessage = (m: any): BoardMessage => ({
+  id: m.id,
+  boardId: m.boardId,
+  senderId: m.senderId,
+  content: m.content ?? "",
+  createdAt: m.createdAt ?? new Date().toISOString(),
+  editedAt: m.editedAt ?? null,
+  deletedAt: m.deletedAt ?? null,
+  sender: {
+    id: m.sender?.id ?? m.senderId,
+    displayName: m.sender?.displayName ?? m.senderDisplayName ?? "",
+    avatarUrl: m.sender?.avatarUrl ?? null,
+  },
+});
+
 export const boardsApi = {
   // Get board detail (includes lists, cards, members, labels)
   getDetail: async (id: string): Promise<BoardDetail> => {
@@ -141,6 +160,20 @@ export const boardsApi = {
   getById: async (id: string): Promise<Board> => {
     const response = await httpClient.get<BoardEnvelope>(`/boards/${id}`);
     return mapBoardFromApi(response.data.board);
+  },
+
+  listMessages: async (boardId: string, input?: { cursor?: string; limit?: number }): Promise<ListBoardMessagesResponse> => {
+    const response = await httpClient.get<BoardMessagesEnvelope>(`/boards/${boardId}/messages`, {
+      params: {
+        cursor: input?.cursor,
+        limit: input?.limit,
+      },
+    });
+
+    return {
+      messages: (response.data.messages || []).map(mapBoardMessage),
+      nextCursor: response.data.nextCursor ?? null,
+    };
   },
 
   // Create board

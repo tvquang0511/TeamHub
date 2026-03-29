@@ -79,11 +79,15 @@ export function setupSocketServer(httpServer: HttpServer) {
 
     socket.on(
       "chat:message:send",
-      async (payload: { boardId: string; content: string }, ack?: (res: any) => void) => {
+      async (
+        payload: { boardId: string; content: string; attachmentIds?: string[] },
+        ack?: (res: any) => void,
+      ) => {
         try {
           const boardId = String(payload?.boardId ?? "");
           const content = String(payload?.content ?? "");
-          const result = await chatService.createMessage(userId, boardId, content);
+          const attachmentIds = Array.isArray(payload?.attachmentIds) ? payload.attachmentIds : undefined;
+          const result = await chatService.createMessage(userId, boardId, content, attachmentIds);
 
           io.to(roomName(boardId)).emit("chat:message:new", result);
           ack?.({ ...result, ok: true });

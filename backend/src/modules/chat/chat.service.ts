@@ -25,6 +25,16 @@ export type BoardMessageDto = {
     displayName: string;
     avatarUrl: string | null;
   };
+  attachments: {
+    id: string;
+    bucket: string;
+    objectKey: string;
+    url: string | null;
+    fileName: string;
+    mimeType: string;
+    size: number;
+    createdAt: string;
+  }[];
 };
 
 const toDto = (row: any): BoardMessageDto => ({
@@ -40,6 +50,18 @@ const toDto = (row: any): BoardMessageDto => ({
     displayName: row.sender.displayName,
     avatarUrl: row.sender.avatarUrl ?? null,
   },
+  attachments: Array.isArray(row.attachments)
+    ? row.attachments.map((a: any) => ({
+        id: a.id,
+        bucket: a.bucket,
+        objectKey: a.objectKey,
+        url: a.url ?? null,
+        fileName: a.fileName,
+        mimeType: a.mimeType,
+        size: a.size,
+        createdAt: a.createdAt.toISOString(),
+      }))
+    : [],
 });
 
 export class ChatService {
@@ -63,7 +85,12 @@ export class ChatService {
     return { messages, nextCursor };
   }
 
-  async createMessage(userId: string, boardId: string, contentRaw: string) {
+  async createMessage(
+    userId: string,
+    boardId: string,
+    contentRaw: string,
+    attachmentIdsRaw?: string[] | null,
+  ) {
     const board = await chatRepo.findBoard(boardId);
     if (!board || board.archivedAt) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
 
@@ -71,9 +98,31 @@ export class ChatService {
     if (!member) throw new ApiError(403, "CHAT_FORBIDDEN", "Chat is only available to board members");
 
     const content = String(contentRaw ?? "").trim();
-    if (!content) throw new ApiError(400, "CHAT_MESSAGE_EMPTY", "Message content is required");
+    const attachmentIds = Array.isArray(attachmentIdsRaw)
+      ? attachmentIdsRaw.map(String).filter(Boolean)
+      : [];
 
-    const created = await chatRepo.createMessage({ boardId, senderId: userId, content });
+    if (!content && attachmentIds.length === 0) {
+      throw new ApiError(400, "CHAT_MESSAGE_EMPTY", "Message content is required");
+    }
+
+    let created: any;
+    try {
+      created = await chatRepo.createMessageWithAttachments({
+        boardId,
+        senderId: userId,
+        content,
+        attachmentIds,
+      });
+    } catch (e: any) {
+      if (e?.code === "ATTACHMENT_INVALID" || e?.message === "ATTACHMENT_INVALID") {
+        throw new ApiError(400, "ATTACHMENT_INVALID", "One or more attachments are invalid or already linked");
+      }
+      throw e;
+    }
+
+    if (!created) throw new ApiError(500, "CHAT_ERROR", "Failed to create message");
+
     return { message: toDto(created) };
   }
 

@@ -34,6 +34,8 @@ export function presignGetObject(params: {
   bucket: string;
   objectKey: string;
   expiresInSeconds?: number;
+  responseContentDisposition?: string;
+  responseContentType?: string;
 }): PresignedGetResult {
   const expiresIn = params.expiresInSeconds ?? 300;
 
@@ -62,6 +64,15 @@ export function presignGetObject(params: {
     "X-Amz-Expires": String(expiresIn),
     "X-Amz-SignedHeaders": signedHeaders,
   };
+
+  // Optional: force browser download behavior.
+  // These are standard S3 query params and must be included in signature.
+  if (params.responseContentDisposition) {
+    canonicalQuery["response-content-disposition"] = params.responseContentDisposition;
+  }
+  if (params.responseContentType) {
+    canonicalQuery["response-content-type"] = params.responseContentType;
+  }
 
   const canonicalQueryString = Object.keys(canonicalQuery)
     .sort()

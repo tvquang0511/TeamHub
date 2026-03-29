@@ -195,6 +195,12 @@ export class AttachmentsService {
   const secretAccessKey = env.MINIO_SECRET_KEY;
   const region = env.MINIO_REGION;
 
+    const safeFileName = String(existing.fileName || "file")
+      .replace(/[\\/]/g, "_")
+      .replace(/\r|\n/g, " ")
+      .replace(/"/g, "'");
+    const contentDisposition = `attachment; filename="${safeFileName}"`;
+
     const presign = presignGetObject({
       endpoint,
       accessKeyId,
@@ -203,6 +209,8 @@ export class AttachmentsService {
       bucket: existing.bucket,
       objectKey: existing.objectKey,
       expiresInSeconds: 300,
+      responseContentDisposition: contentDisposition,
+      responseContentType: existing.mimeType || "application/octet-stream",
     });
 
     return { presign };

@@ -206,6 +206,17 @@ export interface BoardMessageSender {
   avatarUrl: string | null;
 }
 
+export interface BoardMessageAttachment {
+  id: string;
+  bucket: string;
+  objectKey: string;
+  url: string | null;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+}
+
 export interface BoardMessage {
   id: string;
   boardId: string;
@@ -215,6 +226,7 @@ export interface BoardMessage {
   editedAt: string | null;
   deletedAt: string | null;
   sender: BoardMessageSender;
+  attachments: BoardMessageAttachment[];
 }
 
 export interface ListBoardMessagesResponse {

@@ -73,6 +73,7 @@ model users {
   passwordResetTokens password_reset_tokens[]
   workspaceMembers  workspace_members[]
   boardMessages     board_messages[] @relation("BoardMessageSender")
+  boardMessageAttachments board_message_attachments[] @relation("BoardMessageAttachmentUploader")
   boardMembers      board_members[]
   cardComments      card_comments[]
   cardAssignees     card_assignees[]
@@ -180,9 +181,38 @@ model board_messages {
 
   board  boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
   sender users  @relation("BoardMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments board_message_attachments[]
 
   @@index([boardId, createdAt, id], map: "idx_board_messages_board_created_id")
   @@map("board_messages")
+}
+
+model board_message_attachments {
+  id         String   @id @default(uuid()) @db.Uuid
+  boardId    String   @db.Uuid @map("board_id")
+  messageId  String?  @db.Uuid @map("message_id")
+  uploaderId String   @db.Uuid @map("uploader_id")
+
+  // FILE attachments (MinIO private bucket)
+  bucket     String
+  objectKey  String   @map("object_key")
+  url        String?
+
+  fileName   String   @map("file_name")
+  mimeType   String   @map("mime_type")
+  size       Int
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  linkedAt   DateTime? @map("linked_at")
+
+  board    boards         @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  message  board_messages? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  uploader users          @relation("BoardMessageAttachmentUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([boardId, createdAt, id], map: "idx_board_message_attachments_board_created_id")
+  @@index([messageId, createdAt, id], map: "idx_board_message_attachments_message_created_id")
+  @@index([uploaderId], map: "idx_board_message_attachments_uploader_id")
+  @@map("board_message_attachments")
 }
 
 model boards {
@@ -206,6 +236,7 @@ model boards {
   members   board_members[]
   lists     lists[]
   messages  board_messages[]
+  messageAttachments board_message_attachments[]
   labels    labels[]
   activities activities[]
 

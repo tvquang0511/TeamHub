@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { toast } from "sonner";
-import { MoreHorizontal } from "lucide-react";
+import { FileText, FileUp, ImageUp, MoreHorizontal } from "lucide-react";
 
 import { boardsApi } from "../../../api/boards.api";
+import { chatAttachmentsApi, type ChatMessageAttachment } from "../../../api/chatAttachments.api";
 import { getAccessToken } from "../../../api/http";
 import { useAuth } from "../../../providers/AuthProvider";
 import type { BoardDetail, BoardMessage } from "../../../types/api";
 import { Button } from "../../../components/ui/button";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import { Textarea } from "../../../components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +30,22 @@ function apiBaseToSocketBase(apiBase: string) {
 const SOCKET_BASE_URL = apiBaseToSocketBase(
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api",
 );
+
+type InlineImageState = {
+  url: string;
+  expiresAt: number;
+};
+
+const isImageMime = (mimeType: string | null | undefined) =>
+  Boolean(mimeType && mimeType.toLowerCase().startsWith("image/"));
+
+const getInitials = (name: string) => {
+  const trimmed = name.trim();
+  if (!trimmed) return "?";
+  const parts = trimmed.split(/\s+/g);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 type AckOk<T> = { ok: true } & T;
 type AckErr = { ok: false; error: { code: string; message: string } };
@@ -54,8 +72,18 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
   const [draft, setDraft] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
 
+  const [pendingUploads, setPendingUploads] = useState<
+    { file: File; uploading: boolean; error?: string }[]
+  >([]);
+  const [composerAttachments, setComposerAttachments] = useState<ChatMessageAttachment[]>([]);
+
   const socketRef = useRef<Socket | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [inlineImageUrls, setInlineImageUrls] = useState<Record<string, InlineImageState>>({});
+  const inlineImageUrlsRef = useRef<Record<string, InlineImageState>>({});
 
   const myUserId = user?.id ?? "";
 
@@ -132,6 +160,7 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
     if (!canUseChat) {
       setMessages([]);
       setNextCursor(null);
+      setInlineImageUrls({});
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -195,6 +224,50 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [board.id, canUseChat]);
 
+  useEffect(() => {
+    inlineImageUrlsRef.current = inlineImageUrls;
+  }, [inlineImageUrls]);
+
+  useEffect(() => {
+    if (!canUseChat) return;
+
+    const now = Date.now();
+    const ids: string[] = [];
+    for (const m of messages) {
+      if (!Array.isArray(m.attachments)) continue;
+      for (const a of m.attachments) {
+        if (isImageMime(a.mimeType)) ids.push(a.id);
+      }
+    }
+
+    const uniqueIds = Array.from(new Set(ids));
+    const missing = uniqueIds.filter((id) => {
+      const cached = inlineImageUrlsRef.current[id];
+      return !cached || cached.expiresAt <= now + 30_000;
+    });
+
+    if (!missing.length) return;
+
+    let cancelled = false;
+    (async () => {
+      for (const id of missing) {
+        if (cancelled) return;
+        try {
+          const presign = await chatAttachmentsApi.presignDownload(board.id, id, "inline");
+          if (cancelled) return;
+          const expiresAt = Date.now() + presign.expiresIn * 1000;
+          setInlineImageUrls((prev) => ({ ...prev, [id]: { url: presign.downloadUrl, expiresAt } }));
+        } catch {
+          // ignore; user can still click to download
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [board.id, canUseChat, messages]);
+
   const isEditableByMe = (m: BoardMessage) => {
     if (!myUserId) return false;
     if (m.senderId !== myUserId) return false;
@@ -226,9 +299,23 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
     }
 
     const content = draft.trim();
-    if (!content) {
-      toast.error("Nội dung tin nhắn không được trống");
+    if (!editingMessageId && pendingUploads.some((u) => u.uploading)) {
+      toast.error("Đang upload file, hãy đợi xíu");
       return;
+    }
+
+    const attachmentIds = composerAttachments.map((a) => a.id);
+
+    if (editingMessageId) {
+      if (!content) {
+        toast.error("Nội dung tin nhắn không được trống");
+        return;
+      }
+    } else {
+      if (!content && attachmentIds.length === 0) {
+        toast.error("Tin nhắn trống");
+        return;
+      }
     }
 
     if (editingMessageId) {
@@ -250,15 +337,73 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
 
     socket.emit(
       "chat:message:send",
-      { boardId: board.id, content },
+      { boardId: board.id, content, attachmentIds },
       (ack: SendAck) => {
         if (!ack?.ok) {
           toast.error(ack?.error?.message || "Không thể gửi tin nhắn");
           return;
         }
         setDraft("");
+        setComposerAttachments([]);
       },
     );
+  };
+
+  const uploadFiles = async (files: File[], kind: "file" | "image") => {
+    if (!canUseChat) {
+      toast.error("Bạn không có quyền dùng chat của board này");
+      return;
+    }
+
+    if (editingMessageId) {
+      toast.error("Không thể đính kèm khi đang chỉnh sửa");
+      return;
+    }
+
+    const all = (files || []).filter(Boolean);
+
+    const isImageFile = (f: File) => (f.type || "").toLowerCase().startsWith("image/");
+
+    const list =
+      kind === "image"
+        ? all.filter((f) => isImageFile(f))
+        : all.filter((f) => !isImageFile(f));
+
+    if (!list.length) return;
+
+    setPendingUploads((prev) => [...prev, ...list.map((f) => ({ file: f, uploading: true }))]);
+
+    for (const file of list) {
+      try {
+        const attachment = await chatAttachmentsApi.uploadFileToBoardChat(board.id, file);
+        setComposerAttachments((prev) => [...prev, attachment]);
+      } catch (e: any) {
+        const message = e?.response?.data?.error?.message || e?.message || "Upload thất bại";
+        toast.error(message);
+      } finally {
+        setPendingUploads((prev) => {
+          const idx = prev.findIndex((u) => u.file === file && u.uploading);
+          if (idx < 0) return prev;
+          const copy = [...prev];
+          copy[idx] = { ...copy[idx], uploading: false };
+          return copy;
+        });
+      }
+    }
+  };
+
+  const downloadAttachment = async (attachmentId: string) => {
+    if (!canUseChat) {
+      toast.error("Bạn không có quyền dùng chat của board này");
+      return;
+    }
+
+    try {
+      const presign = await chatAttachmentsApi.presignDownload(board.id, attachmentId, "attachment");
+      window.open(presign.downloadUrl, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error?.message || "Không thể tải file");
+    }
   };
 
   const deleteMessage = (m: BoardMessage) => {
@@ -330,6 +475,12 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
                 const mine = m.senderId === myUserId;
                 const deleted = !!m.deletedAt;
                 const editable = isEditableByMe(m);
+                const hasAttachments = Array.isArray(m.attachments) && m.attachments.length > 0;
+                const imageAttachments = hasAttachments ? m.attachments.filter((a) => isImageMime(a.mimeType)) : [];
+                const fileAttachments = hasAttachments ? m.attachments.filter((a) => !isImageMime(a.mimeType)) : [];
+                const canEditMessage = editable && !hasAttachments;
+
+                const showMenu = !deleted && mine;
 
                 return (
                   <div key={m.id} className={mine ? "text-right" : "text-left"}>
@@ -340,8 +491,20 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
                       {m.editedAt && !deleted ? " · đã chỉnh sửa" : ""}
                     </div>
 
-                    <div className={mine ? "mt-1 flex items-center justify-end gap-1" : "mt-1"}>
-                      {!deleted && mine ? (
+                    <div className={mine ? "mt-1 flex items-center justify-end gap-1" : "mt-1 flex items-end gap-2"}>
+                      {!mine ? (
+                        <Avatar className="h-7 w-7">
+                          {m.sender.avatarUrl ? (
+                            <AvatarImage src={m.sender.avatarUrl} alt={m.sender.displayName} />
+                          ) : (
+                            <AvatarFallback className="text-[10px]">
+                              {getInitials(m.sender.displayName)}
+                            </AvatarFallback>
+                          )}
+                        </Avatar>
+                      ) : null}
+
+                      {showMenu ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -354,9 +517,11 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem disabled={!editable} onClick={() => startEdit(m)}>
-                              Chỉnh sửa
-                            </DropdownMenuItem>
+                            {hasAttachments ? null : (
+                              <DropdownMenuItem disabled={!canEditMessage} onClick={() => startEdit(m)}>
+                                Chỉnh sửa
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               variant="destructive"
                               disabled={!editable}
@@ -370,14 +535,93 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
 
                       <div
                         className={
-                          "inline-block max-w-[90%] rounded-md px-3 py-2 text-sm " +
-                          (mine
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-foreground")
+                          mine
+                            ? "flex max-w-[90%] flex-col items-end gap-2"
+                            : "flex max-w-[90%] flex-col items-start gap-2"
                         }
                       >
-                        {deleted ? "Tin nhắn đã bị xoá" : m.content}
+                        {deleted ? (
+                          <div
+                            className={
+                              "inline-block rounded-md px-3 py-2 text-sm " +
+                              (mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")
+                            }
+                          >
+                            Tin nhắn đã bị xoá
+                          </div>
+                        ) : m.content ? (
+                          <div
+                            className={
+                              "inline-block rounded-md px-3 py-2 text-sm " +
+                              (mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")
+                            }
+                          >
+                            <div className="whitespace-pre-wrap wrap-break-word">{m.content}</div>
+                          </div>
+                        ) : null}
+
+                        {!deleted && hasAttachments ? (
+                          <div className={mine ? "flex flex-col items-end gap-2" : "flex flex-col gap-2"}>
+                            {imageAttachments.length ? (
+                              <div className={mine ? "flex flex-wrap justify-end gap-2" : "flex flex-wrap gap-2"}>
+                                {imageAttachments.map((a) => {
+                                  const cached = inlineImageUrls[a.id];
+                                  const src = cached?.url;
+
+                                  return (
+                                    <button
+                                      key={a.id}
+                                      type="button"
+                                      className="overflow-hidden rounded-md"
+                                      onClick={() => {
+                                        if (src) window.open(src, "_blank", "noopener,noreferrer");
+                                        else downloadAttachment(a.id);
+                                      }}
+                                    >
+                                      {src ? (
+                                        <img
+                                          src={src}
+                                          alt={a.fileName}
+                                          className="block max-h-48 max-w-48 object-cover"
+                                          loading="lazy"
+                                          onError={() => {
+                                            setInlineImageUrls((prev) => {
+                                              const copy = { ...prev };
+                                              delete copy[a.id];
+                                              return copy;
+                                            });
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="h-24 w-24 rounded-md bg-muted" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : null}
+
+                            {fileAttachments.length ? (
+                              <div className={mine ? "flex flex-col items-end gap-1" : "flex flex-col gap-1"}>
+                                {fileAttachments.map((a) => (
+                                  <button
+                                    key={a.id}
+                                    type="button"
+                                    className="flex w-fit max-w-72 items-center gap-1 rounded-md bg-muted px-2 py-1.5 text-left"
+                                    onClick={() => downloadAttachment(a.id)}
+                                  >
+                                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+                                    <span className="min-w-0 flex-1 truncate text-xs text-foreground">
+                                      {a.fileName}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
+
                     </div>
                   </div>
                 );
@@ -389,6 +633,30 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
           <div className="border-t p-3">
             {editingMessageId ? (
               <div className="mb-2 text-xs text-muted-foreground">Đang chỉnh sửa…</div>
+            ) : null}
+
+            {!editingMessageId && (composerAttachments.length > 0 || pendingUploads.some((u) => u.uploading)) ? (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {composerAttachments.map((a) => (
+                  <div key={a.id} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs">
+                    <span className="max-w-48 truncate">{a.fileName}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      aria-label="Remove attachment"
+                      onClick={() => setComposerAttachments((prev) => prev.filter((x) => x.id !== a.id))}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ))}
+
+                {pendingUploads.some((u) => u.uploading) ? (
+                  <div className="text-xs text-muted-foreground">Đang upload…</div>
+                ) : null}
+              </div>
             ) : null}
 
             <Textarea
@@ -417,7 +685,55 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
                   Huỷ
                 </Button>
               ) : (
-                <div />
+                <>
+                  <div className="flex items-center gap-1">
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      className="hidden"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => {
+                        const files = Array.from(e.currentTarget.files || []);
+                        e.currentTarget.value = "";
+                        uploadFiles(files, "image");
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      aria-label="Attach image"
+                      disabled={pendingUploads.some((u) => u.uploading)}
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <ImageUp className="size-4" />
+                    </Button>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      multiple
+                      accept="application/*,text/*,audio/*,video/*,.zip,.rar,.7z,.csv,.txt"
+                      onChange={(e) => {
+                        const files = Array.from(e.currentTarget.files || []);
+                        e.currentTarget.value = "";
+                        uploadFiles(files, "file");
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      aria-label="Attach file"
+                      disabled={pendingUploads.some((u) => u.uploading)}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <FileUp className="size-4" />
+                    </Button>
+                  </div>
+                </>
               )}
 
               <Button onClick={submit}>{editingMessageId ? "Lưu" : "Gửi"}</Button>

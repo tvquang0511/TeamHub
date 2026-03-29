@@ -13,6 +13,22 @@ export type ChatMessageRow = {
     displayName: string;
     avatarUrl: string | null;
   };
+  attachments?: ChatMessageAttachmentRow[];
+};
+
+export type ChatMessageAttachmentRow = {
+  id: string;
+  boardId: string;
+  messageId: string | null;
+  uploaderId: string;
+  bucket: string;
+  objectKey: string;
+  url: string | null;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  createdAt: Date;
+  linkedAt: Date | null;
 };
 
 export class ChatRepo {
@@ -78,6 +94,23 @@ export class ChatRepo {
         createdAt: true,
         editedAt: true,
         deletedAt: true,
+        attachments: {
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            boardId: true,
+            messageId: true,
+            uploaderId: true,
+            bucket: true,
+            objectKey: true,
+            url: true,
+            fileName: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+            linkedAt: true,
+          },
+        },
         sender: {
           select: { id: true, displayName: true, avatarUrl: true },
         },
@@ -100,6 +133,23 @@ export class ChatRepo {
         createdAt: true,
         editedAt: true,
         deletedAt: true,
+        attachments: {
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            boardId: true,
+            messageId: true,
+            uploaderId: true,
+            bucket: true,
+            objectKey: true,
+            url: true,
+            fileName: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+            linkedAt: true,
+          },
+        },
         sender: {
           select: { id: true, displayName: true, avatarUrl: true },
         },
@@ -122,6 +172,23 @@ export class ChatRepo {
         createdAt: true,
         editedAt: true,
         deletedAt: true,
+        attachments: {
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            boardId: true,
+            messageId: true,
+            uploaderId: true,
+            bucket: true,
+            objectKey: true,
+            url: true,
+            fileName: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+            linkedAt: true,
+          },
+        },
         sender: {
           select: { id: true, displayName: true, avatarUrl: true },
         },
@@ -144,11 +211,187 @@ export class ChatRepo {
         createdAt: true,
         editedAt: true,
         deletedAt: true,
+        attachments: {
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            boardId: true,
+            messageId: true,
+            uploaderId: true,
+            bucket: true,
+            objectKey: true,
+            url: true,
+            fileName: true,
+            mimeType: true,
+            size: true,
+            createdAt: true,
+            linkedAt: true,
+          },
+        },
         sender: {
           select: { id: true, displayName: true, avatarUrl: true },
         },
       },
     }) as Promise<ChatMessageRow>;
+  }
+
+  async createMessageAttachment(input: {
+    boardId: string;
+    uploaderId: string;
+    bucket: string;
+    objectKey: string;
+    url: string | null;
+    fileName: string;
+    mimeType: string;
+    size: number;
+  }) {
+    return (prisma as any).board_message_attachments.create({
+      data: {
+        boardId: input.boardId,
+        uploaderId: input.uploaderId,
+        bucket: input.bucket,
+        objectKey: input.objectKey,
+        url: input.url,
+        fileName: input.fileName,
+        mimeType: input.mimeType,
+        size: input.size,
+      },
+      select: {
+        id: true,
+        boardId: true,
+        messageId: true,
+        uploaderId: true,
+        bucket: true,
+        objectKey: true,
+        url: true,
+        fileName: true,
+        mimeType: true,
+        size: true,
+        createdAt: true,
+        linkedAt: true,
+      },
+    }) as Promise<ChatMessageAttachmentRow>;
+  }
+
+  async findMessageAttachmentById(attachmentId: string) {
+    return (prisma as any).board_message_attachments.findUnique({
+      where: { id: attachmentId },
+      select: {
+        id: true,
+        boardId: true,
+        messageId: true,
+        uploaderId: true,
+        bucket: true,
+        objectKey: true,
+        url: true,
+        fileName: true,
+        mimeType: true,
+        size: true,
+        createdAt: true,
+        linkedAt: true,
+      },
+    }) as Promise<ChatMessageAttachmentRow | null>;
+  }
+
+  async findUnlinkedMessageAttachments(input: { boardId: string; uploaderId: string; ids: string[] }) {
+    if (!input.ids.length) return [] as ChatMessageAttachmentRow[];
+
+    return (prisma as any).board_message_attachments.findMany({
+      where: {
+        id: { in: input.ids },
+        boardId: input.boardId,
+        uploaderId: input.uploaderId,
+        messageId: null,
+      },
+      select: {
+        id: true,
+        boardId: true,
+        messageId: true,
+        uploaderId: true,
+        bucket: true,
+        objectKey: true,
+        url: true,
+        fileName: true,
+        mimeType: true,
+        size: true,
+        createdAt: true,
+        linkedAt: true,
+      },
+    }) as Promise<ChatMessageAttachmentRow[]>;
+  }
+
+  async linkAttachmentsToMessage(input: { messageId: string; attachmentIds: string[]; linkedAt: Date }) {
+    if (!input.attachmentIds.length) return { count: 0 };
+    return (prisma as any).board_message_attachments.updateMany({
+      where: { id: { in: input.attachmentIds }, messageId: null },
+      data: { messageId: input.messageId, linkedAt: input.linkedAt },
+    }) as Promise<{ count: number }>;
+  }
+
+  async createMessageWithAttachments(input: {
+    boardId: string;
+    senderId: string;
+    content: string;
+    attachmentIds: string[];
+  }) {
+    const { boardId, senderId, content, attachmentIds } = input;
+
+    return prisma.$transaction(async (tx: any) => {
+      const message = await tx.board_messages.create({
+        data: { boardId, senderId, content },
+        select: { id: true },
+      });
+
+      if (attachmentIds.length) {
+        const attachments = await tx.board_message_attachments.findMany({
+          where: {
+            id: { in: attachmentIds },
+            boardId,
+            uploaderId: senderId,
+            messageId: null,
+          },
+          select: { id: true },
+        });
+
+        if (attachments.length !== attachmentIds.length) {
+          const err = new Error("ATTACHMENT_INVALID");
+          (err as any).code = "ATTACHMENT_INVALID";
+          throw err;
+        }
+
+        await tx.board_message_attachments.updateMany({
+          where: { id: { in: attachmentIds }, messageId: null },
+          data: { messageId: message.id, linkedAt: new Date() },
+        });
+      }
+
+      return tx.board_messages.findUnique({
+        where: { id: message.id },
+        select: {
+          id: true,
+          boardId: true,
+          senderId: true,
+          content: true,
+          createdAt: true,
+          editedAt: true,
+          deletedAt: true,
+          attachments: {
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+            select: {
+              id: true,
+              bucket: true,
+              objectKey: true,
+              url: true,
+              fileName: true,
+              mimeType: true,
+              size: true,
+              createdAt: true,
+            },
+          },
+          sender: { select: { id: true, displayName: true, avatarUrl: true } },
+        },
+      });
+    });
   }
 }
 

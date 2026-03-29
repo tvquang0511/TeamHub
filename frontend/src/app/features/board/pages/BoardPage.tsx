@@ -232,14 +232,15 @@ export const BoardPage: React.FC = () => {
 
         <Sheet open={chatOpen} onOpenChange={setChatOpen}>
           <SheetTrigger asChild>
-            <div className="fixed right-4 bottom-4 z-40">
+            <div className="fixed right-6 bottom-6 z-40">
               <Button
                 type="button"
                 variant="secondary"
-                className="h-11 gap-2 border shadow-sm"
+                size="icon"
+                className="size-12 rounded-full border shadow-sm"
+                aria-label="Chat"
               >
-                <MessageCircle className="size-4" />
-                <span>Chat</span>
+                <MessageCircle className="size-6" />
               </Button>
             </div>
           </SheetTrigger>

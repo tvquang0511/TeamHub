@@ -127,6 +127,18 @@ const mapBoardMessage = (m: any): BoardMessage => ({
     displayName: m.sender?.displayName ?? m.senderDisplayName ?? "",
     avatarUrl: m.sender?.avatarUrl ?? null,
   },
+  attachments: Array.isArray(m.attachments)
+    ? m.attachments.map((a: any) => ({
+        id: a.id,
+        bucket: a.bucket,
+        objectKey: a.objectKey,
+        url: a.url ?? null,
+        fileName: a.fileName,
+        mimeType: a.mimeType,
+        size: a.size,
+        createdAt: a.createdAt ?? new Date().toISOString(),
+      }))
+    : [],
 });
 
 export const boardsApi = {

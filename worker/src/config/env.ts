@@ -18,6 +18,7 @@ const envSchema = z.object({
 
   // Formatting
   APP_TIMEZONE: z.string().min(1).default('Asia/Ho_Chi_Minh'),
+  ACTIVITY_RETENTION_DAYS: z.coerce.number().int().positive().optional(),
 });
 
 export const env = envSchema.parse(process.env);

@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { activity_type } from "@prisma/client";
 
 import { ApiError } from "../../common/errors/ApiError";
+import { activitiesRepo } from "../activities/activities.repo";
 import { attachmentsRepo } from "./attachments.repo";
 import { cardsRepo } from "../cards/cards.repo";
 import { presignPutObject } from "../../common/minio/minio.presign.put";
@@ -101,7 +103,7 @@ export class AttachmentsService {
   }
 
   async commitFile(userId: string, cardId: string, input: z.infer<typeof commitFileAttachmentInputSchema>) {
-    await this.assertCanWriteCard(userId, cardId);
+    const { card } = await this.assertCanWriteCard(userId, cardId);
 
     const attachment = await attachmentsRepo.create({
       cardId,
@@ -115,11 +117,20 @@ export class AttachmentsService {
       size: input.size,
     });
 
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: card.list.board.workspaceId,
+      boardId: card.list.board.id,
+      cardId: card.id,
+      type: activity_type.ATTACHMENT_ADDED,
+      payload: { attachmentId: attachment.id, type: "FILE" },
+    });
+
     return { attachment };
   }
 
   async createLink(userId: string, cardId: string, input: z.infer<typeof createLinkAttachmentInputSchema>) {
-    await this.assertCanWriteCard(userId, cardId);
+    const { card } = await this.assertCanWriteCard(userId, cardId);
 
     const attachment = await attachmentsRepo.create({
       cardId,
@@ -127,6 +138,15 @@ export class AttachmentsService {
       type: "LINK",
       linkUrl: input.linkUrl,
       linkTitle: input.linkTitle ?? null,
+    });
+
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: card.list.board.workspaceId,
+      boardId: card.list.board.id,
+      cardId: card.id,
+      type: activity_type.ATTACHMENT_ADDED,
+      payload: { attachmentId: attachment.id, type: "LINK" },
     });
 
     return { attachment };
@@ -161,6 +181,15 @@ export class AttachmentsService {
       referencedCardId: ref.id,
     } as any);
 
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: card.list.board.workspaceId,
+      boardId: card.list.board.id,
+      cardId: card.id,
+      type: activity_type.ATTACHMENT_ADDED,
+      payload: { attachmentId: attachment.id, type: "CARD", referencedCardId: ref.id },
+    });
+
     return { attachment };
   }
 
@@ -173,6 +202,15 @@ export class AttachmentsService {
 
     // Optional policy: allow only uploader to delete. For now: board members can delete.
     await attachmentsRepo.delete(attachmentId);
+
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: existing.card.list.board.workspaceId,
+      boardId: existing.card.list.board.id,
+      cardId: existing.card.id,
+      type: activity_type.ATTACHMENT_REMOVED,
+      payload: { attachmentId: existing.id, type: existing.type },
+    });
     return { ok: true };
   }
 

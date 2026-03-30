@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { activity_type } from "@prisma/client";
 
 import { ApiError } from "../../common/errors/ApiError";
+import { activitiesRepo } from "../activities/activities.repo";
 import { commentsRepo } from "./comments.repo";
 
 export const listCommentsQuerySchema = z.object({
@@ -65,9 +67,19 @@ export class CommentsService {
   }
 
   async create(userId: string, input: z.infer<typeof createCommentInputSchema>) {
-    await this.assertCardWritable(userId, input.cardId);
+    const card = await this.assertCardWritable(userId, input.cardId);
 
     const comment = await commentsRepo.create(input.cardId, userId, input.content);
+
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: card.list.board.workspaceId,
+      boardId: card.list.board.id,
+      cardId: card.id,
+      type: activity_type.COMMENT_ADDED,
+      payload: { commentId: comment.id },
+    });
+
     return { comment };
   }
 

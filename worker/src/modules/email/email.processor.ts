@@ -1,4 +1,4 @@
-import { sendPasswordResetEmail } from '../mail/mailer';
+import { sendPasswordResetEmail } from '../../mail/mailer';
 
 export type PasswordResetEmailJobData = {
 	type: 'password_reset';

@@ -239,6 +239,8 @@ model boards {
   messageAttachments board_message_attachments[]
   labels    labels[]
   activities activities[]
+  metricsDaily board_metrics_daily[]
+  metricsMonthly board_metrics_monthly[]
 
   @@index([workspaceId], map: "idx_boards_workspace_id")
   @@index([workspaceId, position], map: "idx_boards_workspace_position")
@@ -266,6 +268,8 @@ model lists {
 
   name       String
   position   Decimal  @db.Decimal(65, 30)
+  isDoing    Boolean  @default(false) @map("is_doing")
+  isDone     Boolean  @default(false) @map("is_done")
   archivedAt DateTime? @map("archived_at")
 
   createdAt  DateTime @default(now()) @map("created_at")
@@ -470,4 +474,59 @@ model activities {
   @@index([cardId, createdAt], map: "idx_activities_card_created_at")
   @@index([actorId, createdAt], map: "idx_activities_actor_created_at")
   @@map("activities")
+}
+
+model board_metrics_daily {
+  id        String   @id @default(uuid()) @db.Uuid
+  boardId   String   @db.Uuid @map("board_id")
+  date      DateTime @db.Date
+
+  cardsCreatedCount     Int @default(0) @map("cards_created_count")
+  cardsDoneCount        Int @default(0) @map("cards_done_count")
+  cardsMovedCount       Int @default(0) @map("cards_moved_count")
+  commentsCount         Int @default(0) @map("comments_count")
+  attachmentsCount      Int @default(0) @map("attachments_count")
+  assigneesAddedCount   Int @default(0) @map("assignees_added_count")
+  assigneesRemovedCount Int @default(0) @map("assignees_removed_count")
+
+  wipCount     Int @default(0) @map("wip_count")
+  overdueCount Int @default(0) @map("overdue_count")
+
+  avgCycleTimeSec Int? @map("avg_cycle_time_sec")
+  avgLeadTimeSec  Int? @map("avg_lead_time_sec")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  board boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, date], map: "uq_board_metrics_daily_board_date")
+  @@index([date], map: "idx_board_metrics_daily_date")
+  @@map("board_metrics_daily")
+}
+
+model board_metrics_monthly {
+  id        String   @id @default(uuid()) @db.Uuid
+  boardId   String   @db.Uuid @map("board_id")
+  month     DateTime @db.Date
+
+  cardsCreatedCount     Int @default(0) @map("cards_created_count")
+  cardsDoneCount        Int @default(0) @map("cards_done_count")
+  cardsMovedCount       Int @default(0) @map("cards_moved_count")
+  commentsCount         Int @default(0) @map("comments_count")
+  attachmentsCount      Int @default(0) @map("attachments_count")
+  assigneesAddedCount   Int @default(0) @map("assignees_added_count")
+  assigneesRemovedCount Int @default(0) @map("assignees_removed_count")
+
+  avgCycleTimeSec Int? @map("avg_cycle_time_sec")
+  avgLeadTimeSec  Int? @map("avg_lead_time_sec")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  board boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, month], map: "uq_board_metrics_monthly_board_month")
+  @@index([month], map: "idx_board_metrics_monthly_month")
+  @@map("board_metrics_monthly")
 }

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
-import { ArrowLeft, Users, Lock, Unlock, Palette, Tag } from "lucide-react";
+import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3 } from "lucide-react";
 import { BoardMembersDialog } from "./BoardMembersDialog";
 import { BoardBackgroundDialog } from "./BoardBackgroundDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
@@ -29,6 +29,8 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
     (board.actor as any)?.canUpdateBoardSettings ?? board.actor?.canWriteBoard ?? false;
   const canUpdateBoardSettings =
     (board.actor as any)?.canUpdateBoardSettings ?? board.actor?.canWriteBoard ?? false;
+  const canViewAnalytics =
+    board.actor?.boardRole === "OWNER" || board.actor?.boardRole === "ADMIN";
   const visibility = board.privacy === "WORKSPACE" ? "WORKSPACE" : "PRIVATE";
 
   const toggleDisabledReason = useMemo(() => {
@@ -204,6 +206,23 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           >
             <Tag className="mr-2 h-4 w-4" />
             Labels
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (!canViewAnalytics) {
+                toast.error("Chỉ OWNER/ADMIN mới xem được thống kê");
+                return;
+              }
+              navigate(`/boards/${board.id}/analytics`);
+            }}
+            title="Xem thống kê board"
+            className={!canViewAnalytics ? "opacity-50" : undefined}
+          >
+            <BarChart3 className="mr-2 h-4 w-4" />
+            Thống kê
           </Button>
 
           <Button

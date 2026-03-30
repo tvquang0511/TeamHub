@@ -82,6 +82,8 @@ const mapList = (l: any, cards: Card[]): List => ({
   boardId: l.boardId,
   position: typeof l.position === "number" ? l.position : Number(l.position ?? 0),
   cards,
+  isDoing: l.isDoing ?? undefined,
+  isDone: l.isDone ?? undefined,
   createdAt: l.createdAt ?? new Date().toISOString(),
   updatedAt: l.updatedAt ?? new Date().toISOString(),
 });

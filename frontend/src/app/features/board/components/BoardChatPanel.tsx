@@ -443,7 +443,7 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
       <div className="flex items-center justify-between border-b px-3 py-2">
         <div className="text-sm font-medium">Chat</div>
         {canUseChat ? (
-          <div className="text-xs text-muted-foreground">Realtime</div>
+          <div className="text-xs text-muted-foreground"></div>
         ) : (
           <div className="text-xs text-muted-foreground">Không có quyền</div>
         )}

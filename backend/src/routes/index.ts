@@ -11,6 +11,7 @@ import { labelsRoutes } from '../modules/labels/labels.router';
 import { checklistsRoutes } from '../modules/checklists/checklists.router';
 import { assigneesRoutes } from '../modules/assignees/assignees.router';
 import { commentsRoutes } from '../modules/comments/comments.router';
+import { analyticsRoutes } from '../modules/analytics/analytics.router';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/labels', labelsRoutes);
 router.use('/checklists', checklistsRoutes);
 router.use('/assignees', assigneesRoutes);
 router.use('/comments', commentsRoutes);
+router.use('/', analyticsRoutes);
 
 export default router;

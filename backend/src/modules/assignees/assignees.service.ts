@@ -1,6 +1,8 @@
 import { ApiError } from "../../common/errors/ApiError";
 import { boardsRepo } from "../boards/boards.repo";
 import { cardsRepo } from "../cards/cards.repo";
+import { activitiesRepo } from "../activities/activities.repo";
+import { activity_type } from "@prisma/client";
 import { assigneesRepo } from "./assignees.repo";
 
 export class AssigneesService {
@@ -34,11 +36,19 @@ export class AssigneesService {
   }
 
   async assignSelf(userId: string, cardId: string) {
-    await this.assertCardAndMembership(userId, cardId);
+    const { card } = await this.assertCardAndMembership(userId, cardId);
 
     try {
       const created = await assigneesRepo.assign(cardId, userId);
       const c: any = created as any;
+      await activitiesRepo.createSafe({
+        actorId: userId,
+        workspaceId: card.list.board.workspaceId,
+        boardId: card.list.board.id,
+        cardId: card.id,
+        type: activity_type.ASSIGNEE_ADDED,
+        payload: { userId },
+      });
       return {
         assignee: {
           id: c.user.id,
@@ -55,11 +65,19 @@ export class AssigneesService {
   }
 
   async unassignSelf(userId: string, cardId: string) {
-    await this.assertCardAndMembership(userId, cardId);
+    const { card } = await this.assertCardAndMembership(userId, cardId);
 
     // Idempotent
     try {
       await assigneesRepo.unassign(cardId, userId);
+      await activitiesRepo.createSafe({
+        actorId: userId,
+        workspaceId: card.list.board.workspaceId,
+        boardId: card.list.board.id,
+        cardId: card.id,
+        type: activity_type.ASSIGNEE_REMOVED,
+        payload: { userId },
+      });
     } catch (e: any) {
       if (e?.code !== "P2025") throw e;
     }
@@ -81,6 +99,14 @@ export class AssigneesService {
     try {
       const created = await assigneesRepo.assign(cardId, targetUserId);
       const c: any = created as any;
+      await activitiesRepo.createSafe({
+        actorId,
+        workspaceId: card.list.board.workspaceId,
+        boardId: card.list.board.id,
+        cardId: card.id,
+        type: activity_type.ASSIGNEE_ADDED,
+        payload: { userId: targetUserId },
+      });
       return {
         assignee: {
           id: c.user.id,
@@ -105,6 +131,14 @@ export class AssigneesService {
     // If user isn't assigned, treat as ok
     try {
       await assigneesRepo.unassign(cardId, targetUserId);
+      await activitiesRepo.createSafe({
+        actorId,
+        workspaceId: card.list.board.workspaceId,
+        boardId: card.list.board.id,
+        cardId: card.id,
+        type: activity_type.ASSIGNEE_REMOVED,
+        payload: { userId: targetUserId },
+      });
     } catch (e: any) {
       if (e?.code !== "P2025") throw e;
     }

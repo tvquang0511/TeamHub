@@ -98,6 +98,8 @@ export interface List {
   boardId: string;
   position: number;
   cards: Card[];
+  isDoing?: boolean;
+  isDone?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -232,4 +234,39 @@ export interface BoardMessage {
 export interface ListBoardMessagesResponse {
   messages: BoardMessage[];
   nextCursor: string | null;
+}
+
+export interface BoardMetricsDaily {
+  date: string;
+  cardsCreatedCount: number;
+  cardsDoneCount: number;
+  cardsMovedCount: number;
+  commentsCount: number;
+  attachmentsCount: number;
+  assigneesAddedCount: number;
+  assigneesRemovedCount: number;
+  wipCount: number;
+  overdueCount: number;
+  avgCycleTimeSec: number | null;
+  avgLeadTimeSec: number | null;
+}
+
+export interface BoardAnalyticsSummary {
+  cardsCreatedCount: number;
+  cardsDoneCount: number;
+  cardsMovedCount: number;
+  commentsCount: number;
+  attachmentsCount: number;
+  assigneesAddedCount: number;
+  assigneesRemovedCount: number;
+  avgCycleTimeSec: number | null;
+  avgLeadTimeSec: number | null;
+  latestWipCount: number;
+  latestOverdueCount: number;
+}
+
+export interface BoardAnalyticsResponse {
+  range: { from: string; to: string };
+  daily: BoardMetricsDaily[];
+  summary: BoardAnalyticsSummary;
 }

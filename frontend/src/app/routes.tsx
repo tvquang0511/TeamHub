@@ -7,6 +7,7 @@ import { WorkspaceListPage } from "./features/workspace/pages/WorkspaceListPage"
 import { WorkspaceDetailPage } from "./features/workspace/pages/WorkspaceDetailPage";
 import { BoardPage } from "./features/board/pages/BoardPage";
 import { BoardSettingsPage } from "./features/board/pages/BoardSettingsPage";
+import { BoardAnalyticsPage } from "./features/board/pages/BoardAnalyticsPage";
 import { AcceptInvitePage } from "./features/invites/pages/AcceptInvitePage";
 import { CreateWorkspaceInvitePage } from "./features/invites/pages/CreateWorkspaceInvitePage";
 import { CardDetailPage } from "./features/cards/pages/CardDetailPage";
@@ -57,6 +58,10 @@ export const router = createBrowserRouter([
       {
         path: "boards/:boardId",
         Component: BoardPage,
+      },
+      {
+        path: "boards/:boardId/analytics",
+        Component: BoardAnalyticsPage,
       },
       {
         path: "boards/:boardId/settings",

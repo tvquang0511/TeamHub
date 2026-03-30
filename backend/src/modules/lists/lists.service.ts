@@ -15,6 +15,8 @@ export const updateListInputSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   position: z.number().nullable().optional(),
   archived: z.boolean().optional(),
+  isDoing: z.boolean().optional(),
+  isDone: z.boolean().optional(),
 });
 
 export class ListsService {
@@ -107,6 +109,8 @@ export class ListsService {
             ? null
             : new Prisma.Decimal(input.position),
       archivedAt,
+      isDoing: input.isDoing,
+      isDone: input.isDone,
     });
 
     return { list };

@@ -1,9 +1,10 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, activity_type } from "@prisma/client";
 import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
 import { computeBetweenPosition } from "../../common/utils/position";
 import { enqueueReminderJob, removeReminderJob } from "../../integrations/queue/reminders.queue";
+import { activitiesRepo } from "../activities/activities.repo";
 import { cardsRepo } from "./cards.repo";
 
 export const createCardInputSchema = z.object({
@@ -49,6 +50,15 @@ export class CardsService {
       description: input.description ?? null,
       dueAt,
       position: new Prisma.Decimal(input.position ?? Date.now()),
+    });
+
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: list.board.workspaceId,
+      boardId: list.board.id,
+      cardId: card.id,
+      type: activity_type.CARD_CREATED,
+      payload: { listId: input.listId },
     });
 
     return { card };
@@ -129,7 +139,7 @@ export class CardsService {
     const archivedAt = input.archived === undefined ? undefined : input.archived ? new Date() : null;
     const dueAt = input.dueAt === undefined ? undefined : input.dueAt === null ? null : new Date(input.dueAt);
 
-  const isDone = input.isDone === undefined ? undefined : input.isDone;
+    const isDone = input.isDone === undefined ? undefined : input.isDone;
 
     const card = await cardsRepo.update(cardId, {
       title: input.title,
@@ -145,6 +155,43 @@ export class CardsService {
       archivedAt,
       listId: nextListId,
     });
+
+    if (nextListId && nextListId !== existing.listId) {
+      await activitiesRepo.createSafe({
+        actorId: userId,
+        workspaceId: existing.list.board.workspaceId,
+        boardId: existing.list.board.id,
+        cardId: card.id,
+        type: activity_type.CARD_MOVED,
+        payload: { fromListId: existing.listId, toListId: nextListId },
+      });
+    }
+
+    if (input.dueAt !== undefined) {
+      const prev = existing.dueAt ? existing.dueAt.toISOString() : null;
+      const next = dueAt ? dueAt.toISOString() : null;
+      if (prev !== next) {
+        await activitiesRepo.createSafe({
+          actorId: userId,
+          workspaceId: existing.list.board.workspaceId,
+          boardId: existing.list.board.id,
+          cardId: card.id,
+          type: activity_type.DUE_AT_CHANGED,
+          payload: { from: prev, to: next },
+        });
+      }
+    }
+
+    if (input.isDone !== undefined && existing.isDone !== input.isDone) {
+      await activitiesRepo.createSafe({
+        actorId: userId,
+        workspaceId: existing.list.board.workspaceId,
+        boardId: existing.list.board.id,
+        cardId: card.id,
+        type: activity_type.CARD_UPDATED,
+        payload: { field: "isDone", from: existing.isDone, to: input.isDone },
+      });
+    }
 
     return { card };
   }
@@ -253,6 +300,16 @@ export class CardsService {
 
     const position = computeBetweenPosition(prev?.position, next?.position);
     const card = await cardsRepo.move(cardId, { listId: destinationListId, position });
+
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: existing.list.board.workspaceId,
+      boardId: existing.list.board.id,
+      cardId: card.id,
+      type: activity_type.CARD_MOVED,
+      payload: { fromListId: existing.listId, toListId: destinationListId },
+    });
+
     return { card };
   }
 
@@ -325,6 +382,14 @@ export class CardsService {
 
     try {
       const attached = await cardsRepo.attachLabel(cardId, labelId);
+      await activitiesRepo.createSafe({
+        actorId: userId,
+        workspaceId: card.list.board.workspaceId,
+        boardId: card.list.board.id,
+        cardId: card.id,
+        type: activity_type.LABEL_ADDED,
+        payload: { labelId },
+      });
       return { label: attached.label };
     } catch (e: any) {
       // Unique violation => already attached
@@ -351,6 +416,14 @@ export class CardsService {
     // Idempotent delete
     try {
       await cardsRepo.detachLabel(cardId, labelId);
+      await activitiesRepo.createSafe({
+        actorId: userId,
+        workspaceId: card.list.board.workspaceId,
+        boardId: card.list.board.id,
+        cardId: card.id,
+        type: activity_type.LABEL_REMOVED,
+        payload: { labelId },
+      });
     } catch (e: any) {
       if (e?.code !== "P2025") throw e;
     }

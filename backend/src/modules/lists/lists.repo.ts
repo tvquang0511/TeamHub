@@ -42,6 +42,8 @@ export class ListsRepo {
         boardId: true,
         name: true,
         position: true,
+        isDoing: true,
+        isDone: true,
         archivedAt: true,
         createdAt: true,
         updatedAt: true,
@@ -58,6 +60,8 @@ export class ListsRepo {
         boardId: true,
         name: true,
         position: true,
+        isDoing: true,
+        isDone: true,
         archivedAt: true,
         createdAt: true,
         updatedAt: true,
@@ -73,6 +77,8 @@ export class ListsRepo {
         boardId: true,
         name: true,
         position: true,
+        isDoing: true,
+        isDone: true,
         archivedAt: true,
         createdAt: true,
         updatedAt: true,
@@ -86,6 +92,8 @@ export class ListsRepo {
     data: Partial<Pick<CreateListData, "name">> & {
       position?: Prisma.Decimal | null;
       archivedAt?: Date | null;
+      isDoing?: boolean;
+      isDone?: boolean;
     },
   ) {
     return prisma.lists.update({
@@ -94,12 +102,16 @@ export class ListsRepo {
         name: data.name,
         position: data.position ?? undefined,
         archivedAt: data.archivedAt ?? undefined,
+        isDoing: data.isDoing ?? undefined,
+        isDone: data.isDone ?? undefined,
       },
       select: {
         id: true,
         boardId: true,
         name: true,
         position: true,
+        isDoing: true,
+        isDone: true,
         archivedAt: true,
         createdAt: true,
         updatedAt: true,
@@ -123,6 +135,8 @@ export class ListsRepo {
         boardId: true,
         name: true,
         position: true,
+        isDoing: true,
+        isDone: true,
         archivedAt: true,
         createdAt: true,
         updatedAt: true,

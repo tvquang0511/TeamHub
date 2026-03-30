@@ -1,6 +1,6 @@
 import type { PoolClient } from 'pg';
 
-import { sendReminderEmail } from '../mail/mailer';
+import { sendReminderEmail } from '../../mail/mailer';
 
 export async function processReminderJob(client: PoolClient, reminderJobId: string) {
   await client.query('BEGIN');

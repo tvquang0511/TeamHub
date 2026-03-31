@@ -10,7 +10,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "metrics:daily": "ts-node src/jobs/boardMetricsDaily.ts"
+    "metrics:daily": "ts-node src/jobs/boardMetricsDaily.ts",
+    "seed:demo": "ts-node scripts/seed.ts",
+    "seed:analytics": "ts-node scripts/seed-analytics.ts"
   },
   "keywords": [],
   "author": "",

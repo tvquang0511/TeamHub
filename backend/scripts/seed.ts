@@ -2,7 +2,7 @@ import "dotenv/config";
 import bcrypt from "bcrypt";
 import { Prisma } from "@prisma/client";
 
-import prisma, { disconnectPrisma } from "../backend/src/db/prisma";
+import prisma, { disconnectPrisma } from "../src/db/prisma";
 
 const PASSWORD = "123456";
 

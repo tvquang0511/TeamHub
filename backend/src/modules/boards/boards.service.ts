@@ -2,6 +2,14 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 
 import { ApiError } from "../../common/errors/ApiError";
+import env from "../../config/env";
+import {
+  bumpBoardCacheVersion,
+  cacheGetJson,
+  cacheKey,
+  cacheSetJson,
+  getBoardCacheVersion,
+} from "../../integrations/cache/redisCache";
 import { boardsRepo } from "./boards.repo";
 
 export const createBoardInputSchema = z.object({
@@ -223,6 +231,7 @@ export class BoardsService {
     }
 
     await boardsRepo.updateBoardMemberRole(boardId, targetUserId, role);
+    await bumpBoardCacheVersion(boardId);
     return { ok: true };
   }
 
@@ -247,6 +256,29 @@ export class BoardsService {
       }
     }
 
+    // Cache board view payload (lists + cards + members + labels).
+    // Do NOT cache `actor` because it's user-specific.
+    const boardVer = await getBoardCacheVersion(boardId);
+    const cacheKeyStr = cacheKey("board", boardId, "detail", "ver", String(boardVer));
+
+    const cached = await cacheGetJson<{
+      board: any;
+      lists: any[];
+      cards: any[];
+      members: any[];
+      labels: any[];
+    }>(cacheKeyStr);
+
+    const actor = this.buildBoardActorPermissions({
+      workspaceRole: wsMembership.role,
+      boardVisibility: board.visibility,
+      boardMemberRole: boardMember?.role,
+    });
+
+    if (cached) {
+      return { ...cached, actor };
+    }
+
     const [lists, cards, members, labels] = await Promise.all([
       boardsRepo.listListsByBoard(boardId),
       boardsRepo.listCardsByBoard(boardId),
@@ -261,13 +293,10 @@ export class BoardsService {
       labels: (c.cardLabels || []).map((cl: any) => cl.label),
     }));
 
-    const actor = this.buildBoardActorPermissions({
-      workspaceRole: wsMembership.role,
-      boardVisibility: board.visibility,
-      boardMemberRole: boardMember?.role,
-    });
+    const responseBase = { board, lists, cards: normalizedCards, members, labels };
+    await cacheSetJson(cacheKeyStr, responseBase, env.CACHE_BOARD_VIEW_TTL_SEC);
 
-    return { board, lists, cards: normalizedCards, members, labels, actor };
+    return { ...responseBase, actor };
   }
 
   async update(userId: string, boardId: string, input: z.infer<typeof updateBoardInputSchema>) {
@@ -309,6 +338,7 @@ export class BoardsService {
       archivedAt,
     });
 
+    await bumpBoardCacheVersion(boardId);
     return { board };
   }
 
@@ -333,6 +363,7 @@ export class BoardsService {
     }
 
     const board = await boardsRepo.update(boardId, { visibility: input.visibility });
+    await bumpBoardCacheVersion(boardId);
     return { board };
   }
 
@@ -367,6 +398,7 @@ export class BoardsService {
         input.backgroundSplitPct === undefined ? undefined : input.backgroundSplitPct,
     });
 
+    await bumpBoardCacheVersion(boardId);
     return { board };
   }
 
@@ -389,6 +421,7 @@ export class BoardsService {
     }
 
     await boardsRepo.update(boardId, { archivedAt: new Date() });
+    await bumpBoardCacheVersion(boardId);
     return { ok: true };
   }
   async addMember(
@@ -415,6 +448,7 @@ export class BoardsService {
 
     const role = input.role ?? "MEMBER";
     const member = await boardsRepo.addBoardMember({ boardId, userId: input.userId, role });
+    await bumpBoardCacheVersion(boardId);
     return { member };
   }
 
@@ -445,6 +479,7 @@ export class BoardsService {
 
     const role = input.role ?? "MEMBER";
     const member = await boardsRepo.addBoardMember({ boardId, userId: user.id, role });
+    await bumpBoardCacheVersion(boardId);
     return { member };
   }
 
@@ -471,6 +506,7 @@ export class BoardsService {
     }
 
     await boardsRepo.removeBoardMember(boardId, memberUserId);
+    await bumpBoardCacheVersion(boardId);
     return { ok: true };
   }
 
@@ -498,6 +534,7 @@ export class BoardsService {
     }
 
     await boardsRepo.removeBoardMember(boardId, userId);
+    await bumpBoardCacheVersion(boardId);
     return { ok: true };
   }
 }

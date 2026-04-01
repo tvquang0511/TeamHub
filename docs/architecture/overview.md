@@ -25,7 +25,7 @@
    - (Optional) cache board detail (phase 2)
    - (Optional) Socket.IO Redis adapter (scale many instances)
    - (Optional) rate limit chat
-   - Cache strategy doc: see `docs/architecture/caching.md`
+   - Cache strategy doc: see [docs/architecture/caching.md](caching.md)
 7. (Optional) **BullMQ**
    - Background jobs (reminders, activity log async, notification pipeline)
 

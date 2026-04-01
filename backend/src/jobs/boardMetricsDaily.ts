@@ -1,6 +1,7 @@
 import { activity_type } from "@prisma/client";
 
 import prisma from "../db/prisma";
+import { bumpAnalyticsCacheVersion } from "../integrations/cache/redisCache";
 
 const DEFAULT_RETENTION_DAYS = 90;
 
@@ -264,6 +265,10 @@ export async function runBoardMetricsDailyRollup(dateArg?: string) {
 
     const monthStart = new Date(Date.UTC(dayStart.getUTCFullYear(), dayStart.getUTCMonth(), 1));
     await upsertMonthly(board.id, monthStart);
+
+    // Invalidate analytics cache for this board (version-stamp).
+    // Invalidate analytics cache for this board immediately after rollup.
+    await bumpAnalyticsCacheVersion(board.id);
   }
 }
 

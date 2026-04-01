@@ -8,6 +8,19 @@ const envSchema = z.object({
   // Redis (BullMQ)
   REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
 
+  // Cache (Redis)
+  CACHE_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  // Prefix for all Redis cache keys (keep separate from BullMQ keys).
+  // Example: "cache:v1"
+  CACHE_PREFIX: z.string().min(1).default('cache:v1'),
+  CACHE_ANALYTICS_TTL_SEC: z.coerce.number().int().positive().default(600),
+  CACHE_MEMBERSHIP_TTL_SEC: z.coerce.number().int().positive().default(60),
+  CACHE_BOARD_VIEW_TTL_SEC: z.coerce.number().int().positive().default(120),
+  CACHE_CARD_DETAIL_TTL_SEC: z.coerce.number().int().positive().default(60),
+
   // CORS
   // Comma-separated list of allowed origins for browser clients.
   // Example: "http://localhost:5173,http://127.0.0.1:5173"

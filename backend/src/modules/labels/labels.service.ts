@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
+import { bumpBoardCacheVersion } from "../../integrations/cache/redisCache";
 import { labelsRepo } from "./labels.repo";
 
 export const createLabelInputSchema = z.object({
@@ -43,6 +44,8 @@ export class LabelsService {
       color: input.color ?? null,
     });
 
+    await bumpBoardCacheVersion(input.boardId);
+
     return { label };
   }
 
@@ -63,6 +66,8 @@ export class LabelsService {
       color: input.color === undefined ? undefined : input.color,
     });
 
+    await bumpBoardCacheVersion(existing.boardId);
+
     return { label };
   }
 
@@ -79,6 +84,8 @@ export class LabelsService {
     }
 
     await labelsRepo.delete(labelId);
+
+    await bumpBoardCacheVersion(existing.boardId);
     return { ok: true };
   }
 }

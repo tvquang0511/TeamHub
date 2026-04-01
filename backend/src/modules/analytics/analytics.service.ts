@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
 import prisma from "../../db/prisma";
+import env from "../../config/env";
+import { cacheGetJson, cacheKey, cacheSetJson, getAnalyticsCacheVersion } from "../../integrations/cache/redisCache";
 import { boardsRepo } from "../boards/boards.repo";
 
 export const analyticsQuerySchema = z.object({
@@ -12,6 +14,8 @@ export const analyticsQuerySchema = z.object({
 
 const startOfDayUtc = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 const addDaysUtc = (d: Date, days: number) => new Date(d.getTime() + days * 24 * 60 * 60 * 1000);
+
+const toYmd = (d: Date) => d.toISOString().slice(0, 10);
 
 const parseDateArg = (value?: string) => {
   if (!value) return null;
@@ -51,6 +55,31 @@ export class AnalyticsService {
       toDate = end;
     }
 
+    // Cache-aside: board analytics is read-heavy and changes only when rollups run.
+    // Authz is checked above, so cache key doesn't need userId.
+    const fromYmd = toYmd(fromDate);
+    const toYmdStr = toYmd(toDate);
+    const boardVer = await getAnalyticsCacheVersion(boardId);
+    const cacheKeyStr = cacheKey(
+      "analytics",
+      "board",
+      boardId,
+      "from",
+      fromYmd,
+      "to",
+      toYmdStr,
+      "ver",
+      String(boardVer),
+    );
+
+    const cached = await cacheGetJson<{
+      range: { from: string; to: string };
+      daily: any[];
+      summary: any;
+    }>(cacheKeyStr);
+
+    if (cached) return cached;
+
     const daily = await prisma.board_metrics_daily.findMany({
       where: {
         boardId,
@@ -73,11 +102,14 @@ export class AnalyticsService {
       latestOverdueCount: daily.length ? daily[daily.length - 1]!.overdueCount : 0,
     };
 
-    return {
+    const response = {
       range: { from: fromDate.toISOString().slice(0, 10), to: toDate.toISOString().slice(0, 10) },
       daily,
       summary,
     };
+
+    await cacheSetJson(cacheKeyStr, response, env.CACHE_ANALYTICS_TTL_SEC);
+    return response;
   }
 }
 

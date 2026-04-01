@@ -5,6 +5,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
 
+  // Cache key prefix (shared with backend). Default matches backend.
+  CACHE_PREFIX: z.string().min(1).default('cache:v1'),
+
   // SMTP (email reminders)
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().positive().optional(),

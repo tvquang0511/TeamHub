@@ -3,6 +3,14 @@ import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
 import { computeBetweenPosition } from "../../common/utils/position";
+import env from "../../config/env";
+import {
+  bumpBoardCacheVersion,
+  cacheDel,
+  cacheGetJson,
+  cacheKey,
+  cacheSetJson,
+} from "../../integrations/cache/redisCache";
 import { enqueueReminderJob, removeReminderJob } from "../../integrations/queue/reminders.queue";
 import { activitiesRepo } from "../activities/activities.repo";
 import { cardsRepo } from "./cards.repo";
@@ -27,6 +35,10 @@ export const updateCardInputSchema = z.object({
 });
 
 export class CardsService {
+  private cardDetailCacheKey(cardId: string) {
+    return cacheKey("card", cardId, "detail");
+  }
+
   async create(userId: string, input: z.infer<typeof createCardInputSchema>) {
     const list = await cardsRepo.findList(input.listId);
     if (!list || list.archivedAt || list.board.archivedAt) {
@@ -61,6 +73,8 @@ export class CardsService {
       payload: { listId: input.listId },
     });
 
+    await bumpBoardCacheVersion(list.board.id);
+
     return { card };
   }
 
@@ -88,7 +102,10 @@ export class CardsService {
   }
 
   async get(userId: string, cardId: string) {
-    const card = await cardsRepo.findById(cardId);
+    const cacheKeyStr = this.cardDetailCacheKey(cardId);
+    const cached = await cacheGetJson<any>(cacheKeyStr);
+
+    const card = cached ?? (await cardsRepo.findById(cardId));
     if (!card) throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
 
     const workspaceId = card.list.board.workspaceId;
@@ -102,6 +119,11 @@ export class CardsService {
           throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
         }
       }
+    }
+
+    // Cache after authz checks to avoid caching on invalid IDs that might throw.
+    if (!cached) {
+      await cacheSetJson(cacheKeyStr, card, env.CACHE_CARD_DETAIL_TTL_SEC);
     }
 
     return { card };
@@ -121,6 +143,7 @@ export class CardsService {
     }
 
     let nextListId: string | undefined = undefined;
+    let nextBoardId: string | null = null;
     if (input.listId) {
       const nextList = await cardsRepo.findList(input.listId);
       if (!nextList || nextList.archivedAt || nextList.board.archivedAt) {
@@ -134,6 +157,7 @@ export class CardsService {
       const nextBoardMember = await cardsRepo.isBoardMember(nextList.board.id, userId);
       if (!nextBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
       nextListId = input.listId;
+      nextBoardId = nextList.board.id;
     }
 
     const archivedAt = input.archived === undefined ? undefined : input.archived ? new Date() : null;
@@ -191,6 +215,14 @@ export class CardsService {
         type: activity_type.CARD_UPDATED,
         payload: { field: "isDone", from: existing.isDone, to: input.isDone },
       });
+    }
+
+    await cacheDel(this.cardDetailCacheKey(cardId));
+
+    const sourceBoardId = existing.list.board.id;
+    await bumpBoardCacheVersion(sourceBoardId);
+    if (nextBoardId && nextBoardId !== sourceBoardId) {
+      await bumpBoardCacheVersion(nextBoardId);
     }
 
     return { card };
@@ -310,6 +342,14 @@ export class CardsService {
       payload: { fromListId: existing.listId, toListId: destinationListId },
     });
 
+    await cacheDel(this.cardDetailCacheKey(cardId));
+
+    const destBoardId = destinationList.board.id;
+    await bumpBoardCacheVersion(sourceBoardId);
+    if (destBoardId !== sourceBoardId) {
+      await bumpBoardCacheVersion(destBoardId);
+    }
+
     return { card };
   }
 
@@ -327,6 +367,9 @@ export class CardsService {
     }
 
     await cardsRepo.update(cardId, { archivedAt: new Date() });
+
+    await cacheDel(this.cardDetailCacheKey(cardId));
+    await bumpBoardCacheVersion(existing.list.board.id);
     return { ok: true };
   }
 
@@ -390,6 +433,9 @@ export class CardsService {
         type: activity_type.LABEL_ADDED,
         payload: { labelId },
       });
+
+      await cacheDel(this.cardDetailCacheKey(cardId));
+      await bumpBoardCacheVersion(card.list.board.id);
       return { label: attached.label };
     } catch (e: any) {
       // Unique violation => already attached
@@ -427,6 +473,9 @@ export class CardsService {
     } catch (e: any) {
       if (e?.code !== "P2025") throw e;
     }
+
+    await cacheDel(this.cardDetailCacheKey(cardId));
+    await bumpBoardCacheVersion(card.list.board.id);
 
     return { ok: true };
   }

@@ -1,6 +1,27 @@
 import type { PoolClient } from "pg";
+import IORedis from "ioredis";
+
+import env from "../../config/env";
 
 const DEFAULT_RETENTION_DAYS = 90;
+
+let _cacheRedis: IORedis | null = null;
+function getCacheRedis(): IORedis {
+  if (_cacheRedis) return _cacheRedis;
+  _cacheRedis = new IORedis(env.REDIS_URL, {
+    maxRetriesPerRequest: null,
+  });
+  return _cacheRedis;
+}
+
+async function bumpAnalyticsCacheVersion(boardId: string) {
+  try {
+    const prefix = env.CACHE_PREFIX.endsWith(":") ? env.CACHE_PREFIX.slice(0, -1) : env.CACHE_PREFIX;
+    await getCacheRedis().incr(`${prefix}:analytics:board:${boardId}:ver`);
+  } catch {
+    // ignore cache failures
+  }
+}
 
 type ActivityRow = {
   type: string;
@@ -273,6 +294,8 @@ export async function processBoardMetricsDailyJob(
          updated_at = NOW()`,
       [board.id, monthStart, monthEnd],
     );
+
+    await bumpAnalyticsCacheVersion(board.id);
   }
 
   const cutoff = addDaysUtc(startOfDayUtc(new Date()), -retentionDays);

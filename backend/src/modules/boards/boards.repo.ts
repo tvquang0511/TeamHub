@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 
 import prisma from "../../db/prisma";
+import { cacheDel, cacheGetJsonNullable, cacheKey, cacheSetJson } from "../../integrations/cache/redisCache";
+import env from "../../config/env";
 
 export type CreateBoardData = {
   workspaceId: string;
@@ -14,25 +16,43 @@ export type CreateBoardData = {
   position?: Prisma.Decimal | null;
 };
 
+type MemberRole = "OWNER" | "ADMIN" | "MEMBER";
+
 export class BoardsRepo {
   async isWorkspaceMember(workspaceId: string, userId: string) {
-    return prisma.workspace_members.findUnique({
+    const cacheKeyStr = cacheKey("member", "workspace", workspaceId, "user", userId);
+
+    const cached = await cacheGetJsonNullable<{ id: string; role: MemberRole }>(cacheKeyStr);
+    if (cached.hit) return cached.value;
+
+    const membership = await prisma.workspace_members.findUnique({
       where: { workspaceId_userId: { workspaceId, userId } },
       select: { id: true, role: true },
     });
+
+    await cacheSetJson(cacheKeyStr, membership, env.CACHE_MEMBERSHIP_TTL_SEC);
+    return membership;
   }
 
   async isBoardMember(boardId: string, userId: string) {
     // NOTE: if Prisma Client typings haven't been regenerated yet,
     // access via `any` to unblock compilation; runtime works once `prisma generate` is run.
-    return (prisma as any).board_members.findUnique({
+    const cacheKeyStr = cacheKey("member", "board", boardId, "user", userId);
+
+    const cached = await cacheGetJsonNullable<{ id: string; role: MemberRole }>(cacheKeyStr);
+    if (cached.hit) return cached.value;
+
+    const membership = await (prisma as any).board_members.findUnique({
       where: { boardId_userId: { boardId, userId } },
       select: { id: true, role: true },
     });
+
+    await cacheSetJson(cacheKeyStr, membership, env.CACHE_MEMBERSHIP_TTL_SEC);
+    return membership;
   }
 
   async addBoardMember(data: { boardId: string; userId: string; role: "OWNER" | "ADMIN" | "MEMBER" }) {
-    return (prisma as any).board_members.create({
+    const created = await (prisma as any).board_members.create({
       data: {
         boardId: data.boardId,
         userId: data.userId,
@@ -40,6 +60,10 @@ export class BoardsRepo {
       },
       select: { id: true, boardId: true, userId: true, role: true, createdAt: true },
     });
+
+    // Invalidate membership cache for this user+board.
+    await cacheDel(cacheKey("member", "board", data.boardId, "user", data.userId));
+    return created;
   }
 
   async listBoardMembers(boardId: string) {
@@ -60,17 +84,23 @@ export class BoardsRepo {
   }
 
   async removeBoardMember(boardId: string, userId: string) {
-    return (prisma as any).board_members.delete({
+    const deleted = await (prisma as any).board_members.delete({
       where: { boardId_userId: { boardId, userId } },
     });
+
+    await cacheDel(cacheKey("member", "board", boardId, "user", userId));
+    return deleted;
   }
 
   async updateBoardMemberRole(boardId: string, userId: string, role: "ADMIN" | "MEMBER") {
-    return (prisma as any).board_members.update({
+    const updated = await (prisma as any).board_members.update({
       where: { boardId_userId: { boardId, userId } },
       data: { role: role as any },
       select: { id: true, boardId: true, userId: true, role: true, createdAt: true },
     });
+
+    await cacheDel(cacheKey("member", "board", boardId, "user", userId));
+    return updated;
   }
 
   async create(data: CreateBoardData) {

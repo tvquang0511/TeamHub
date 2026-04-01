@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
 import { computeBetweenPosition } from "../../common/utils/position";
+import { bumpBoardCacheVersion } from "../../integrations/cache/redisCache";
 import { listsRepo } from "./lists.repo";
 
 export const createListInputSchema = z.object({
@@ -38,6 +39,8 @@ export class ListsService {
       name: input.name,
       position: new Prisma.Decimal(input.position ?? Date.now()),
     });
+
+    await bumpBoardCacheVersion(board.id);
 
     return { list };
   }
@@ -113,6 +116,8 @@ export class ListsService {
       isDone: input.isDone,
     });
 
+    await bumpBoardCacheVersion(existing.boardId);
+
     return { list };
   }
 
@@ -147,6 +152,8 @@ export class ListsService {
 
     const position = computeBetweenPosition(prev?.position, next?.position);
     const list = await listsRepo.updatePosition(listId, position);
+
+    await bumpBoardCacheVersion(existing.boardId);
     return { list };
   }
 
@@ -170,6 +177,8 @@ export class ListsService {
 
     // Soft delete cards in this list as well (keeps referential integrity & hides from queries)
     await listsRepo.archiveCardsByList(listId);
+
+    await bumpBoardCacheVersion(existing.boardId);
 
     return { ok: true };
   }

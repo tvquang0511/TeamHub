@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 
 import routes from "./routes";
 import errorHandler from './common/middlewares/errorHandler';
-import { apiRateLimit } from "./common/middlewares/rateLimit";
 import swaggerUi from 'swagger-ui-express';
 import { buildOpenApiDocument } from './docs/openapi';
 import env from "./config/env";
@@ -50,7 +49,7 @@ app.get("/health", (req, res) => {
 });
 
 // API routes
-app.use("/api", apiRateLimit, routes);
+app.use("/api", routes);
 
 // not found
 app.use((req, res) => {

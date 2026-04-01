@@ -40,9 +40,62 @@ const envSchema = z.object({
     .default('true')
     .transform((v) => v === 'true'),
   RATE_LIMIT_PREFIX: z.string().min(1).default('rl:v1'),
-  // Global API limit (per IP)
+
+  // Global API safety net (per IP)
+  // NOTE: Feature-level limiters should do the real work; keep this fairly loose.
   RATE_LIMIT_API_WINDOW_SEC: z.coerce.number().int().positive().default(60),
-  RATE_LIMIT_API_MAX: z.coerce.number().int().positive().default(240),
+  RATE_LIMIT_API_MAX: z.coerce.number().int().positive().default(600),
+
+  // Feature-level limiters (prefer scope: user-or-ip after auth)
+  RATE_LIMIT_WORKSPACES_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_WORKSPACES_MAX: z.coerce.number().int().positive().default(60),
+
+  RATE_LIMIT_INVITES_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_INVITES_MAX: z.coerce.number().int().positive().default(30),
+
+  RATE_LIMIT_BOARDS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_BOARDS_MAX: z.coerce.number().int().positive().default(120),
+
+  // Board view is heavier (board detail payload)
+  RATE_LIMIT_BOARD_VIEW_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_BOARD_VIEW_MAX: z.coerce.number().int().positive().default(30),
+
+  // Chat (board messages)
+  RATE_LIMIT_CHAT_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_CHAT_MAX: z.coerce.number().int().positive().default(90),
+
+  RATE_LIMIT_LISTS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_LISTS_MAX: z.coerce.number().int().positive().default(120),
+
+  RATE_LIMIT_CARDS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_CARDS_MAX: z.coerce.number().int().positive().default(180),
+
+  // Card detail is heavier than list
+  RATE_LIMIT_CARD_DETAIL_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_CARD_DETAIL_MAX: z.coerce.number().int().positive().default(90),
+
+  RATE_LIMIT_USERS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_USERS_MAX: z.coerce.number().int().positive().default(60),
+
+  // Upload/presign endpoints should be stricter
+  RATE_LIMIT_ATTACHMENTS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_ATTACHMENTS_MAX: z.coerce.number().int().positive().default(30),
+
+  RATE_LIMIT_LABELS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_LABELS_MAX: z.coerce.number().int().positive().default(90),
+
+  RATE_LIMIT_CHECKLISTS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_CHECKLISTS_MAX: z.coerce.number().int().positive().default(90),
+
+  RATE_LIMIT_ASSIGNEES_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_ASSIGNEES_MAX: z.coerce.number().int().positive().default(90),
+
+  RATE_LIMIT_COMMENTS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_COMMENTS_MAX: z.coerce.number().int().positive().default(120),
+
+  RATE_LIMIT_ANALYTICS_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_ANALYTICS_MAX: z.coerce.number().int().positive().default(30),
+
   // Auth endpoints are more sensitive (per IP)
   RATE_LIMIT_AUTH_WINDOW_SEC: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_AUTH_MAX: z.coerce.number().int().positive().default(20),

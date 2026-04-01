@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authJwt } from '../../common/middlewares/authJwt';
+import { invitesRateLimit } from "../../common/middlewares/rateLimit";
 import {
 	acceptInvite,
 	acceptMyWorkspaceInvite,
@@ -14,6 +15,7 @@ import {
 const router = Router();
 
 router.use(authJwt);
+router.use(invitesRateLimit);
 
 // Inbox (topbar notifications)
 router.get('/inbox/workspaces', listMyWorkspaceInvites);

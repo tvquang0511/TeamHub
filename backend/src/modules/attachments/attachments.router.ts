@@ -1,11 +1,13 @@
 import { Router } from "express";
 
 import { authJwt } from "../../common/middlewares/authJwt";
+import { attachmentsRateLimit } from "../../common/middlewares/rateLimit";
 import { attachmentsController } from "./attachments.controller";
 
 export const attachmentsRoutes = Router();
 
 attachmentsRoutes.use(authJwt);
+attachmentsRoutes.use(attachmentsRateLimit);
 
 // List attachments of a card
 attachmentsRoutes.get("/cards/:cardId", attachmentsController.listByCard);

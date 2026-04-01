@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { authJwt } from '../../common/middlewares/authJwt';
+import { usersRateLimit } from "../../common/middlewares/rateLimit";
 import { getMe, searchUsers, updateMe, uploadAvatarCommit, uploadAvatarInit } from './users.controller';
 
 const router = Router();
 router.use(authJwt);
+router.use(usersRateLimit);
 
 // GET /users/me
 router.get('/me', getMe);

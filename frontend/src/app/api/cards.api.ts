@@ -2,15 +2,33 @@ import { httpClient } from "./http";
 import type {
   Card,
   CreateCardRequest,
+  Label,
   ReminderJob,
   UpdateCardRequest,
   MoveCardRequest,
+  User,
 } from "../types/api";
 
 type CardEnvelope = { card: any };
 type CardsEnvelope = { cards: any[] };
 type RemindersEnvelope = { reminders: ReminderJob[] };
 type ReminderEnvelope = { reminder: ReminderJob };
+
+const mapLabel = (l: any): Label => ({
+  id: l.id,
+  name: l.name,
+  color: l.color ?? "#64748B",
+  boardId: l.boardId ?? "",
+  createdAt: l.createdAt ?? new Date().toISOString(),
+});
+
+const mapUser = (u: any): User => ({
+  id: u.id,
+  email: u.email ?? "",
+  displayName: u.displayName ?? "",
+  avatarUrl: u.avatarUrl ?? null,
+  createdAt: u.createdAt ?? new Date().toISOString(),
+});
 
 const mapCard = (c: any): Card => ({
   id: c.id,
@@ -20,8 +38,8 @@ const mapCard = (c: any): Card => ({
   position: typeof c.position === "number" ? c.position : Number(c.position ?? 0),
   dueAt: c.dueAt ?? undefined,
   isDone: c.isDone ?? undefined,
-  labels: [],
-  assignees: [],
+  labels: Array.isArray(c.labels) ? c.labels.map(mapLabel) : [],
+  assignees: Array.isArray(c.assignees) ? c.assignees.map(mapUser) : [],
   createdAt: c.createdAt ?? new Date().toISOString(),
   updatedAt: c.updatedAt ?? new Date().toISOString(),
 });

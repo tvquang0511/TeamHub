@@ -1,11 +1,13 @@
 import { Router } from "express";
 
 import { authJwt } from "../../common/middlewares/authJwt";
+import { listsRateLimit } from "../../common/middlewares/rateLimit";
 import { listsController } from "./lists.controller";
 
 export const listsRoutes = Router();
 
 listsRoutes.use(authJwt);
+listsRoutes.use(listsRateLimit);
 
 // MVP API for frontend scaffolding
 // GET /lists?boardId=:boardId

@@ -1,10 +1,12 @@
 import { Router } from "express";
 
 import { authJwt } from "../../common/middlewares/authJwt";
+import { checklistsRateLimit } from "../../common/middlewares/rateLimit";
 import { checklistsController } from "./checklists.controller";
 
 export const checklistsRoutes = Router();
 checklistsRoutes.use(authJwt);
+checklistsRoutes.use(checklistsRateLimit);
 
 // Card -> Checklists
 checklistsRoutes.get("/cards/:cardId/checklists", checklistsController.listByCard);

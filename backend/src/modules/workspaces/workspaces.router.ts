@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authJwt } from '../../common/middlewares/authJwt';
+import { workspacesRateLimit } from "../../common/middlewares/rateLimit";
 import {
   commitWorkspaceBackgroundUpload,
   createWorkspace,
@@ -17,6 +18,7 @@ import {
 const router = Router();
 
 router.use(authJwt);
+router.use(workspacesRateLimit);
 
 router.post('/', createWorkspace);
 router.get('/', listMyWorkspaces);

@@ -105,6 +105,23 @@ export const CardItem: React.FC<CardItemProps> = ({
     },
   });
 
+  const mergeCardPreserveRelations = (existing: Card, updated: Card): Card => {
+    return {
+      ...existing,
+      ...updated,
+      labels:
+        updated.labels && updated.labels.length > 0
+          ? updated.labels
+          : existing.labels,
+      assignees:
+        updated.assignees && updated.assignees.length > 0
+          ? updated.assignees
+          : existing.assignees,
+      checklistTotal: updated.checklistTotal ?? existing.checklistTotal,
+      checklistDone: updated.checklistDone ?? existing.checklistDone,
+    };
+  };
+
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "CARD",
@@ -188,7 +205,9 @@ export const CardItem: React.FC<CardItemProps> = ({
 
       const lists = current.lists.map((l) => {
         if (l.id !== updated.listId) return l;
-        const cards = l.cards.map((c) => (c.id === updated.id ? { ...c, ...updated } : c));
+        const cards = l.cards.map((c) =>
+          c.id === updated.id ? mergeCardPreserveRelations(c, updated) : c,
+        );
         return { ...l, cards };
       });
 
@@ -205,7 +224,9 @@ export const CardItem: React.FC<CardItemProps> = ({
       if (!current) return;
 
       const lists = current.lists.map((l) => {
-        const cards = l.cards.map((c) => (c.id === updated.id ? { ...c, ...updated } : c));
+        const cards = l.cards.map((c) =>
+          c.id === updated.id ? mergeCardPreserveRelations(c, updated) : c,
+        );
         return { ...l, cards };
       });
 
@@ -320,7 +341,9 @@ export const CardItem: React.FC<CardItemProps> = ({
       if (!current) return;
 
       const lists = current.lists.map((l) => {
-        const cards = l.cards.map((c) => (c.id === updated.id ? { ...c, ...updated } : c));
+        const cards = l.cards.map((c) =>
+          c.id === updated.id ? mergeCardPreserveRelations(c, updated) : c,
+        );
         return { ...l, cards };
       });
 

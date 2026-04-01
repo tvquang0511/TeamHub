@@ -191,9 +191,6 @@ export class BoardsService {
       throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
     }
 
-    const actor = await boardsRepo.isBoardMember(boardId, userId);
-    if (!actor) throw new ApiError(403, "BOARD_FORBIDDEN", "Not a board member");
-
     const members = await boardsRepo.listBoardMembers(boardId);
     return {
       members: members.map((m: any) => ({
@@ -216,13 +213,6 @@ export class BoardsService {
   ) {
     const board = await boardsRepo.findById(boardId);
     if (!board) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-
-    // Only board OWNER/ADMIN can update board member roles.
-    const actor = await boardsRepo.isBoardMember(boardId, actorId);
-    if (!actor) throw new ApiError(403, "BOARD_FORBIDDEN", "Not a board member");
-    if (actor.role !== "OWNER" && actor.role !== "ADMIN") {
-      throw new ApiError(403, "BOARD_FORBIDDEN", "Insufficient board role");
-    }
 
     const target = await boardsRepo.isBoardMember(boardId, targetUserId);
     if (!target) throw new ApiError(404, "BOARD_MEMBER_NOT_FOUND", "Member not found");
@@ -306,14 +296,6 @@ export class BoardsService {
     const wsMembership = await boardsRepo.isWorkspaceMember(existing.workspaceId, userId);
     if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
-    const boardMember = await boardsRepo.isBoardMember(existing.id, userId);
-    // Policy: only board OWNER/ADMIN can update board settings.
-    // Workspace OWNER/ADMIN may read private boards in read-only mode, but cannot update settings unless they're a board admin.
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-    if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
-      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to update this board");
-    }
-
     const archivedAt =
       input.archived === undefined ? undefined : input.archived ? new Date() : null;
 
@@ -355,13 +337,6 @@ export class BoardsService {
       throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
     }
 
-    const boardMember = await boardsRepo.isBoardMember(existing.id, userId);
-    // Policy: only board OWNER/ADMIN can update board settings.
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-    if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
-      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to update this board");
-    }
-
     const board = await boardsRepo.update(boardId, { visibility: input.visibility });
     await bumpBoardCacheVersion(boardId);
     return { board };
@@ -378,13 +353,6 @@ export class BoardsService {
     const wsMembership = await boardsRepo.isWorkspaceMember(existing.workspaceId, userId);
     if (!wsMembership) {
       throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
-    }
-
-    const boardMember = await boardsRepo.isBoardMember(existing.id, userId);
-    // Policy: only board OWNER/ADMIN can update board settings.
-    if (!boardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-    if (boardMember.role !== "OWNER" && boardMember.role !== "ADMIN") {
-      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to update this board");
     }
 
     const board = await boardsRepo.update(boardId, {
@@ -435,12 +403,6 @@ export class BoardsService {
     const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, actorId);
     if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
-    const actorBoardMember = await boardsRepo.isBoardMember(boardId, actorId);
-    if (!actorBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-    if (actorBoardMember.role !== "OWNER" && actorBoardMember.role !== "ADMIN") {
-      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to manage board members");
-    }
-
     const targetWsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, input.userId);
     if (!targetWsMembership) {
       throw new ApiError(400, "BOARD_MEMBER_INVALID", "User is not a member of this workspace");
@@ -462,12 +424,6 @@ export class BoardsService {
 
     const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, actorId);
     if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
-
-    const actorBoardMember = await boardsRepo.isBoardMember(boardId, actorId);
-    if (!actorBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-    if (actorBoardMember.role !== "OWNER" && actorBoardMember.role !== "ADMIN") {
-      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to manage board members");
-    }
 
     const user = await boardsRepo.findUserByEmail(input.email);
     if (!user) throw new ApiError(400, "BOARD_MEMBER_INVALID", "User with this email does not exist");
@@ -491,10 +447,7 @@ export class BoardsService {
     if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
 
     const actorBoardMember = await boardsRepo.isBoardMember(boardId, actorId);
-    if (!actorBoardMember) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
-    if (actorBoardMember.role !== "OWNER" && actorBoardMember.role !== "ADMIN") {
-      throw new ApiError(403, "BOARD_FORBIDDEN", "You are not allowed to manage board members");
-    }
+    if (!actorBoardMember) throw new ApiError(403, "BOARD_FORBIDDEN", "Not a board member");
 
     // Prevent removing yourself if you're the last OWNER (simple guard)
     if (memberUserId === actorId && actorBoardMember.role === "OWNER") {

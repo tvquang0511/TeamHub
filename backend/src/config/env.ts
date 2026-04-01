@@ -1,5 +1,10 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
 import { z } from 'zod';
+
+// Ensure we always load `backend/.env` regardless of process CWD.
+// This makes local dev (running from repo root vs backend/) consistent.
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),

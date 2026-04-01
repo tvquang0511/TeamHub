@@ -1,8 +1,11 @@
 // Prisma v7 ("client" engine): requires a driver adapter (or Accelerate).
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const datasourceUrl = process.env.DATABASE_URL;
 

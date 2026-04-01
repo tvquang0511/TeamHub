@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { authJwt } from '../../common/middlewares/authJwt';
 import { workspacesRateLimit } from "../../common/middlewares/rateLimit";
 import {
+  requireWorkspaceAdmin,
+  requireWorkspaceMember,
+  requireWorkspaceOwner,
+} from '../../common/middlewares/requireWorkspaceRole';
+import {
   commitWorkspaceBackgroundUpload,
   createWorkspace,
   deleteWorkspace,
@@ -22,18 +27,18 @@ router.use(workspacesRateLimit);
 
 router.post('/', createWorkspace);
 router.get('/', listMyWorkspaces);
-router.get('/:id', getWorkspaceDetail);
-router.patch('/:id', updateWorkspace);
-router.delete('/:id', deleteWorkspace);
-router.get('/:id/members', listWorkspaceMembers);
+router.get('/:id', requireWorkspaceMember(), getWorkspaceDetail);
+router.patch('/:id', requireWorkspaceAdmin(), updateWorkspace);
+router.delete('/:id', requireWorkspaceOwner(), deleteWorkspace);
+router.get('/:id/members', requireWorkspaceMember(), listWorkspaceMembers);
 
 // Workspace background image upload (public)
-router.post('/:id/background/init', initWorkspaceBackgroundUpload);
-router.post('/:id/background/commit', commitWorkspaceBackgroundUpload);
+router.post('/:id/background/init', requireWorkspaceAdmin(), initWorkspaceBackgroundUpload);
+router.post('/:id/background/commit', requireWorkspaceAdmin(), commitWorkspaceBackgroundUpload);
 
 // Workspace member management
-router.patch('/:id/members/:userId', updateWorkspaceMemberRole);
-router.delete('/:id/members/:userId', removeWorkspaceMember);
-router.post('/:id/leave', leaveWorkspace);
+router.patch('/:id/members/:userId', requireWorkspaceAdmin(), updateWorkspaceMemberRole);
+router.delete('/:id/members/:userId', requireWorkspaceAdmin(), removeWorkspaceMember);
+router.post('/:id/leave', requireWorkspaceMember(), leaveWorkspace);
 
 export default router;

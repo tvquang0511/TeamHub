@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { authJwt } from "../../common/middlewares/authJwt";
 import { boardViewRateLimit, boardsRateLimit, chatRateLimit } from "../../common/middlewares/rateLimit";
+import { requireBoardAdmin, requireBoardMember } from '../../common/middlewares/requireBoardRole';
 import { boardsController } from "./boards.controller";
 import { boardMembersController } from "./boardMembers.controller";
 import { chatController } from "../chat/chat.controller";
@@ -27,15 +28,15 @@ boardsRoutes.post(
 	chatRateLimit,
 	chatAttachmentsController.presignDownload,
 );
-boardsRoutes.patch("/:id", boardsController.update);
-boardsRoutes.patch("/:id/visibility", boardsController.updateVisibility);
-boardsRoutes.patch("/:id/background", boardsController.updateBackground);
+boardsRoutes.patch("/:id", requireBoardAdmin(), boardsController.update);
+boardsRoutes.patch("/:id/visibility", requireBoardAdmin(), boardsController.updateVisibility);
+boardsRoutes.patch("/:id/background", requireBoardAdmin(), boardsController.updateBackground);
 boardsRoutes.delete("/:id", boardsController.delete);
 
-boardsRoutes.get("/:id/members", boardMembersController.list);
-boardsRoutes.post("/:id/members", boardMembersController.add);
-boardsRoutes.post("/:id/members/by-email", boardMembersController.addByEmail);
-boardsRoutes.patch("/:id/members/:userId", boardMembersController.updateRole);
-boardsRoutes.delete("/:id/members/:userId", boardMembersController.remove);
+boardsRoutes.get("/:id/members", requireBoardMember(), boardMembersController.list);
+boardsRoutes.post("/:id/members", requireBoardAdmin(), boardMembersController.add);
+boardsRoutes.post("/:id/members/by-email", requireBoardAdmin(), boardMembersController.addByEmail);
+boardsRoutes.patch("/:id/members/:userId", requireBoardAdmin(), boardMembersController.updateRole);
+boardsRoutes.delete("/:id/members/:userId", requireBoardAdmin(), boardMembersController.remove);
 
-boardsRoutes.post("/:id/leave", boardsController.leave);
+boardsRoutes.post("/:id/leave", requireBoardMember(), boardsController.leave);

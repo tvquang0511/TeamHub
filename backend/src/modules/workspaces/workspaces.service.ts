@@ -82,23 +82,11 @@ export const workspacesService = {
   },
 
   async updateWorkspace(actorId: string, workspaceId: string, input: { name?: string; description?: string | null }) {
-    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
-    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
-    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
-      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
-    }
-
     const ws = await workspacesRepo.updateWorkspace(workspaceId, input);
     return { workspace: publicWorkspace(ws) };
   },
 
   async deleteWorkspace(actorId: string, workspaceId: string) {
-    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
-    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
-    if (actor.role !== 'OWNER') {
-      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Only OWNER can delete workspace');
-    }
-
     await workspacesRepo.deleteWorkspace(workspaceId);
     return { ok: true };
   },
@@ -128,12 +116,6 @@ export const workspacesService = {
     targetUserId: string,
     role: Extract<workspace_member_role, 'ADMIN' | 'MEMBER'>,
   ) {
-    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
-    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
-    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
-      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
-    }
-
     const target = await workspacesRepo.findMembership(workspaceId, targetUserId);
     if (!target) throw new ApiError(404, 'WORKSPACE_MEMBER_NOT_FOUND', 'Member not found');
 
@@ -147,12 +129,6 @@ export const workspacesService = {
   },
 
   async removeMember(actorId: string, workspaceId: string, targetUserId: string) {
-    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
-    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
-    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
-      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
-    }
-
     const target = await workspacesRepo.findMembership(workspaceId, targetUserId);
     if (!target) throw new ApiError(404, 'WORKSPACE_MEMBER_NOT_FOUND', 'Member not found');
 
@@ -181,12 +157,6 @@ export const workspacesService = {
 
   async initBackgroundUpload(actorId: string, workspaceId: string, rawBody: unknown) {
     const { fileName, contentType } = workspaceBgInitBodySchema.parse(rawBody);
-
-    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
-    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
-    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
-      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
-    }
 
     if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(contentType)) {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Unsupported background content type');
@@ -221,12 +191,6 @@ export const workspacesService = {
 
     if (!objectKey.startsWith(`workspace-backgrounds/${workspaceId}/`)) {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid workspace background objectKey');
-    }
-
-    const actor = await workspacesRepo.findMembership(workspaceId, actorId);
-    if (!actor) throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Not a workspace member');
-    if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') {
-      throw new ApiError(403, 'WORKSPACE_FORBIDDEN', 'Insufficient workspace role');
     }
 
     const bucket = env.MINIO_BUCKET_PUBLIC;

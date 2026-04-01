@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import dotenv from "dotenv";
 
 import routes from "./routes";
 import errorHandler from './common/middlewares/errorHandler';
@@ -10,7 +9,15 @@ import swaggerUi from 'swagger-ui-express';
 import { buildOpenApiDocument } from './docs/openapi';
 import env from "./config/env";
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'test') {
+  // Safe config log to confirm runtime env is loaded.
+  console.log('[config] cache', {
+    enabled: env.CACHE_ENABLED,
+    logEnabled: env.CACHE_LOG_ENABLED,
+    logSampleRate: env.CACHE_LOG_SAMPLE_RATE,
+    prefix: env.CACHE_PREFIX,
+  });
+}
 
 
 const app = express();
@@ -19,7 +26,7 @@ const app = express();
 app.set("trust proxy", env.TRUST_PROXY ? 1 : false);
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN
+    origin: env.CORS_ORIGIN
       ?.split(',')
       .map((s) => s.trim())
       .filter(Boolean) ?? [

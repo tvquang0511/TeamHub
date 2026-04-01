@@ -21,6 +21,10 @@ function getRedis(): IORedis {
   return _redis;
 }
 
+export function getCacheRedis(): IORedis {
+  return getRedis();
+}
+
 const NONE_SENTINEL = "__none__";
 
 function normalizePrefix(prefix: string) {
@@ -35,12 +39,34 @@ export function cacheKey(...parts: string[]) {
   return `${cachePrefix()}:${parts.join(":")}`;
 }
 
+function shouldLog() {
+  if (!env.CACHE_LOG_ENABLED) return false;
+  const rate = env.CACHE_LOG_SAMPLE_RATE;
+  if (rate >= 1) return true;
+  if (rate <= 0) return false;
+  return Math.random() < rate;
+}
+
+function formatKey(key: string) {
+  if (env.CACHE_LOG_KEYS) return key;
+  if (key.length <= 80) return key;
+  return `${key.slice(0, 80)}…`;
+}
+
+function cacheLog(event: string, key: string, details?: string) {
+  if (!shouldLog()) return;
+  // eslint-disable-next-line no-console
+  console.log(`[cache] ${event} ${formatKey(key)}${details ? ` ${details}` : ""}`);
+}
+
 export async function cacheGetString(key: string): Promise<string | null> {
   if (!env.CACHE_ENABLED) return null;
   try {
     const v = await getRedis().get(key);
+    cacheLog(v === null ? "MISS" : "HIT", key);
     return v;
   } catch {
+    cacheLog("ERR_GET", key);
     return null;
   }
 }
@@ -49,7 +75,9 @@ export async function cacheSetString(key: string, value: string, ttlSec: number)
   if (!env.CACHE_ENABLED) return;
   try {
     await getRedis().set(key, value, "EX", ttlSec);
+    cacheLog("SET", key, `ttl=${ttlSec}`);
   } catch {
+    cacheLog("ERR_SET", key);
     // ignore cache failures
   }
 }
@@ -60,10 +88,13 @@ export async function cacheDel(key: string): Promise<void> {
     // UNLINK is non-blocking in Redis; fall back to DEL if not supported.
     // ioredis supports both.
     await (getRedis() as any).unlink(key);
+    cacheLog("DEL", key);
   } catch {
     try {
       await getRedis().del(key);
+      cacheLog("DEL", key);
     } catch {
+      cacheLog("ERR_DEL", key);
       // ignore cache failures
     }
   }
@@ -77,6 +108,7 @@ export async function cacheGetJson<T>(key: string): Promise<T | null> {
   try {
     return JSON.parse(raw) as T;
   } catch {
+    cacheLog("ERR_PARSE", key);
     return null;
   }
 }
@@ -91,6 +123,7 @@ export async function cacheGetJsonNullable<T>(
   try {
     return { hit: true, value: JSON.parse(raw) as T };
   } catch {
+    cacheLog("ERR_PARSE", key);
     return { hit: false, value: null };
   }
 }

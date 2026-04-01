@@ -6,13 +6,18 @@ import dotenv from "dotenv";
 
 import routes from "./routes";
 import errorHandler from './common/middlewares/errorHandler';
+import { apiRateLimit } from "./common/middlewares/rateLimit";
 import swaggerUi from 'swagger-ui-express';
 import { buildOpenApiDocument } from './docs/openapi';
+import env from "./config/env";
 
 dotenv.config();
 
 
 const app = express();
+
+// Important for correct req.ip when running behind Nginx/reverse proxy.
+app.set("trust proxy", env.TRUST_PROXY ? 1 : false);
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN
@@ -45,7 +50,7 @@ app.get("/health", (req, res) => {
 });
 
 // API routes
-app.use("/api", routes);
+app.use("/api", apiRateLimit, routes);
 
 // not found
 app.use((req, res) => {

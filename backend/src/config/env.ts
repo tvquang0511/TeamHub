@@ -21,10 +21,46 @@ const envSchema = z.object({
   CACHE_BOARD_VIEW_TTL_SEC: z.coerce.number().int().positive().default(120),
   CACHE_CARD_DETAIL_TTL_SEC: z.coerce.number().int().positive().default(60),
 
+  // Cache logging (debug/diagnostics)
+  CACHE_LOG_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  // 0..1 (e.g. 0.05 = log ~5% of cache ops)
+  CACHE_LOG_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.0),
+  // Log full Redis keys (may contain IDs). Prefer false in prod.
+  CACHE_LOG_KEYS: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+
+  // Rate limiting (Redis)
+  RATE_LIMIT_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  RATE_LIMIT_PREFIX: z.string().min(1).default('rl:v1'),
+  // Global API limit (per IP)
+  RATE_LIMIT_API_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_API_MAX: z.coerce.number().int().positive().default(240),
+  // Auth endpoints are more sensitive (per IP)
+  RATE_LIMIT_AUTH_WINDOW_SEC: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_AUTH_MAX: z.coerce.number().int().positive().default(20),
+  // Password reset endpoints should be stricter (per IP)
+  RATE_LIMIT_PASSWORD_WINDOW_SEC: z.coerce.number().int().positive().default(3600),
+  RATE_LIMIT_PASSWORD_MAX: z.coerce.number().int().positive().default(5),
+
   // CORS
   // Comma-separated list of allowed origins for browser clients.
   // Example: "http://localhost:5173,http://127.0.0.1:5173"
   CORS_ORIGIN: z.string().optional(),
+
+  // If running behind a reverse proxy (Nginx), enable to trust X-Forwarded-For.
+  // Required for correct req.ip (rate limiting, audit logging, etc.).
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 
   // Public web URL for links in emails (password reset, etc.)
   // Example: "http://localhost:5173" or "https://app.teamhub.com"

@@ -164,6 +164,15 @@ Backend (`backend/src/config/env.ts`):
 - `CACHE_BOARD_VIEW_TTL_SEC`
 - `CACHE_CARD_DETAIL_TTL_SEC`
 
+Cache logs (debug/diagnostics):
+- `CACHE_LOG_ENABLED` (`true|false`)
+- `CACHE_LOG_SAMPLE_RATE` (0..1)
+- `CACHE_LOG_KEYS` (`true|false`)
+
+Gợi ý dùng thực tế:
+- Dev: `CACHE_LOG_ENABLED=true`, `CACHE_LOG_SAMPLE_RATE=1`, `CACHE_LOG_KEYS=false`
+- Prod: `CACHE_LOG_ENABLED=true`, `CACHE_LOG_SAMPLE_RATE=0.01` (1%), `CACHE_LOG_KEYS=false`
+
 Worker (`worker/src/config/env.ts`):
 - `REDIS_URL`
 - `CACHE_PREFIX` (phải giống backend)
@@ -212,3 +221,6 @@ Bạn có thể kiểm tra 3 thứ để chắc cache đang hoạt động đún
 3) Invalidation
   - Sau một thao tác write (update card/move list/attach label), version board phải tăng.
   - Sau khi rollup metrics chạy, analytics version phải tăng.
+
+## 10) Related docs
+- Rate limiting (Redis): see `docs/architecture/rate-limiting.md`

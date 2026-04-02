@@ -22,6 +22,7 @@
    - Consume BullMQ queues: `reminders`, `emails`, `analytics`
    - Sends SMTP emails (reminder)
    - Runs analytics rollups (board metrics daily/monthly)
+   - Background jobs/queues: see [docs/architecture/queues.md](queues.md)
 5. **Redis**
    - Required for **BullMQ** (reminders/emails/analytics)
    - Cache-aside (nếu bật)
@@ -32,6 +33,7 @@
 6. **Object Storage (MinIO / S3)**
    - Lưu avatar, workspace background, card attachments
    - Flow: init/presign -> client upload -> commit
+   - Cleanup mechanism: see [docs/architecture/blob-storage.md](blob-storage.md)
 7. **Nginx (prod-like)**
    - Reverse proxy + serve frontend static (compose prod)
 

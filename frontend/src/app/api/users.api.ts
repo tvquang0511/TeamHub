@@ -36,6 +36,11 @@ export const usersApi = {
     return res.data.user;
   },
 
+  deleteAvatar: async (): Promise<UserProfile> => {
+    const res = await httpClient.delete<{ user: UserProfile }>("/users/me/avatar");
+    return res.data.user;
+  },
+
   // Search users by email or name (for autocomplete)
   search: async (
     query: string,

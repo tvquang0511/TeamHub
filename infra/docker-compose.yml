@@ -1,26 +1,62 @@
 services:
 
+  nginx:
+    image: nginx:latest
+    container_name: teamhub-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+
   frontend:
     build: ../frontend
     container_name: teamhub-frontend
-    ports:
-      - "5173:5173"
+    env_file:
+      - ../frontend/.env
+    environment:
+      # Same-origin API through nginx
+      VITE_API_BASE_URL: /api
+    command:
+      - /bin/sh
+      - -c
+      - |
+        npm run build && npm run preview -- --host 0.0.0.0 --port 5173
 
   backend:
     build: ../backend
     container_name: teamhub-backend
-    ports:
-      - "4000:4000"
+    env_file:
+      - ../backend/.env
+    environment:
+      DATABASE_URL: postgresql://teamhub:teamhub@postgres:5432/teamhub?schema=public
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: http://minio:9000
+      TRUST_PROXY: "true"
+      # With nginx same-origin, CORS is mostly irrelevant; keep a safe default.
+      CORS_ORIGIN: http://localhost
+    command:
+      - /bin/sh
+      - -c
+      - |
+        npm run prisma:generate && npm run dev
 
   worker:
     build: ../worker
     container_name: teamhub-worker
+    env_file:
+      - ../worker/.env
+    environment:
+      DATABASE_URL: postgresql://teamhub:teamhub@postgres:5432/teamhub?schema=public
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: http://minio:9000
 
   postgres:
     image: postgres:15
     container_name: teamhub-postgres
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: teamhub
       POSTGRES_PASSWORD: teamhub
@@ -31,17 +67,38 @@ services:
   redis:
     image: redis:7
     container_name: teamhub-redis
-    ports:
-      - "6379:6379"
 
-  nginx:
-    image: nginx:latest
-    container_name: teamhub-nginx
-    ports:
-      - "80:80"
+  minio:
+    image: minio/minio:latest
+    container_name: teamhub-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: teamhub
+      MINIO_ROOT_PASSWORD: teamhub-secret
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/conf.d:/etc/nginx/conf.d
+      - minio_data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: teamhub-minio-init
+    depends_on:
+      - minio
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 teamhub teamhub-secret; do sleep 1; done
+        mc mb -p local/teamhub || true
+        mc anonymous set none local/teamhub || true
+
+        mc mb -p local/teamhub-public || true
+        mc anonymous set download local/teamhub-public || true
+
+        mc ilm add --expire-days 7 --prefix "tmp/" local/teamhub || \
+          mc ilm rule add --expire-days 7 --prefix "tmp/" local/teamhub || true
+        mc ilm add --expire-days 7 --prefix "tmp/" local/teamhub-public || \
+          mc ilm rule add --expire-days 7 --prefix "tmp/" local/teamhub-public || true
 
 volumes:
   postgres_data:
+  minio_data:

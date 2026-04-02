@@ -44,6 +44,14 @@ services:
         mc mb -p local/teamhub-public || true
         mc anonymous set download local/teamhub-public || true
 
+        # Lifecycle: expire temporary uploads under tmp/ after 7 days.
+        # Different mc versions expose slightly different ILM command surfaces,
+        # so apply this best-effort and never fail startup.
+        mc ilm add --expire-days 7 --prefix "tmp/" local/teamhub || \
+          mc ilm rule add --expire-days 7 --prefix "tmp/" local/teamhub || true
+        mc ilm add --expire-days 7 --prefix "tmp/" local/teamhub-public || \
+          mc ilm rule add --expire-days 7 --prefix "tmp/" local/teamhub-public || true
+
   redis:
     image: redis:7
     container_name: teamhub-redis

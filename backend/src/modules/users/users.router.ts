@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authJwt } from '../../common/middlewares/authJwt';
 import { usersRateLimit } from "../../common/middlewares/rateLimit";
-import { getMe, searchUsers, updateMe, uploadAvatarCommit, uploadAvatarInit } from './users.controller';
+import { deleteAvatar, getMe, searchUsers, updateMe, uploadAvatarCommit, uploadAvatarInit } from './users.controller';
 
 const router = Router();
 router.use(authJwt);
@@ -18,6 +18,9 @@ router.post('/me/avatar/init', uploadAvatarInit);
 
 // POST /users/me/avatar/commit
 router.post('/me/avatar/commit', uploadAvatarCommit);
+
+// DELETE /users/me/avatar
+router.delete('/me/avatar', deleteAvatar);
 
 // GET /users/search?q=inv&workspaceId=...&limit=10
 router.get('/search', searchUsers);

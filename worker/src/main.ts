@@ -6,6 +6,8 @@ import { withClient } from './db/pool';
 import { processReminderJob } from './modules/reminder/reminder.processor';
 import { processEmailJob } from './modules/email/email.processor';
 import { processBoardMetricsDailyJob } from './modules/analytics/analytics.processor';
+import { BLOBS_QUEUE_NAME } from './modules/blobs/blobs.constants';
+import { processBlobsJob } from './modules/blobs/blobs.processor';
 
 const REMINDERS_QUEUE_NAME = 'reminders';
 const REMINDERS_JOB_NAME = 'send';
@@ -62,6 +64,17 @@ const analyticsWorker = new Worker(
 	},
 );
 
+const blobsWorker = new Worker(
+	BLOBS_QUEUE_NAME,
+	async (job) => {
+		return await processBlobsJob(job);
+	},
+	{
+		connection,
+		concurrency: 5,
+	},
+);
+
 RemindersWorker.on('completed', (job) => {
 	// eslint-disable-next-line no-console
 	console.log(`[reminders] completed job ${job.id}`);
@@ -92,7 +105,17 @@ analyticsWorker.on('failed', (job, err) => {
 	console.error(`[analytics] failed job ${job?.id}:`, err);
 });
 
+blobsWorker.on('completed', (job) => {
+	// eslint-disable-next-line no-console
+	console.log(`[blobs] completed job ${job.id}`);
+});
+
+blobsWorker.on('failed', (job, err) => {
+	// eslint-disable-next-line no-console
+	console.error(`[blobs] failed job ${job?.id}:`, err);
+});
+
 // eslint-disable-next-line no-console
 console.log(
-	`[worker] listening queues=${REMINDERS_QUEUE_NAME},${EMAILS_QUEUE_NAME},${ANALYTICS_QUEUE_NAME} redis=${env.REDIS_URL}`,
+	`[worker] listening queues=${REMINDERS_QUEUE_NAME},${EMAILS_QUEUE_NAME},${ANALYTICS_QUEUE_NAME},${BLOBS_QUEUE_NAME} redis=${env.REDIS_URL}`,
 );

@@ -8,6 +8,7 @@ import { cardsRepo } from "../cards/cards.repo";
 import { presignPutObject } from "../../common/minio/minio.presign.put";
 import { presignGetObject } from "../../common/minio/minio.presign.get";
 import env from "../../config/env";
+import { enqueueDeleteObject } from "../../integrations/queue/blobs.queue";
 
 export const presignUploadInputSchema = z.object({
   fileName: z.string().min(1).max(500),
@@ -202,6 +203,10 @@ export class AttachmentsService {
 
     // Optional policy: allow only uploader to delete. For now: board members can delete.
     await attachmentsRepo.delete(attachmentId);
+
+    if (existing.type === "FILE" && existing.bucket && existing.objectKey) {
+      await enqueueDeleteObject({ bucket: existing.bucket, objectKey: existing.objectKey });
+    }
 
     await activitiesRepo.createSafe({
       actorId: userId,

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
 import { chatRepo } from "./chat.repo";
+import { enqueueDeleteObject } from "../../integrations/queue/blobs.queue";
 
 const EDIT_DELETE_WINDOW_MS = 20 * 60 * 1000;
 
@@ -170,6 +171,16 @@ export class ChatService {
     }
 
     await chatRepo.deleteMessage({ boardId, messageId, deletedAt: new Date() });
+
+    // Attachments are only meaningful for active messages.
+    // Remove rows and delete underlying objects to avoid storage leaks.
+    const attachments = await chatRepo.listMessageAttachments(messageId);
+    if (attachments.length) {
+      await chatRepo.deleteMessageAttachments(messageId);
+      await Promise.all(
+        attachments.map((a) => enqueueDeleteObject({ bucket: a.bucket, objectKey: a.objectKey })),
+      );
+    }
     return { ok: true };
   }
 }

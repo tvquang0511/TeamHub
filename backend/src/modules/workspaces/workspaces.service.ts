@@ -4,6 +4,7 @@ import { workspacesRepo } from './workspaces.repo';
 import { workspace_member_role } from '@prisma/client';
 import env from '../../config/env';
 import { presignPutObject } from '../../common/minio/minio.presign.put';
+import { enqueueDeleteObject } from '../../integrations/queue/blobs.queue';
 
 export const createWorkspaceInputSchema = z.object({
   name: z.string().min(1).max(200),
@@ -168,9 +169,8 @@ export const workspacesService = {
     const region = env.MINIO_REGION;
     const bucket = env.MINIO_BUCKET_PUBLIC;
 
-    const ext = fileName.includes('.') ? fileName.split('.').pop()!.toLowerCase() : 'jpg';
-    const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 10) || 'jpg';
-    const objectKey = `workspace-backgrounds/${workspaceId}/${Date.now()}.${safeExt}`;
+    // Fixed key per workspace to prevent accumulating old backgrounds.
+    const objectKey = `workspace-backgrounds/${workspaceId}`;
 
     const presigned = presignPutObject({
       endpoint,
@@ -189,7 +189,8 @@ export const workspacesService = {
   async commitBackgroundUpload(actorId: string, workspaceId: string, rawBody: unknown) {
     const { objectKey } = workspaceBgCommitBodySchema.parse(rawBody);
 
-    if (!objectKey.startsWith(`workspace-backgrounds/${workspaceId}/`)) {
+    const expectedKey = `workspace-backgrounds/${workspaceId}`;
+    if (objectKey !== expectedKey) {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid workspace background objectKey');
     }
 
@@ -202,9 +203,36 @@ export const workspacesService = {
       .map(encodeURIComponent)
       .join('/')
     ].join('');
-    const backgroundImageUrl = new URL(encodedPath, baseUrl).toString();
+    const backgroundImageUrlBase = new URL(encodedPath, baseUrl).toString();
+    const backgroundImageUrl = `${backgroundImageUrlBase}?v=${Date.now()}`;
 
+    const existing = await workspacesRepo.getWorkspaceById(workspaceId);
     const ws = await workspacesRepo.updateWorkspace(workspaceId, { backgroundImageUrl });
+
+    // Best-effort cleanup of legacy timestamped background keys.
+    const prevUrl = existing?.backgroundImageUrl;
+    if (prevUrl) {
+      try {
+        const u = new URL(prevUrl);
+        const prevUrlBase = new URL(u.pathname, u.origin).toString();
+        if (prevUrlBase !== backgroundImageUrlBase) {
+          const parts = u.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+          const prevBucket = parts[0];
+          const prevObjectKey = parts.slice(1).join('/');
+          if (
+            prevBucket &&
+            prevObjectKey &&
+            prevObjectKey.startsWith(`workspace-backgrounds/${workspaceId}/`)
+          ) {
+            await enqueueDeleteObject({ bucket: prevBucket, objectKey: prevObjectKey });
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // Also delete fixed key when background is later cleared (if you add such endpoint).
     return { workspace: publicWorkspace(ws) };
   },
 };

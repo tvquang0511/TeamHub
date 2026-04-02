@@ -14,12 +14,19 @@ declare module "socket.io" {
 }
 
 function parseCorsOrigins(): string[] {
-  return (
+  const origins = (
     env.CORS_ORIGIN
       ?.split(",")
       .map((s) => s.trim())
       .filter(Boolean) ?? ["http://localhost:5173"]
-  );
+  ).slice();
+
+  if (env.SOCKET_ADMIN_UI_ENABLED && env.NODE_ENV !== "production") {
+    const adminOrigin = env.SOCKET_ADMIN_UI_ORIGIN || "https://admin.socket.io";
+    if (adminOrigin && !origins.includes(adminOrigin)) origins.push(adminOrigin);
+  }
+
+  return origins;
 }
 
 function extractBearerToken(value?: string | string[]) {
@@ -39,6 +46,12 @@ export function setupSocketServer(httpServer: HttpServer) {
   });
 
   io.use((socket, next) => {
+    // Admin UI uses its own auth middleware on the /admin namespace.
+    // Do not require app JWT there.
+    if (env.SOCKET_ADMIN_UI_ENABLED && socket.nsp.name === "/admin") {
+      return next();
+    }
+
     const tokenFromAuth =
       typeof socket.handshake.auth?.token === "string" ? socket.handshake.auth.token : null;
 
@@ -134,13 +147,29 @@ export function setupSocketServer(httpServer: HttpServer) {
     );
   });
 
-  if (env.NODE_ENV !== "production") {
+  if (env.SOCKET_ADMIN_UI_ENABLED && env.NODE_ENV !== "production") {
     // Loaded lazily so prod can omit dependency if desired.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { instrument } = require("@socket.io/admin-ui") as typeof import("@socket.io/admin-ui");
 
+    // @socket.io/admin-ui expects a bcrypt hash.
+    // Allow a plain password in env for developer convenience.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const bcrypt = require("bcryptjs") as typeof import("bcryptjs");
+
+    let passwordHash = env.SOCKET_ADMIN_UI_PASSWORD;
+    try {
+      bcrypt.getRounds(passwordHash);
+    } catch {
+      passwordHash = bcrypt.hashSync(passwordHash, 10);
+    }
+
     instrument(io, {
-      auth: false,
+      auth: {
+        type: "basic",
+        username: env.SOCKET_ADMIN_UI_USERNAME,
+        password: passwordHash,
+      },
       mode: "development",
     });
   }

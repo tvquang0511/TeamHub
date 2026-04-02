@@ -9,17 +9,6 @@ import swaggerUi from 'swagger-ui-express';
 import { buildOpenApiDocument } from './docs/openapi';
 import env from "./config/env";
 
-if (env.NODE_ENV !== 'test') {
-  // Safe config log to confirm runtime env is loaded.
-  console.log('[config] cache', {
-    enabled: env.CACHE_ENABLED,
-    logEnabled: env.CACHE_LOG_ENABLED,
-    logSampleRate: env.CACHE_LOG_SAMPLE_RATE,
-    prefix: env.CACHE_PREFIX,
-  });
-}
-
-
 const app = express();
 
 // Important for correct req.ip when running behind Nginx/reverse proxy.

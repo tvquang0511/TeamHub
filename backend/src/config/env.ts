@@ -115,6 +115,17 @@ const envSchema = z.object({
   // Example: "http://localhost:5173,http://127.0.0.1:5173"
   CORS_ORIGIN: z.string().optional(),
 
+  // Socket.IO Admin UI (development only)
+  SOCKET_ADMIN_UI_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  // Origin of the Admin UI webapp (default: https://admin.socket.io)
+  SOCKET_ADMIN_UI_ORIGIN: z.string().optional(),
+  // Basic auth for Admin UI
+  SOCKET_ADMIN_UI_USERNAME: z.string().min(1).default('admin'),
+  SOCKET_ADMIN_UI_PASSWORD: z.string().min(1).default('admin'),
+
   // If running behind a reverse proxy (Nginx), enable to trust X-Forwarded-For.
   // Required for correct req.ip (rate limiting, audit logging, etc.).
   TRUST_PROXY: z
@@ -143,6 +154,17 @@ const envSchema = z.object({
     .optional()
     .default('0')
     .transform((v) => v === 'true' || v === '1'),
+
+  // Blob storage sweeper (MinIO cleanup)
+  BLOB_SWEEP_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  // Daily at 01:30 UTC by default
+  BLOB_SWEEP_CRON: z.string().min(1).default('30 1 * * *'),
+  BLOB_SWEEP_TZ: z.string().min(1).default('UTC'),
+  // Delay before executing a delete_object job (ms). Helps avoid racey deletes and allows brief undo windows.
+  BLOB_DELETE_DELAY_MS: z.coerce.number().int().nonnegative().default(60_000),
 
   JWT_ACCESS_SECRET: z.string().min(1),
   JWT_REFRESH_SECRET: z.string().min(1),

@@ -328,6 +328,32 @@ export class ChatRepo {
     }) as Promise<{ count: number }>;
   }
 
+  async listMessageAttachments(messageId: string) {
+    return (prisma as any).board_message_attachments.findMany({
+      where: { messageId },
+      select: {
+        id: true,
+        boardId: true,
+        messageId: true,
+        uploaderId: true,
+        bucket: true,
+        objectKey: true,
+        url: true,
+        fileName: true,
+        mimeType: true,
+        size: true,
+        createdAt: true,
+        linkedAt: true,
+      },
+    }) as Promise<ChatMessageAttachmentRow[]>;
+  }
+
+  async deleteMessageAttachments(messageId: string) {
+    return (prisma as any).board_message_attachments.deleteMany({
+      where: { messageId },
+    }) as Promise<{ count: number }>;
+  }
+
   async createMessageWithAttachments(input: {
     boardId: string;
     senderId: string;

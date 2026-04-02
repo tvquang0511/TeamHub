@@ -3,6 +3,7 @@ import { usersRepo } from './users.repo';
 import { ApiError } from '../../common/errors/ApiError';
 import { presignPutObject } from '../../common/minio/minio.presign.put';
 import env from '../../config/env';
+import { enqueueDeleteObject } from '../../integrations/queue/blobs.queue';
 
 export const usersSearchQuerySchema = z.object({
   q: z.string().min(1).max(200),
@@ -66,10 +67,9 @@ export const usersService = {
   // Use a dedicated public bucket for avatars
   const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
 
-    const ext = fileName.includes('.') ? fileName.split('.').pop()!.toLowerCase() : 'png';
-    const safeExt = ext.replace(/[^a-z0-9]/g, '').slice(0, 10) || 'png';
-
-    const objectKey = `avatars/${userId}/${Date.now()}.${safeExt}`;
+    // Fixed key per user to prevent accumulating old avatars.
+    // (Content-Type is stored on the object at upload time.)
+    const objectKey = `avatars/${userId}`;
     const presigned = presignPutObject({
       endpoint,
       accessKeyId,
@@ -91,6 +91,11 @@ export const usersService = {
     const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
     const endpoint = env.MINIO_ENDPOINT;
 
+    const expectedKey = `avatars/${userId}`;
+    if (objectKey !== expectedKey) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid avatar objectKey');
+    }
+
     // Build a public path-style URL pointing directly to the avatar in the public bucket.
     const baseUrl = new URL(endpoint);
     const encodedPath = ['/', encodeURIComponent(bucket), '/', objectKey
@@ -98,9 +103,62 @@ export const usersService = {
       .map(encodeURIComponent)
       .join('/')
     ].join('');
-    const avatarUrl = new URL(encodedPath, baseUrl).toString();
+    const avatarUrlBase = new URL(encodedPath, baseUrl).toString();
 
+    // Cache busting: keep a stable key but change URL so browsers re-fetch.
+    const avatarUrl = `${avatarUrlBase}?v=${Date.now()}`;
+
+    const existing = await usersRepo.getById(userId);
     const updated = await usersRepo.updateProfile(userId, { avatarUrl });
+
+    // Best-effort cleanup: if previous avatar used legacy timestamped key,
+    // enqueue deletion to avoid leaving orphaned objects.
+    const prevUrl = existing?.avatarUrl;
+    if (prevUrl) {
+      try {
+        const u = new URL(prevUrl);
+        const prevUrlBase = new URL(u.pathname, u.origin).toString();
+        if (prevUrlBase === avatarUrlBase) return { user: updated };
+
+        const parts = u.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+        const prevBucket = parts[0];
+        const prevObjectKey = parts.slice(1).join('/');
+        if (prevBucket && prevObjectKey && prevObjectKey.startsWith(`avatars/${userId}/`)) {
+          await enqueueDeleteObject({ bucket: prevBucket, objectKey: prevObjectKey });
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return { user: updated };
+  },
+
+  async deleteAvatar(userId: string) {
+    const existing = await usersRepo.getById(userId);
+    if (!existing) throw new ApiError(404, 'NOT_FOUND', 'User not found');
+
+    const prevUrl = existing.avatarUrl;
+    const updated = await usersRepo.updateProfile(userId, { avatarUrl: null });
+
+    // Delete fixed key (current design)
+    const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
+    await enqueueDeleteObject({ bucket, objectKey: `avatars/${userId}` });
+
+    // Best-effort: delete legacy timestamped key (if any)
+    if (prevUrl) {
+      try {
+        const u = new URL(prevUrl);
+        const parts = u.pathname.split('/').filter(Boolean).map(decodeURIComponent);
+        const prevBucket = parts[0];
+        const prevObjectKey = parts.slice(1).join('/');
+        if (prevBucket && prevObjectKey && prevObjectKey.startsWith(`avatars/${userId}/`)) {
+          await enqueueDeleteObject({ bucket: prevBucket, objectKey: prevObjectKey });
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     return { user: updated };
   },

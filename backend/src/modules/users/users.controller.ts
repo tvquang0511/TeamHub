@@ -31,3 +31,9 @@ export const uploadAvatarCommit = async (req: Request, res: Response) => {
   const result = await usersService.commitAvatarUpload(userId, req.body);
   return res.json(result);
 };
+
+export const deleteAvatar = async (req: Request, res: Response) => {
+  const userId = req.user!.id;
+  const result = await usersService.deleteAvatar(userId);
+  return res.json(result);
+};

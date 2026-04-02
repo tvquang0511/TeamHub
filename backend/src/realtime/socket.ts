@@ -15,7 +15,7 @@ declare module "socket.io" {
 
 function parseCorsOrigins(): string[] {
   return (
-    process.env.CORS_ORIGIN
+    env.CORS_ORIGIN
       ?.split(",")
       .map((s) => s.trim())
       .filter(Boolean) ?? ["http://localhost:5173"]
@@ -134,7 +134,7 @@ export function setupSocketServer(httpServer: HttpServer) {
     );
   });
 
-  if (process.env.NODE_ENV !== "production") {
+  if (env.NODE_ENV !== "production") {
     // Loaded lazily so prod can omit dependency if desired.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { instrument } = require("@socket.io/admin-ui") as typeof import("@socket.io/admin-ui");

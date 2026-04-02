@@ -45,6 +45,26 @@
       }
     },
     {
+      "name": "Get",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/lists/{{listId}}", "host": ["{{baseUrl}}"], "path": ["lists", "{{listId}}"] }
+      }
+    },
+    {
+      "name": "Update",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/lists/{{listId}}", "host": ["{{baseUrl}}"], "path": ["lists", "{{listId}}"] },
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"Todo (updated)\"\n}" }
+      }
+    },
+    {
       "name": "Move / reorder (prev/next)",
       "request": {
         "method": "POST",

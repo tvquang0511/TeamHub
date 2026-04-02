@@ -19,7 +19,7 @@
           "host": ["{{baseUrl}}"],
           "path": ["invites", "workspaces", "{{workspaceId}}"]
         },
-        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteEmail}}\"\n}" }
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"role\": \"MEMBER\",\n  \"expiresAt\": \"2026-12-31T00:00:00.000Z\"\n}" }
       },
       "event": [
         {
@@ -34,6 +34,18 @@
           }
         }
       ]
+    },
+    {
+      "name": "Get invite by token (workspace members)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/{{inviteToken}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "{{inviteToken}}"]
+        }
+      }
     },
     {
       "name": "List workspace invites (OWNER/ADMIN)",
@@ -85,60 +97,6 @@
       }
     },
     {
-      "name": "Create board invite (captures boardInviteToken)",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-        ],
-        "url": {
-          "raw": "{{baseUrl}}/invites/boards/{{boardId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["invites", "boards", "{{boardId}}"]
-        },
-        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteEmail}}\"\n}" }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
-              "const json = pm.response.json();",
-              "if (json.invite && json.invite.token) pm.collectionVariables.set('boardInviteToken', json.invite.token);"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "List board invites (board ADMIN)",
-      "request": {
-        "method": "GET",
-        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-        "url": {
-          "raw": "{{baseUrl}}/invites/boards/{{boardId}}",
-          "host": ["{{baseUrl}}"],
-          "path": ["invites", "boards", "{{boardId}}"]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
-              "const json = pm.response.json();",
-              "if (json.invites && json.invites.length) pm.collectionVariables.set('boardInviteId', json.invites[0].id);"
-            ]
-          }
-        }
-      ]
-    },
-    {
       "name": "Inbox: list my workspace invites",
       "request": {
         "method": "GET",
@@ -172,6 +130,18 @@
           "raw": "{{baseUrl}}/invites/inbox/workspaces/{{inboxInviteId}}/accept",
           "host": ["{{baseUrl}}"],
           "path": ["invites", "inbox", "workspaces", "{{inboxInviteId}}", "accept"]
+        }
+      }
+    },
+    {
+      "name": "Inbox: decline workspace invite by inviteId",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{inviteAccessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/invites/inbox/workspaces/{{inboxInviteId}}/decline",
+          "host": ["{{baseUrl}}"],
+          "path": ["invites", "inbox", "workspaces", "{{inboxInviteId}}", "decline"]
         }
       }
     },

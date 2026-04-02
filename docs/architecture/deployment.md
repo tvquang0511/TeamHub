@@ -15,7 +15,8 @@ Goal: fast iteration, hot reload.
 - Frontend: Vite dev server (HMR)
 - Backend: ts-node-dev/nodemon (watch)
 - Worker: watch mode
-- Nginx: reverse proxy to avoid CORS issues and keep 1 base URL.
+- Infra deps via Docker Compose: Postgres + Redis + MinIO
+- (Optional) Nginx reverse proxy if you want a single origin in dev
 
 ### 1.2 Production (prod)
 Goal: stable deployment.
@@ -43,21 +44,34 @@ Goal: stable deployment.
 
 ### 3.1 Files
 - `infra/docker-compose.dev.yml`
-  - includes source mount volumes
-  - exposes extra ports for debugging
-  - runs watchers
+  - runs **infra dependencies only** (Postgres + Redis + MinIO)
 - `infra/docker-compose.yml`
-  - intended for prod-like deployment (no source mounts)
-  - runs built artifacts
+  - prod-like deployment (frontend + backend + worker + postgres + redis + nginx)
+
+Note: `infra/docker-compose.yml` currently does not include MinIO. In production you can:
+- add MinIO to the compose, or
+- point the app to a managed S3-compatible storage.
 
 ### 3.2 Run commands
 From project root (example):
 ```bash
-# Dev
-docker compose -f infra/docker-compose.dev.yml up -d --build
+# Dev: infra deps only
+docker compose -f infra/docker-compose.dev.yml up -d
 
-# Prod-like
+# Prod-like: run everything in containers
 docker compose -f infra/docker-compose.yml up -d --build
+```
+
+Recommended dev loop (2-4 terminals):
+```bash
+# Terminal A
+cd backend && npm run dev
+
+# Terminal B
+cd worker && npm run dev
+
+# Terminal C
+cd frontend && npm run dev
 ```
 
 ---
@@ -87,15 +101,17 @@ In dev, nginx usually proxies to Vite server instead.
 ---
 
 ## 5) Backend prod mode
-- Build TS -> JS (`dist/`)
-- Start with `node dist/main.js`
+- In compose prod-like, backend runs as a Node service.
+- Preferred: build TS -> JS and run compiled entry (e.g. `dist/`).
+- Dev: run via `npm run dev`.
 - Use env vars from `.env`
 
 ---
 
 ## 6) Worker prod mode
-- Build TS -> JS (`dist/`)
-- Start poller with `node dist/main.js`
+- Worker consumes BullMQ queues (reminders/emails/analytics)
+- Preferred: build TS -> JS and run compiled entry.
+- Dev: run via `npm run dev`.
 - Scale worker separately if needed (later)
 
 ---
@@ -129,3 +145,5 @@ In dev, nginx usually proxies to Vite server instead.
 | Worker | Watch mode | Node runs compiled JS |
 | Nginx | Reverse proxy | Static + reverse proxy |
 | DB | Docker postgres | Managed or docker |
+| Redis | Docker redis | Managed or docker |
+| MinIO/S3 | Docker MinIO | S3-compatible storage |

@@ -2,8 +2,7 @@ import axios, { AxiosError } from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 import type { ApiErrorResponse } from "../types/api";
 
-// Backend API base URL - adjust this based on your environment
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
+import { API_BASE_URL } from "../../config/env";
 
 // Create axios instance with base configuration
 export const httpClient = axios.create({

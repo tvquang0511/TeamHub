@@ -9,18 +9,18 @@
   ],
   "item": [
     {
-      "name": "List (by workspaceId)",
+      "name": "List (by boardId)",
       "request": {
         "method": "GET",
         "header": [
           { "key": "Authorization", "value": "Bearer {{accessToken}}" }
         ],
         "url": {
-          "raw": "{{baseUrl}}/labels?workspaceId={{workspaceId}}",
+          "raw": "{{baseUrl}}/labels?boardId={{boardId}}",
           "host": ["{{baseUrl}}"],
           "path": ["labels"],
           "query": [
-            { "key": "workspaceId", "value": "{{workspaceId}}" }
+            { "key": "boardId", "value": "{{boardId}}" }
           ]
         }
       }
@@ -36,7 +36,7 @@
         "url": { "raw": "{{baseUrl}}/labels", "host": ["{{baseUrl}}"], "path": ["labels"] },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"workspaceId\": \"{{workspaceId}}\",\n  \"name\": \"Bug\",\n  \"color\": \"#EF4444\"\n}"
+          "raw": "{\n  \"boardId\": \"{{boardId}}\",\n  \"name\": \"Bug\",\n  \"color\": \"#EF4444\"\n}"
         }
       },
       "event": [

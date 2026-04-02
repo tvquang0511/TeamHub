@@ -3,6 +3,7 @@ import { toSchema } from '../components/schemas';
 
 const CreateWorkspaceInviteRequestSchema = z.object({
   email: z.string().email(),
+  role: z.enum(['ADMIN', 'MEMBER']).optional(),
   expiresAt: z.string().datetime().optional(),
 });
 
@@ -12,6 +13,7 @@ const CreateWorkspaceInviteResponseSchema = z.object({
     email: z.string().email(),
     token: z.string(),
     expiresAt: z.string(),
+    role: z.enum(['ADMIN', 'MEMBER']),
   }),
 });
 
@@ -26,6 +28,7 @@ const WorkspaceInviteSchema = z.object({
   id: z.string(),
   workspaceId: z.string(),
   email: z.string().email(),
+  role: z.enum(['OWNER', 'ADMIN', 'MEMBER']),
   expiresAt: z.string(),
   acceptedAt: z.string().nullable(),
   createdAt: z.string(),

@@ -7,11 +7,15 @@ This folder contains **multiple small Postman collections** (1 per module), to k
 Import these collections:
 
 - `TeamHub - 00 Auth.postman_collection.json`
+- `TeamHub - 05 Users.postman_collection.json`
 - `TeamHub - 10 Workspaces.postman_collection.json`
 - `TeamHub - 20 Invites.postman_collection.json`
 - `TeamHub - 30 Boards.postman_collection.json`
 - `TeamHub - 40 Lists.postman_collection.json`
 - `TeamHub - 50 Cards.postman_collection.json`
+- `TeamHub - 52 Checklists.postman_collection.json`
+- `TeamHub - 53 Assignees.postman_collection.json`
+- `TeamHub - 54 Comments.postman_collection.json`
 - `TeamHub - 55 Labels.postman_collection.json`
 - `TeamHub - 60 Attachments.postman_collection.json`
 - `TeamHub - 70 Reminders.postman_collection.json`
@@ -27,29 +31,46 @@ Recommended import/run order:
 - Register
 - Login (captures `accessToken`, `refreshToken`)
 
-2) **Workspaces**
+2) **Users**
+- Get/Update me
+- Avatar init/commit (captures `avatarObjectKey`, `avatarUploadUrl`)
+
+3) **Workspaces**
 - Create workspace (captures `workspaceId`)
+- Background init/commit (captures `workspaceBgObjectKey`)
 
-3) **Boards**
+4) **Boards**
 - Create board (captures `boardId`)
+- (Optional) Chat attachments presign/commit (captures `boardMessageAttachmentId`)
 
-4) **Lists**
+5) **Lists**
 - Create list (captures `listId`)
 
-5) **Cards**
+6) **Cards**
 - Create card (captures `cardId`)
 
-5.1) **Labels**
+7) **Checklists**
+- Create checklist (captures `checklistId`)
+- Create item (captures `itemId`)
+
+8) **Assignees**
+- Assign/unassign, admin add/kick
+
+9) **Comments**
+- Create comment (captures `commentId`)
+
+10) **Labels**
 - Create label (captures `labelId`)
 
-5.2) **Attachments**
+11) **Attachments**
 - Presign upload (captures `bucket`, `objectKey`, `objectUrl`, `uploadUrl`)
 - Commit file attachment (captures `attachmentId`)
+- Card reference attachment (uses `refCardId`)
 
-5.3) **Reminders**
+12) **Reminders**
 - Set reminder (captures `reminderJobId`)
 
-6) **Invites**
+13) **Invites**
 - Create invite (captures `inviteToken`)
 - Register/Login invited user (in Auth)
 - Accept invite (in Invites)
@@ -61,7 +82,13 @@ These collections rely on these common variables:
 - `baseUrl` (default: `http://localhost:4000/api`)
 - `accessToken`, `refreshToken`
 - `workspaceId`, `boardId`, `listId`, `cardId`
-- `labelId`, `attachmentId`, `reminderJobId`
+- `userId`, `memberUserId`
+- `labelId`, `attachmentId`, `reminderJobId`, `boardMessageAttachmentId`
+- `avatarObjectKey`, `avatarUploadUrl`, `workspaceBgObjectKey`
+- `bucket`, `objectKey`, `objectUrl`, `uploadUrl`
+- `s3Bucket`, `s3ObjectKey`, `s3Url`
+- `refCardId`
+- `checklistId`, `itemId`, `commentId`
 - `inviteEmail`, `invitePassword`, `inviteDisplayName`
 - `inviteAccessToken`, `inviteRefreshToken`, `inviteToken`
 

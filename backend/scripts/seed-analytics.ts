@@ -1,10 +1,9 @@
-import "dotenv/config";
-
 import bcrypt from "bcrypt";
 import { Prisma, activity_type } from "@prisma/client";
 
 import prisma, { disconnectPrisma } from "../src/db/prisma";
 import { runBoardMetricsDailyRollup } from "../src/jobs/boardMetricsDaily";
+import env from "../src/config/env";
 
 const PASSWORD = "123456";
 
@@ -14,13 +13,6 @@ const atUtc = (dayStartUtc: Date, hh: number, mm: number) =>
   new Date(Date.UTC(dayStartUtc.getUTCFullYear(), dayStartUtc.getUTCMonth(), dayStartUtc.getUTCDate(), hh, mm, 0));
 
 const toYmd = (d: Date) => d.toISOString().slice(0, 10);
-
-function intFromEnv(name: string, fallback: number) {
-  const raw = process.env[name];
-  if (!raw) return fallback;
-  const v = Number(raw);
-  return Number.isFinite(v) && v > 0 ? Math.floor(v) : fallback;
-}
 
 async function ensureUsers() {
   const passwordHash = await bcrypt.hash(PASSWORD, 10);
@@ -73,8 +65,7 @@ async function ensureWorkspace(users: { id: string }[]) {
 }
 
 async function resetBoardIfNeeded(boardName: string) {
-  const reset = process.env.SEED_ANALYTICS_RESET === "1" || process.env.SEED_ANALYTICS_RESET === "true";
-  if (!reset) return;
+  if (!env.SEED_ANALYTICS_RESET) return;
 
   const existing = await prisma.boards.findFirst({ where: { name: boardName } });
   if (!existing) return;
@@ -385,9 +376,9 @@ async function backfillDailyMetrics(startDay: Date, endDay: Date) {
 }
 
 async function main() {
-  const days = intFromEnv("ANALYTICS_SEED_DAYS", 30);
-  const boardName = process.env.ANALYTICS_SEED_BOARD_NAME ?? "Analytics Seed Board";
-  const backfill = process.env.SEED_ANALYTICS_BACKFILL !== "0";
+  const days = env.ANALYTICS_SEED_DAYS;
+  const boardName = env.ANALYTICS_SEED_BOARD_NAME;
+  const backfill = env.SEED_ANALYTICS_BACKFILL;
 
   const users = await ensureUsers();
   const ws = await ensureWorkspace(users);

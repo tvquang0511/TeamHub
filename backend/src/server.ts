@@ -3,8 +3,9 @@ import { createServer } from "http";
 import app from "./app";
 import { setupSocketServer } from "./realtime/socket";
 import { ensureBoardMetricsDailyJob } from "./integrations/queue/analytics.queue";
+import env from "./config/env";
 
-const PORT = process.env.PORT || 4000;
+const PORT = env.PORT;
 
 const httpServer = createServer(app);
 setupSocketServer(httpServer);

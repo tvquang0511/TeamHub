@@ -1,0 +1,70 @@
+{
+  "info": {
+    "_postman_id": "32a3f437-30e1-4f6c-a7b0-4ce3d06ce3f6",
+    "name": "TeamHub - 53 Assignees",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:4000/api" }],
+  "item": [
+    {
+      "name": "List assignees",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/assignees/cards/{{cardId}}/assignees",
+          "host": ["{{baseUrl}}"],
+          "path": ["assignees", "cards", "{{cardId}}", "assignees"]
+        }
+      }
+    },
+    {
+      "name": "Assign myself",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/assignees/cards/{{cardId}}/assignees/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["assignees", "cards", "{{cardId}}", "assignees", "me"]
+        }
+      }
+    },
+    {
+      "name": "Unassign myself",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/assignees/cards/{{cardId}}/assignees/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["assignees", "cards", "{{cardId}}", "assignees", "me"]
+        }
+      }
+    },
+    {
+      "name": "Admin add assignee by userId",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/assignees/cards/{{cardId}}/assignees/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["assignees", "cards", "{{cardId}}", "assignees", "{{userId}}"]
+        }
+      }
+    },
+    {
+      "name": "Admin kick assignee by userId",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/assignees/cards/{{cardId}}/assignees/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["assignees", "cards", "{{cardId}}", "assignees", "{{userId}}"]
+        }
+      }
+    }
+  ]
+}

@@ -52,7 +52,7 @@ const analyticsWorker = new Worker(
 		if (job.name !== ANALYTICS_JOB_NAME) return;
 
 		const dateArg = (job.data as any)?.date as string | undefined;
-		const retentionDays = Number(process.env.ACTIVITY_RETENTION_DAYS || 90);
+		const retentionDays = env.ACTIVITY_RETENTION_DAYS ?? 90;
 
 		await withClient(async (client) => processBoardMetricsDailyJob(client, dateArg, retentionDays));
 	},

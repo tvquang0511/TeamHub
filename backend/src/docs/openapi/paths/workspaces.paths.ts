@@ -6,15 +6,25 @@ const CreateWorkspaceRequestSchema = z.object({
   description: z.string().max(1000).optional(),
 });
 
+const UpdateWorkspaceRequestSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).nullable().optional(),
+});
+
 const WorkspaceSchema = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.string().nullable().optional(),
-  createdAt: z.string().datetime().optional(),
-  updatedAt: z.string().datetime().optional(),
+  description: z.string().nullable(),
+  backgroundImageUrl: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 const CreateWorkspaceResponseSchema = z.object({
+  workspace: WorkspaceSchema,
+});
+
+const UpdateWorkspaceResponseSchema = z.object({
   workspace: WorkspaceSchema,
 });
 
@@ -23,6 +33,10 @@ const ListMyWorkspacesResponseSchema = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
+      description: z.string().nullable(),
+      backgroundImageUrl: z.string().nullable(),
+      createdAt: z.string().datetime(),
+      updatedAt: z.string().datetime(),
       role: z.enum(['OWNER', 'ADMIN', 'MEMBER']),
     }),
   ),
@@ -37,7 +51,9 @@ const ListMembersResponseSchema = z.object({
     z.object({
       id: z.string(),
       userId: z.string(),
+      email: z.string().email(),
       displayName: z.string(),
+      avatarUrl: z.string().nullable(),
       role: z.enum(['OWNER', 'ADMIN', 'MEMBER']),
     }),
   ),
@@ -50,7 +66,9 @@ const UpdateWorkspaceMemberRoleRequestSchema = z.object({
 const WorkspaceMemberSchema = z.object({
   id: z.string(),
   userId: z.string(),
+  email: z.string().email(),
   displayName: z.string(),
+  avatarUrl: z.string().nullable(),
   role: z.enum(['OWNER', 'ADMIN', 'MEMBER']),
 });
 
@@ -60,10 +78,39 @@ const UpdateWorkspaceMemberRoleResponseSchema = z.object({
 
 const OkResponseSchema = z.object({ ok: z.boolean() });
 
+const PresignedPutResultSchema = z.object({
+  uploadUrl: z.string().url(),
+  method: z.literal('PUT'),
+  headers: z.record(z.string(), z.string()),
+  bucket: z.string(),
+  objectKey: z.string(),
+  url: z.string().url(),
+  expiresIn: z.number().int(),
+});
+
+const InitWorkspaceBackgroundUploadRequestSchema = z.object({
+  fileName: z.string().min(1).max(500),
+  contentType: z.string().min(1).max(200),
+});
+
+const InitWorkspaceBackgroundUploadResponseSchema = z.object({
+  upload: PresignedPutResultSchema,
+});
+
+const CommitWorkspaceBackgroundUploadRequestSchema = z.object({
+  objectKey: z.string().min(1).max(2000),
+});
+
+const CommitWorkspaceBackgroundUploadResponseSchema = z.object({
+  workspace: WorkspaceSchema,
+});
+
 export function buildWorkspacesSchemas() {
   return {
     CreateWorkspaceRequest: toSchema(CreateWorkspaceRequestSchema, 'CreateWorkspaceRequest'),
     CreateWorkspaceResponse: toSchema(CreateWorkspaceResponseSchema, 'CreateWorkspaceResponse'),
+    UpdateWorkspaceRequest: toSchema(UpdateWorkspaceRequestSchema, 'UpdateWorkspaceRequest'),
+    UpdateWorkspaceResponse: toSchema(UpdateWorkspaceResponseSchema, 'UpdateWorkspaceResponse'),
     ListMyWorkspacesResponse: toSchema(
       ListMyWorkspacesResponseSchema,
       'ListMyWorkspacesResponse',
@@ -83,6 +130,22 @@ export function buildWorkspacesSchemas() {
     UpdateWorkspaceMemberRoleResponse: toSchema(
       UpdateWorkspaceMemberRoleResponseSchema,
       'UpdateWorkspaceMemberRoleResponse',
+    ),
+    InitWorkspaceBackgroundUploadRequest: toSchema(
+      InitWorkspaceBackgroundUploadRequestSchema,
+      'InitWorkspaceBackgroundUploadRequest',
+    ),
+    InitWorkspaceBackgroundUploadResponse: toSchema(
+      InitWorkspaceBackgroundUploadResponseSchema,
+      'InitWorkspaceBackgroundUploadResponse',
+    ),
+    CommitWorkspaceBackgroundUploadRequest: toSchema(
+      CommitWorkspaceBackgroundUploadRequestSchema,
+      'CommitWorkspaceBackgroundUploadRequest',
+    ),
+    CommitWorkspaceBackgroundUploadResponse: toSchema(
+      CommitWorkspaceBackgroundUploadResponseSchema,
+      'CommitWorkspaceBackgroundUploadResponse',
     ),
     OkResponse: toSchema(OkResponseSchema, 'OkResponse'),
   };
@@ -217,6 +280,211 @@ export const workspacesPaths = {
             'application/json': {
               schema: { $ref: '#/components/schemas/ErrorResponse' },
             },
+          },
+        },
+      },
+    },
+    patch: {
+      tags: ['Workspaces'],
+      summary: 'Update workspace',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          example: 'uuid',
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/UpdateWorkspaceRequest' },
+            examples: {
+              sample: {
+                summary: 'Update workspace name',
+                value: { name: 'New Name' },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpdateWorkspaceResponse' },
+            },
+          },
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '403': {
+          description: 'Forbidden',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '404': {
+          description: 'Workspace not found',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+      },
+    },
+    delete: {
+      tags: ['Workspaces'],
+      summary: 'Delete workspace',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          example: 'uuid',
+        },
+      ],
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/OkResponse' },
+              examples: { sample: { value: { ok: true } } },
+            },
+          },
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '403': {
+          description: 'Forbidden',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '404': {
+          description: 'Workspace not found',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+      },
+    },
+  },
+
+  '/workspaces/{id}/background/init': {
+    post: {
+      tags: ['Workspaces'],
+      summary: 'Init workspace background upload (presigned PUT)',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          example: 'uuid',
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/InitWorkspaceBackgroundUploadRequest' },
+            examples: {
+              sample: {
+                summary: 'Init background upload',
+                value: { fileName: 'bg.jpg', contentType: 'image/jpeg' },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/InitWorkspaceBackgroundUploadResponse' },
+            },
+          },
+        },
+        '400': {
+          description: 'Validation error',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+      },
+    },
+  },
+
+  '/workspaces/{id}/background/commit': {
+    post: {
+      tags: ['Workspaces'],
+      summary: 'Commit workspace background upload',
+      security: [{ bearerAuth: [] }],
+      parameters: [
+        {
+          name: 'id',
+          in: 'path',
+          required: true,
+          schema: { type: 'string', format: 'uuid' },
+          example: 'uuid',
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/CommitWorkspaceBackgroundUploadRequest' },
+            examples: {
+              sample: {
+                summary: 'Commit background upload',
+                value: { objectKey: 'workspace-backgrounds/workspaceId/123.jpg' },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        '200': {
+          description: 'OK',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/CommitWorkspaceBackgroundUploadResponse' },
+            },
+          },
+        },
+        '400': {
+          description: 'Validation error',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
+          },
+        },
+        '401': {
+          description: 'Unauthorized',
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } },
           },
         },
       },

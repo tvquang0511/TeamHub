@@ -105,6 +105,37 @@
       }
     },
     {
+      "name": "Create card reference attachment (uses refCardId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/attachments/cards/{{cardId}}/cards",
+          "host": ["{{baseUrl}}"],
+          "path": ["attachments", "cards", "{{cardId}}", "cards"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"referencedCardId\": \"{{refCardId}}\",\n  \"linkTitle\": \"Related card\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.attachment && json.attachment.id) pm.collectionVariables.set('attachmentId', json.attachment.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "Presign download",
       "request": {
         "method": "POST",

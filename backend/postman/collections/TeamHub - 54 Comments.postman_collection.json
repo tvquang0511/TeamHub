@@ -1,0 +1,65 @@
+{
+  "info": {
+    "_postman_id": "7a5b1865-3a2a-43c3-b30f-1f2a6f0c7569",
+    "name": "TeamHub - 54 Comments",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api" },
+    { "key": "commentId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "List (by cardId)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/comments?cardId={{cardId}}&limit=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["comments"],
+          "query": [
+            { "key": "cardId", "value": "{{cardId}}" },
+            { "key": "limit", "value": "20" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create (captures commentId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/comments", "host": ["{{baseUrl}}"], "path": ["comments"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cardId\": \"{{cardId}}\",\n  \"content\": \"Hello from Postman\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.comment && json.comment.id) pm.collectionVariables.set('commentId', json.comment.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/comments/{{commentId}}", "host": ["{{baseUrl}}"], "path": ["comments", "{{commentId}}"] }
+      }
+    }
+  ]
+}

@@ -122,6 +122,57 @@
           "path": ["workspaces", "{{workspaceId}}", "leave"]
         }
       }
+    },
+    {
+      "name": "Background: init upload (captures workspaceBgObjectKey)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/background/init",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}", "background", "init"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fileName\": \"bg.jpg\",\n  \"contentType\": \"image/jpeg\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "if (json.upload && json.upload.objectKey) pm.collectionVariables.set('workspaceBgObjectKey', json.upload.objectKey);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Background: commit upload (uses workspaceBgObjectKey)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/workspaces/{{workspaceId}}/background/commit",
+          "host": ["{{baseUrl}}"],
+          "path": ["workspaces", "{{workspaceId}}", "background", "commit"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"objectKey\": \"{{workspaceBgObjectKey}}\"\n}"
+        }
+      }
     }
   ]
 }

@@ -8,6 +8,7 @@ import { chatAttachmentsApi, type ChatMessageAttachment } from "../../../api/cha
 import { getAccessToken } from "../../../api/http";
 import { useAuth } from "../../../providers/AuthProvider";
 import type { BoardDetail, BoardMessage } from "../../../types/api";
+import { API_BASE_URL } from "../../../../config/env";
 import { Button } from "../../../components/ui/button";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import { Textarea } from "../../../components/ui/textarea";
@@ -28,7 +29,7 @@ function apiBaseToSocketBase(apiBase: string) {
 }
 
 const SOCKET_BASE_URL = apiBaseToSocketBase(
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api",
+  API_BASE_URL,
 );
 
 type InlineImageState = {

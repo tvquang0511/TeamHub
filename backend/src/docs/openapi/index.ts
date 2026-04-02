@@ -8,6 +8,12 @@ import { buildListsSchemas, listsPaths } from './paths/lists.paths';
 import { buildCardsSchemas, cardsPaths } from './paths/cards.paths';
 import { usersPaths } from './paths/users.paths';
 import { buildRemindersSchemas, remindersPaths } from './paths/reminders.paths';
+import { buildAttachmentsSchemas, attachmentsPaths } from './paths/attachments.paths';
+import { buildLabelsSchemas, labelsPaths } from './paths/labels.paths';
+import { buildChecklistsSchemas, checklistsPaths } from './paths/checklists.paths';
+import { buildAssigneesSchemas, assigneesPaths } from './paths/assignees.paths';
+import { buildCommentsSchemas, commentsPaths } from './paths/comments.paths';
+import { buildAnalyticsSchemas, analyticsPaths } from './paths/analytics.paths';
 
 /**
  * Modular OpenAPI entrypoint.
@@ -23,6 +29,12 @@ export function buildOpenApiDocument() {
   const listsSchemas = buildListsSchemas();
   const cardsSchemas = buildCardsSchemas();
   const remindersSchemas = buildRemindersSchemas();
+  const attachmentsSchemas = buildAttachmentsSchemas();
+  const labelsSchemas = buildLabelsSchemas();
+  const checklistsSchemas = buildChecklistsSchemas();
+  const assigneesSchemas = buildAssigneesSchemas();
+  const commentsSchemas = buildCommentsSchemas();
+  const analyticsSchemas = buildAnalyticsSchemas();
 
   return {
     openapi: '3.0.3',
@@ -46,6 +58,12 @@ export function buildOpenApiDocument() {
       { name: 'Boards' },
       { name: 'Lists' },
       { name: 'Cards' },
+      { name: 'Attachments' },
+      { name: 'Labels' },
+      { name: 'Checklists' },
+      { name: 'Assignees' },
+      { name: 'Comments' },
+      { name: 'Analytics' },
       { name: 'Reminders' },
     ],
     components: {
@@ -57,6 +75,12 @@ export function buildOpenApiDocument() {
         ...boardsSchemas,
         ...listsSchemas,
         ...cardsSchemas,
+        ...attachmentsSchemas,
+        ...labelsSchemas,
+        ...checklistsSchemas,
+        ...assigneesSchemas,
+        ...commentsSchemas,
+        ...analyticsSchemas,
         ...remindersSchemas,
       },
       securitySchemes: {
@@ -76,6 +100,12 @@ export function buildOpenApiDocument() {
       ...boardsPaths,
       ...listsPaths,
       ...cardsPaths,
+      ...attachmentsPaths,
+      ...labelsPaths,
+      ...checklistsPaths,
+      ...assigneesPaths,
+      ...commentsPaths,
+      ...analyticsPaths,
       ...remindersPaths,
     },
   };

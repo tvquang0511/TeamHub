@@ -7,6 +7,8 @@ import { z } from 'zod';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+
   PORT: z.coerce.number().int().positive().default(4000),
   DATABASE_URL: z.string().min(1),
 
@@ -123,6 +125,24 @@ const envSchema = z.object({
   // Public web URL for links in emails (password reset, etc.)
   // Example: "http://localhost:5173" or "https://app.teamhub.com"
   APP_WEB_URL: z.string().min(1).default('http://localhost:5173'),
+
+  // Data retention (days)
+  // Used by the daily board metrics rollup cleanup job.
+  ACTIVITY_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
+
+  // Analytics seed (optional; used by scripts/seed-analytics.ts)
+  ANALYTICS_SEED_DAYS: z.coerce.number().int().positive().default(30),
+  ANALYTICS_SEED_BOARD_NAME: z.string().min(1).default('Analytics Seed Board'),
+  SEED_ANALYTICS_BACKFILL: z
+    .enum(['true', 'false', '1', '0'])
+    .optional()
+    .default('1')
+    .transform((v) => v === 'true' || v === '1'),
+  SEED_ANALYTICS_RESET: z
+    .enum(['true', 'false', '1', '0'])
+    .optional()
+    .default('0')
+    .transform((v) => v === 'true' || v === '1'),
 
   JWT_ACCESS_SECRET: z.string().min(1),
   JWT_REFRESH_SECRET: z.string().min(1),

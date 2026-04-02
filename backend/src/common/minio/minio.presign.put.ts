@@ -3,12 +3,6 @@ import crypto from "crypto";
 // Minimal presign implementation for S3-compatible (MinIO) using AWS Signature V4.
 // This presign is for PUT object.
 
-export function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env ${name}`);
-  return v;
-}
-
 function hmac(key: Buffer | string, data: string): Buffer {
   return crypto.createHmac("sha256", key).update(data, "utf8").digest();
 }

@@ -32,6 +32,140 @@
       ]
     },
     {
+      "name": "Get detail",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"First card (updated)\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Set due date",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/due-date",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "due-date"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"dueAt\": \"2026-04-10T09:00:00.000Z\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Clear due date",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/due-date",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "due-date"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"dueAt\": null\n}" }
+      }
+    },
+    {
+      "name": "Mark done",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/done",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "done"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"isDone\": true\n}" }
+      }
+    },
+    {
+      "name": "Mark undone",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/done",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "done"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"isDone\": false\n}" }
+      }
+    },
+    {
+      "name": "Labels: list on card",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/labels",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "labels"]
+        }
+      }
+    },
+    {
+      "name": "Labels: attach (uses labelId)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/labels/{{labelId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "labels", "{{labelId}}"]
+        }
+      }
+    },
+    {
+      "name": "Labels: detach (uses labelId)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/labels/{{labelId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "labels", "{{labelId}}"]
+        }
+      }
+    },
+    {
       "name": "List (by listId)",
       "request": {
         "method": "GET",

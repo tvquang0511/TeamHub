@@ -1,6 +1,7 @@
 import { activity_type } from "@prisma/client";
 
 import prisma from "../db/prisma";
+import env from "../config/env";
 import { bumpAnalyticsCacheVersion } from "../integrations/cache/redisCache";
 
 const DEFAULT_RETENTION_DAYS = 90;
@@ -282,7 +283,7 @@ export async function cleanupOldActivities(retentionDays = DEFAULT_RETENTION_DAY
 async function main() {
   const dateArg = process.argv[2];
   await runBoardMetricsDailyRollup(dateArg);
-  await cleanupOldActivities(Number(process.env.ACTIVITY_RETENTION_DAYS ?? DEFAULT_RETENTION_DAYS));
+  await cleanupOldActivities(env.ACTIVITY_RETENTION_DAYS ?? DEFAULT_RETENTION_DAYS);
 }
 
 if (require.main === module) {

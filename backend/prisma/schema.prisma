@@ -1,13 +1,532 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// TeamHub - Prisma schema (PostgreSQL)
+// Conventions:
+// - UUID primary keys
+// - snake_case column names via @map
+// - created_at / updated_at timestamps
+// - position stored as Decimal (Postgres numeric) for stable ordering
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum workspace_member_role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum board_visibility {
+  PRIVATE
+  WORKSPACE
+}
+
+enum board_member_role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum reminder_job_status {
+  PENDING
+  SENT
+  CANCELED
+  FAILED
+}
+
+enum activity_type {
+  CARD_CREATED
+  CARD_MOVED
+  CARD_UPDATED
+  DUE_AT_CHANGED
+  COMMENT_ADDED
+  ASSIGNEE_ADDED
+  ASSIGNEE_REMOVED
+  LABEL_ADDED
+  LABEL_REMOVED
+  ATTACHMENT_ADDED
+  ATTACHMENT_REMOVED
+}
+
+enum card_attachment_type {
+  FILE
+  LINK
+  CARD
+}
+
+model users {
+  id            String  @id @default(uuid()) @db.Uuid
+  email         String  @unique
+  passwordHash  String  @map("password_hash")
+  displayName   String  @map("display_name")
+
+  avatarUrl     String? @map("avatar_url")
+  description   String?
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  refreshTokens     refresh_tokens[]
+  passwordResetTokens password_reset_tokens[]
+  workspaceMembers  workspace_members[]
+  boardMessages     board_messages[] @relation("BoardMessageSender")
+  boardMessageAttachments board_message_attachments[] @relation("BoardMessageAttachmentUploader")
+  boardMembers      board_members[]
+  cardComments      card_comments[]
+  cardAssignees     card_assignees[]
+    cardAttachments   card_attachments[]
+    reminderJobs      reminder_jobs[]
+  activities        activities[]
+
+  @@map("users")
+}
+
+model password_reset_tokens {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid @map("user_id")
+  tokenHash   String   @unique @map("token_hash")
+  expiresAt   DateTime @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  requestedIp String?  @map("requested_ip")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_password_reset_tokens_user_id")
+  @@index([expiresAt], map: "idx_password_reset_tokens_expires_at")
+  @@map("password_reset_tokens")
+}
+
+model refresh_tokens {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid @map("user_id")
+  tokenHash  String   @map("token_hash")
+  expiresAt  DateTime @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_refresh_tokens_user_id")
+  @@index([expiresAt], map: "idx_refresh_tokens_expires_at")
+  @@map("refresh_tokens")
+}
+
+model workspaces {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  description String?
+
+  backgroundImageUrl String? @map("background_image_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members   workspace_members[]
+  invites   workspace_invites[]
+  boards    boards[]
+  activities activities[]
+
+  @@map("workspaces")
+}
+
+model workspace_members {
+  id          String @id @default(uuid()) @db.Uuid
+  workspaceId String @db.Uuid @map("workspace_id")
+  userId      String @db.Uuid @map("user_id")
+  role        workspace_member_role
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId], map: "uq_workspace_members_workspace_user")
+  @@index([userId], map: "idx_workspace_members_user_id")
+  @@map("workspace_members")
+}
+
+model workspace_invites {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid @map("workspace_id")
+
+  email       String
+  token       String   @unique
+  role        workspace_member_role @default(MEMBER)
+  expiresAt   DateTime @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId], map: "idx_workspace_invites_workspace_id")
+  @@index([email], map: "idx_workspace_invites_email")
+  @@map("workspace_invites")
+}
+
+model board_messages {
+  id        String   @id @default(uuid()) @db.Uuid
+  boardId   String   @db.Uuid @map("board_id")
+  senderId  String   @db.Uuid @map("sender_id")
+
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  editedAt  DateTime? @map("edited_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  board  boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  sender users  @relation("BoardMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments board_message_attachments[]
+
+  @@index([boardId, createdAt, id], map: "idx_board_messages_board_created_id")
+  @@map("board_messages")
+}
+
+model board_message_attachments {
+  id         String   @id @default(uuid()) @db.Uuid
+  boardId    String   @db.Uuid @map("board_id")
+  messageId  String?  @db.Uuid @map("message_id")
+  uploaderId String   @db.Uuid @map("uploader_id")
+
+  // FILE attachments (MinIO private bucket)
+  bucket     String
+  objectKey  String   @map("object_key")
+  url        String?
+
+  fileName   String   @map("file_name")
+  mimeType   String   @map("mime_type")
+  size       Int
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  linkedAt   DateTime? @map("linked_at")
+
+  board    boards         @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  message  board_messages? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  uploader users          @relation("BoardMessageAttachmentUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([boardId, createdAt, id], map: "idx_board_message_attachments_board_created_id")
+  @@index([messageId, createdAt, id], map: "idx_board_message_attachments_message_created_id")
+  @@index([uploaderId], map: "idx_board_message_attachments_uploader_id")
+  @@map("board_message_attachments")
+}
+
+model boards {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @db.Uuid @map("workspace_id")
+
+  name        String
+  description String?
+  visibility  board_visibility @default(PRIVATE)
+  backgroundColor String? @map("background_color")
+  backgroundLeftColor String? @map("background_left_color")
+  backgroundRightColor String? @map("background_right_color")
+  backgroundSplitPct Int? @map("background_split_pct")
+  position    Decimal? @db.Decimal(65, 30)
+  archivedAt  DateTime? @map("archived_at")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace workspaces @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members   board_members[]
+  lists     lists[]
+  messages  board_messages[]
+  messageAttachments board_message_attachments[]
+  labels    labels[]
+  activities activities[]
+  metricsDaily board_metrics_daily[]
+  metricsMonthly board_metrics_monthly[]
+
+  @@index([workspaceId], map: "idx_boards_workspace_id")
+  @@index([workspaceId, position], map: "idx_boards_workspace_position")
+  @@map("boards")
+}
+
+model board_members {
+  id        String @id @default(uuid()) @db.Uuid
+  boardId   String @db.Uuid @map("board_id")
+  userId    String @db.Uuid @map("user_id")
+  role      board_member_role
+  createdAt DateTime @default(now()) @map("created_at")
+
+  board boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  users  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId], map: "uq_board_members_board_user")
+  @@index([userId], map: "idx_board_members_user_id")
+  @@map("board_members")
+}
+
+model lists {
+  id         String   @id @default(uuid()) @db.Uuid
+  boardId    String   @db.Uuid @map("board_id")
+
+  name       String
+  position   Decimal  @db.Decimal(65, 30)
+  isDoing    Boolean  @default(false) @map("is_doing")
+  isDone     Boolean  @default(false) @map("is_done")
+  archivedAt DateTime? @map("archived_at")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  board boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards cards[]
+
+  @@index([boardId, position], map: "idx_lists_board_position")
+  @@map("lists")
+}
+
+model cards {
+  id          String   @id @default(uuid()) @db.Uuid
+  listId      String   @db.Uuid @map("list_id")
+
+  title       String
+  description String?
+  dueAt       DateTime? @map("due_at")
+  isDone      Boolean  @default(false) @map("is_done")
+  position    Decimal  @db.Decimal(65, 30)
+  archivedAt  DateTime? @map("archived_at")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  list lists @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  comments    card_comments[]
+  assignees   card_assignees[]
+  cardLabels  card_labels[]
+  checklists  checklists[]
+  attachments card_attachments[]
+  reminderJobs reminder_jobs[]
+  activities  activities[]
+
+  @@index([listId, position], map: "idx_cards_list_position")
+  @@map("cards")
+}
+
+model card_attachments {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  uploaderId String  @db.Uuid @map("uploader_id")
+
+  type      card_attachment_type
+
+  // FILE attachments (MinIO)
+  bucket    String?
+  objectKey String?  @map("object_key")
+  url       String?
+
+  fileName  String?  @map("file_name")
+  mimeType  String?  @map("mime_type")
+  size      Int?
+
+  // LINK attachments (external)
+  linkUrl   String?  @map("link_url")
+  linkTitle String?  @map("link_title")
+
+  // CARD attachments (reference to another card)
+  referencedCardId String? @db.Uuid @map("referenced_card_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card     cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  uploader users @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt, id], map: "idx_card_attachments_card_created_id")
+  @@index([uploaderId], map: "idx_card_attachments_uploader_id")
+  @@map("card_attachments")
+}
+
+model card_comments {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  authorId  String   @db.Uuid @map("author_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card   cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  author users @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt, id], map: "idx_card_comments_card_created_id")
+  @@map("card_comments")
+}
+
+model card_assignees {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  userId    String   @db.Uuid @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId], map: "uq_card_assignees_card_user")
+  @@index([userId], map: "idx_card_assignees_user_id")
+  @@map("card_assignees")
+}
+
+model labels {
+  id          String   @id @default(uuid()) @db.Uuid
+  boardId     String   @db.Uuid @map("board_id")
+
+  name        String
+  color       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  board     boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cardLabels card_labels[]
+
+  @@index([boardId], map: "idx_labels_board_id")
+  @@map("labels")
+}
+
+model card_labels {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  labelId   String   @db.Uuid @map("label_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card  cards  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label labels @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, labelId], map: "uq_card_labels_card_label")
+  @@index([labelId], map: "idx_card_labels_label_id")
+  @@map("card_labels")
+}
+
+model checklists {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+
+  title     String
+  position  Decimal  @db.Decimal(65, 30)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card  cards            @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  items checklist_items[]
+
+  @@index([cardId, position], map: "idx_checklists_card_position")
+  @@map("checklists")
+}
+
+model checklist_items {
+  id          String   @id @default(uuid()) @db.Uuid
+  checklistId String   @db.Uuid @map("checklist_id")
+
+  title       String
+  position    Decimal  @db.Decimal(65, 30)
+  isDone      Boolean  @default(false) @map("is_done")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  checklist checklists @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([checklistId, position], map: "idx_checklist_items_checklist_position")
+  @@map("checklist_items")
+}
+
+model reminder_jobs {
+  id        String   @id @default(uuid()) @db.Uuid
+  cardId    String   @db.Uuid @map("card_id")
+  userId    String   @db.Uuid @map("user_id")
+
+  remindAt  DateTime @map("remind_at")
+  status    reminder_job_status @default(PENDING)
+
+  attempts  Int      @default(0)
+  lastError String?  @map("last_error")
+  sentAt    DateTime? @map("sent_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  card cards @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId, remindAt], map: "uq_reminder_jobs_card_user_remind_at")
+  @@index([status, remindAt], map: "idx_reminder_jobs_status_remind_at")
+  @@index([userId], map: "idx_reminder_jobs_user_id")
+  @@map("reminder_jobs")
+}
+
+model activities {
+  id          String   @id @default(uuid()) @db.Uuid
+  actorId     String   @db.Uuid @map("actor_id")
+
+  workspaceId String?  @db.Uuid @map("workspace_id")
+  boardId     String?  @db.Uuid @map("board_id")
+  cardId      String?  @db.Uuid @map("card_id")
+
+  type        activity_type
+  payload     Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  actor     users      @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  workspace workspaces? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  board     boards?    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  card      cards?     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt], map: "idx_activities_workspace_created_at")
+  @@index([boardId, createdAt], map: "idx_activities_board_created_at")
+  @@index([cardId, createdAt], map: "idx_activities_card_created_at")
+  @@index([actorId, createdAt], map: "idx_activities_actor_created_at")
+  @@map("activities")
+}
+
+model board_metrics_daily {
+  id        String   @id @default(uuid()) @db.Uuid
+  boardId   String   @db.Uuid @map("board_id")
+  date      DateTime @db.Date
+
+  cardsCreatedCount     Int @default(0) @map("cards_created_count")
+  cardsDoneCount        Int @default(0) @map("cards_done_count")
+  cardsMovedCount       Int @default(0) @map("cards_moved_count")
+  commentsCount         Int @default(0) @map("comments_count")
+  attachmentsCount      Int @default(0) @map("attachments_count")
+  assigneesAddedCount   Int @default(0) @map("assignees_added_count")
+  assigneesRemovedCount Int @default(0) @map("assignees_removed_count")
+
+  wipCount     Int @default(0) @map("wip_count")
+  overdueCount Int @default(0) @map("overdue_count")
+
+  avgCycleTimeSec Int? @map("avg_cycle_time_sec")
+  avgLeadTimeSec  Int? @map("avg_lead_time_sec")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  board boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, date], map: "uq_board_metrics_daily_board_date")
+  @@index([date], map: "idx_board_metrics_daily_date")
+  @@map("board_metrics_daily")
+}
+
+model board_metrics_monthly {
+  id        String   @id @default(uuid()) @db.Uuid
+  boardId   String   @db.Uuid @map("board_id")
+  month     DateTime @db.Date
+
+  cardsCreatedCount     Int @default(0) @map("cards_created_count")
+  cardsDoneCount        Int @default(0) @map("cards_done_count")
+  cardsMovedCount       Int @default(0) @map("cards_moved_count")
+  commentsCount         Int @default(0) @map("comments_count")
+  attachmentsCount      Int @default(0) @map("attachments_count")
+  assigneesAddedCount   Int @default(0) @map("assignees_added_count")
+  assigneesRemovedCount Int @default(0) @map("assignees_removed_count")
+
+  avgCycleTimeSec Int? @map("avg_cycle_time_sec")
+  avgLeadTimeSec  Int? @map("avg_lead_time_sec")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  board boards @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, month], map: "uq_board_metrics_monthly_board_month")
+  @@index([month], map: "idx_board_metrics_monthly_month")
+  @@map("board_metrics_monthly")
 }

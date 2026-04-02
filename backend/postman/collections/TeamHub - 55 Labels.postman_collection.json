@@ -1,0 +1,120 @@
+{
+  "info": {
+    "_postman_id": "6a0704c8-8d48-4a2e-8f27-90ff25a60b7a",
+    "name": "TeamHub - 55 Labels",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api" }
+  ],
+  "item": [
+    {
+      "name": "List (by boardId)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/labels?boardId={{boardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["labels"],
+          "query": [
+            { "key": "boardId", "value": "{{boardId}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create (captures labelId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/labels", "host": ["{{baseUrl}}"], "path": ["labels"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"boardId\": \"{{boardId}}\",\n  \"name\": \"Bug\",\n  \"color\": \"#EF4444\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.label && json.label.id) pm.collectionVariables.set('labelId', json.label.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/labels/{{labelId}}", "host": ["{{baseUrl}}"], "path": ["labels", "{{labelId}}"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"High priority\",\n  \"color\": \"#F59E0B\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Card labels - List",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/cards/{{cardId}}/labels", "host": ["{{baseUrl}}"], "path": ["cards", "{{cardId}}", "labels"] }
+      }
+    },
+    {
+      "name": "Card labels - Attach",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/labels/{{labelId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "labels", "{{labelId}}"]
+        }
+      }
+    },
+    {
+      "name": "Card labels - Detach",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/labels/{{labelId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "labels", "{{labelId}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/labels/{{labelId}}", "host": ["{{baseUrl}}"], "path": ["labels", "{{labelId}}"] }
+      }
+    }
+  ]
+}

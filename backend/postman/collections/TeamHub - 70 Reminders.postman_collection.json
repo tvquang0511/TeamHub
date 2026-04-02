@@ -1,0 +1,66 @@
+{
+  "info": {
+    "_postman_id": "8bb7d6d5-fc70-4d73-8de5-0b0d657c5c24",
+    "name": "TeamHub - 70 Reminders",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:4000/api" }],
+  "item": [
+    {
+      "name": "List my reminders for card",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/reminders",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "reminders"]
+        }
+      }
+    },
+    {
+      "name": "Set reminder for card (me)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/reminders",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "reminders"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"remindAt\": \"2026-03-28T10:00:00.000Z\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.reminder && json.reminder.id) pm.collectionVariables.set('reminderJobId', json.reminder.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cancel reminder job",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/cards/{{cardId}}/reminders/{{reminderJobId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["cards", "{{cardId}}", "reminders", "{{reminderJobId}}"]
+        }
+      }
+    }
+  ]
+}

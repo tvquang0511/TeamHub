@@ -12,18 +12,44 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  minio:
+    image: minio/minio:latest
+    container_name: teamhub-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: teamhub
+      MINIO_ROOT_PASSWORD: teamhub-secret
+    volumes:
+      - minio_data:/data
+
+  # One-shot container to create the bucket on startup.
+  minio-init:
+    image: minio/mc:latest
+    container_name: teamhub-minio-init
+    depends_on:
+      - minio
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 teamhub teamhub-secret; do sleep 1; done
+        # Private bucket for attachments
+        mc mb -p local/teamhub || true
+        mc anonymous set none local/teamhub || true
+
+        # Public bucket for avatars (anonymous download allowed)
+        mc mb -p local/teamhub-public || true
+        mc anonymous set download local/teamhub-public || true
+
   redis:
     image: redis:7
     container_name: teamhub-redis
     ports:
       - "6379:6379"
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: teamhub-rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-
 volumes:
   postgres_data:
+  minio_data:

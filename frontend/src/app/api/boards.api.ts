@@ -1,0 +1,319 @@
+import { httpClient } from "./http";
+import type {
+  Board,
+  BoardDetail,
+  BoardMember,
+  BoardMessage,
+  ListBoardMessagesResponse,
+  Card,
+  Label,
+  List,
+  CreateBoardRequest,
+  AddBoardMemberByEmailRequest,
+} from "../types/api";
+
+export const boardBackgroundToCss = (b: {
+  backgroundColor?: string;
+  backgroundLeftColor?: string;
+  backgroundRightColor?: string;
+  backgroundSplitPct?: number;
+}): string | undefined => {
+  if (b.backgroundColor) return b.backgroundColor;
+  if (!b.backgroundLeftColor || !b.backgroundRightColor) return undefined;
+  const pct =
+    typeof b.backgroundSplitPct === "number" && isFinite(b.backgroundSplitPct)
+      ? Math.min(100, Math.max(0, b.backgroundSplitPct))
+      : 50;
+  // Horizontal multi-color gradient with adjustable split point.
+  return `linear-gradient(90deg, ${b.backgroundLeftColor} 0%, ${b.backgroundLeftColor} ${pct}%, ${b.backgroundRightColor} 100%)`;
+};
+
+type BoardEnvelope = { board: any };
+type MembersEnvelope = { members: any[] };
+type BoardDetailEnvelope = {
+  board: any;
+  lists: any[];
+  cards: any[];
+  members: any[];
+  labels: any[];
+  actor?: any;
+};
+
+type BoardMessagesEnvelope = { messages: any[]; nextCursor: string | null };
+
+export const mapBoardFromApi = (b: any): Board => {
+  return {
+    id: b.id,
+    name: b.name,
+    description: b.description ?? undefined,
+    workspaceId: b.workspaceId,
+    privacy:
+      (b.privacy ?? (b.visibility === "WORKSPACE" ? "WORKSPACE" : "PRIVATE")) === "WORKSPACE"
+        ? "WORKSPACE"
+        : "PRIVATE",
+    // Prefer camelCase from backend; fallback to snake_case if an older/alternate serializer is used.
+    backgroundColor: (b.backgroundColor ?? b.background_color) ?? undefined,
+    backgroundLeftColor: (b.backgroundLeftColor ?? b.background_left_color) ?? undefined,
+    backgroundRightColor: (b.backgroundRightColor ?? b.background_right_color) ?? undefined,
+    backgroundSplitPct: (b.backgroundSplitPct ?? b.background_split_pct) ?? undefined,
+    createdAt: b.createdAt ?? new Date().toISOString(),
+    updatedAt: b.updatedAt ?? new Date().toISOString(),
+    actor: b.actor ?? undefined,
+  };
+};
+
+const mapMember = (m: any): BoardMember => ({
+  id: m.id,
+  userId: m.userId,
+  boardId: m.boardId ?? m.board_id ?? "",
+  role: m.role,
+  user: {
+    id: m.user?.id || m.userId,
+    email: m.user?.email ?? m.email ?? "",
+    displayName: m.user?.displayName ?? m.displayName ?? "",
+    avatarUrl: m.user?.avatarUrl ?? m.avatarUrl ?? null,
+  },
+  joinedAt: m.createdAt ?? new Date().toISOString(),
+});
+
+const mapList = (l: any, cards: Card[]): List => ({
+  id: l.id,
+  name: l.name,
+  boardId: l.boardId,
+  position: typeof l.position === "number" ? l.position : Number(l.position ?? 0),
+  cards,
+  isDoing: l.isDoing ?? undefined,
+  isDone: l.isDone ?? undefined,
+  createdAt: l.createdAt ?? new Date().toISOString(),
+  updatedAt: l.updatedAt ?? new Date().toISOString(),
+});
+
+const mapCard = (c: any): Card => ({
+  id: c.id,
+  title: c.title,
+  description: c.description ?? undefined,
+  listId: c.listId,
+  position: typeof c.position === "number" ? c.position : Number(c.position ?? 0),
+  dueAt: c.dueAt ?? undefined,
+  isDone: c.isDone ?? undefined,
+  checklistTotal: Array.isArray(c.checklists)
+    ? c.checklists.reduce((sum: number, cl: any) => sum + Number(cl?._count?.items ?? 0), 0)
+    : 0,
+  checklistDone: Array.isArray(c.checklists)
+    ? c.checklists.reduce((sum: number, cl: any) => sum + (Array.isArray(cl?.items) ? cl.items.length : 0), 0)
+    : 0,
+  labels: (c.labels || []).map(mapLabel),
+  assignees: [],
+  createdAt: c.createdAt ?? new Date().toISOString(),
+  updatedAt: c.updatedAt ?? new Date().toISOString(),
+});
+
+const mapLabel = (l: any): Label => ({
+  id: l.id,
+  name: l.name,
+  color: l.color ?? "#64748B",
+  boardId: l.boardId ?? "",
+  createdAt: l.createdAt ?? new Date().toISOString(),
+});
+
+const mapBoardMessage = (m: any): BoardMessage => ({
+  id: m.id,
+  boardId: m.boardId,
+  senderId: m.senderId,
+  content: m.content ?? "",
+  createdAt: m.createdAt ?? new Date().toISOString(),
+  editedAt: m.editedAt ?? null,
+  deletedAt: m.deletedAt ?? null,
+  sender: {
+    id: m.sender?.id ?? m.senderId,
+    displayName: m.sender?.displayName ?? m.senderDisplayName ?? "",
+    avatarUrl: m.sender?.avatarUrl ?? null,
+  },
+  attachments: Array.isArray(m.attachments)
+    ? m.attachments.map((a: any) => ({
+        id: a.id,
+        bucket: a.bucket,
+        objectKey: a.objectKey,
+        url: a.url ?? null,
+        fileName: a.fileName,
+        mimeType: a.mimeType,
+        size: a.size,
+        createdAt: a.createdAt ?? new Date().toISOString(),
+      }))
+    : [],
+});
+
+export const boardsApi = {
+  // Get board detail (includes lists, cards, members, labels)
+  getDetail: async (id: string): Promise<BoardDetail> => {
+    const response = await httpClient.get<BoardDetailEnvelope>(`/boards/${id}/detail`);
+    const { board, lists, cards, members, labels, actor } = response.data;
+
+    const mappedCards = (cards || []).map(mapCard);
+    const cardsByList = new Map<string, Card[]>();
+    for (const c of mappedCards) {
+      const arr = cardsByList.get(c.listId) || [];
+      arr.push(c);
+      cardsByList.set(c.listId, arr);
+    }
+
+    const mappedLists = (lists || []).map((l) =>
+      mapList(l, (cardsByList.get(l.id) || []).sort((a, b) => a.position - b.position))
+    );
+
+    return {
+      ...mapBoardFromApi(board),
+      lists: mappedLists.sort((a, b) => a.position - b.position),
+      members: (members || []).map(mapMember),
+      labels: (labels || []).map(mapLabel),
+      actor: actor ?? board?.actor,
+    };
+  },
+
+  // Get board by ID
+  getById: async (id: string): Promise<Board> => {
+    const response = await httpClient.get<BoardEnvelope>(`/boards/${id}`);
+    return mapBoardFromApi(response.data.board);
+  },
+
+  listMessages: async (boardId: string, input?: { cursor?: string; limit?: number }): Promise<ListBoardMessagesResponse> => {
+    const response = await httpClient.get<BoardMessagesEnvelope>(`/boards/${boardId}/messages`, {
+      params: {
+        cursor: input?.cursor,
+        limit: input?.limit,
+      },
+    });
+
+    return {
+      messages: (response.data.messages || []).map(mapBoardMessage),
+      nextCursor: response.data.nextCursor ?? null,
+    };
+  },
+
+  // Create board
+  create: async (data: CreateBoardRequest): Promise<Board> => {
+    const response = await httpClient.post<BoardEnvelope>("/boards", {
+      workspaceId: data.workspaceId,
+      name: data.name,
+      description: data.description,
+      visibility: data.privacy === "WORKSPACE" ? "WORKSPACE" : "PRIVATE",
+      backgroundColor: data.backgroundColor,
+      backgroundLeftColor: data.backgroundLeftColor,
+      backgroundRightColor: data.backgroundRightColor,
+      backgroundSplitPct: data.backgroundSplitPct,
+      position: undefined,
+    });
+    return mapBoardFromApi(response.data.board);
+  },
+
+  // Update board
+  update: async (
+    id: string,
+    data: Partial<CreateBoardRequest>
+  ): Promise<Board> => {
+    const response = await httpClient.patch<BoardEnvelope>(`/boards/${id}`, {
+      name: data.name,
+      description: data.description ?? undefined,
+      visibility:
+        data.privacy === undefined
+          ? undefined
+          : data.privacy === "WORKSPACE"
+            ? "WORKSPACE"
+            : "PRIVATE",
+      backgroundColor:
+        data.backgroundColor === undefined ? undefined : data.backgroundColor,
+      backgroundLeftColor:
+        data.backgroundLeftColor === undefined ? undefined : data.backgroundLeftColor,
+      backgroundRightColor:
+        data.backgroundRightColor === undefined ? undefined : data.backgroundRightColor,
+      backgroundSplitPct:
+        data.backgroundSplitPct === undefined ? undefined : data.backgroundSplitPct,
+      archived: undefined,
+      position: undefined,
+    });
+    return mapBoardFromApi(response.data.board);
+  },
+
+  updateVisibility: async (
+    id: string,
+    visibility: "PRIVATE" | "WORKSPACE"
+  ): Promise<Board> => {
+    const response = await httpClient.patch<BoardEnvelope>(
+      `/boards/${id}/visibility`,
+      { visibility }
+    );
+    return mapBoardFromApi(response.data.board);
+  },
+
+  updateBackground: async (
+    id: string,
+    data: {
+      backgroundColor?: string | null;
+      backgroundLeftColor?: string | null;
+      backgroundRightColor?: string | null;
+      backgroundSplitPct?: number | null;
+    }
+  ): Promise<Board> => {
+    const response = await httpClient.patch<BoardEnvelope>(
+      `/boards/${id}/background`,
+      {
+        backgroundColor:
+          data.backgroundColor === undefined ? undefined : data.backgroundColor,
+        backgroundLeftColor:
+          data.backgroundLeftColor === undefined
+            ? undefined
+            : data.backgroundLeftColor,
+        backgroundRightColor:
+          data.backgroundRightColor === undefined
+            ? undefined
+            : data.backgroundRightColor,
+        backgroundSplitPct:
+          data.backgroundSplitPct === undefined
+            ? undefined
+            : data.backgroundSplitPct,
+      }
+    );
+    return mapBoardFromApi(response.data.board);
+  },
+
+  // Delete board
+  delete: async (id: string): Promise<void> => {
+    await httpClient.delete(`/boards/${id}`);
+  },
+
+  // Get board members
+  getMembers: async (id: string): Promise<BoardMember[]> => {
+    const response = await httpClient.get<MembersEnvelope>(`/boards/${id}/members`);
+    return (response.data.members || []).map(mapMember);
+  },
+
+  // Add member by email
+  addMemberByEmail: async (
+    boardId: string,
+    data: AddBoardMemberByEmailRequest
+  ): Promise<BoardMember> => {
+    const response = await httpClient.post<BoardMember>(
+      `/boards/${boardId}/members/by-email`,
+      data
+    );
+    return response.data;
+  },
+
+  // Remove member
+  removeMember: async (boardId: string, userId: string): Promise<void> => {
+    await httpClient.delete(`/boards/${boardId}/members/${userId}`);
+  },
+
+  // Update member role
+  updateMemberRole: async (
+    boardId: string,
+    userId: string,
+    role: "ADMIN" | "MEMBER"
+  ): Promise<BoardMember> => {
+    const response = await httpClient.patch<BoardMember>(
+      `/boards/${boardId}/members/${userId}`,
+      { role }
+    );
+    return response.data;
+  },
+};

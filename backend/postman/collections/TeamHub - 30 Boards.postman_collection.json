@@ -1,0 +1,329 @@
+{
+  "info": {
+    "_postman_id": "a2aa4f1c-5d4b-4d93-9f6f-f8c3f8a8d030",
+    "name": "TeamHub - 30 Boards",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:4000/api" }],
+  "item": [
+    {
+      "name": "Create (captures boardId)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/boards", "host": ["{{baseUrl}}"], "path": ["boards"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workspaceId\": \"{{workspaceId}}\",\n  \"name\": \"My Board\",\n  \"description\": \"Board for MVP\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "if (json.board && json.board.id) pm.collectionVariables.set('boardId', json.board.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List (by workspaceId)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/boards?workspaceId={{workspaceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards"],
+          "query": [{ "key": "workspaceId", "value": "{{workspaceId}}" }]
+        }
+      }
+    },
+    {
+      "name": "Get",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}"] }
+      }
+    },
+    {
+      "name": "Get detail (one-shot)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}/detail", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}", "detail"] }
+      }
+    },
+    {
+      "name": "Analytics (board)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}/analytics", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}", "analytics"] }
+      }
+    },
+    {
+      "name": "Messages - List (chat history)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/messages?limit=30",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "messages"],
+          "query": [{ "key": "limit", "value": "30" }]
+        }
+      }
+    },
+    {
+      "name": "Update visibility",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/visibility",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "visibility"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"visibility\": \"WORKSPACE\"\n}" }
+      }
+    },
+    {
+      "name": "Update background (gradient)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/background",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "background"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"backgroundLeftColor\": \"#667eea\",\n  \"backgroundRightColor\": \"#764ba2\",\n  \"backgroundSplitPct\": 50\n}"
+        }
+      }
+    },
+    {
+      "name": "Update board (name/description)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"My Board (updated)\",\n  \"description\": \"Updated from Postman\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Delete (archive)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}"] }
+      }
+    },
+    {
+      "name": "Members - List",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}/members", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}", "members"] }
+      }
+    },
+    {
+      "name": "Members - Add by userId",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}/members", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}", "members"] },
+        "body": { "mode": "raw", "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"role\": \"MEMBER\"\n}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('memberUserId', pm.collectionVariables.get('userId'));",
+              "const json = pm.response.json();",
+              "if (json.member && json.member.userId) pm.collectionVariables.set('memberUserId', json.member.userId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Members - Add by email",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}/members/by-email", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}", "members", "by-email"] },
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{inviteEmail}}\",\n  \"role\": \"MEMBER\"\n}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.member && json.member.userId) pm.collectionVariables.set('memberUserId', json.member.userId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Members - Update role",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/members/{{memberUserId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "members", "{{memberUserId}}"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"role\": \"ADMIN\"\n}" }
+      }
+    },
+    {
+      "name": "Members - Remove",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/members/{{memberUserId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "members", "{{memberUserId}}"]
+        }
+      }
+    },
+    {
+      "name": "Leave board",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+        "url": { "raw": "{{baseUrl}}/boards/{{boardId}}/leave", "host": ["{{baseUrl}}"], "path": ["boards", "{{boardId}}", "leave"] }
+      }
+    },
+    {
+      "name": "Messages - Attachments - Presign upload",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/messages/attachments/presign",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "messages", "attachments", "presign"]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"fileName\": \"hello.txt\",\n  \"mimeType\": \"text/plain\",\n  \"size\": 12\n}" }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "const presign = json.presign;",
+              "if (!presign) return;",
+              "if (presign.bucket) pm.collectionVariables.set('s3Bucket', presign.bucket);",
+              "if (presign.objectKey) pm.collectionVariables.set('s3ObjectKey', presign.objectKey);",
+              "if (presign.url) pm.collectionVariables.set('s3Url', presign.url);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messages - Attachments - Commit file",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/messages/attachments/files",
+          "host": ["{{baseUrl}}"],
+          "path": ["boards", "{{boardId}}", "messages", "attachments", "files"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"bucket\": \"{{s3Bucket}}\",\n  \"objectKey\": \"{{s3ObjectKey}}\",\n  \"url\": \"{{s3Url}}\",\n  \"fileName\": \"hello.txt\",\n  \"mimeType\": \"text/plain\",\n  \"size\": 12\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.attachment && json.attachment.id) pm.collectionVariables.set('boardMessageAttachmentId', json.attachment.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messages - Attachments - Presign download",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/boards/{{boardId}}/messages/attachments/{{boardMessageAttachmentId}}/presign-download",
+          "host": ["{{baseUrl}}"],
+          "path": [
+            "boards",
+            "{{boardId}}",
+            "messages",
+            "attachments",
+            "{{boardMessageAttachmentId}}",
+            "presign-download"
+          ]
+        },
+        "body": { "mode": "raw", "raw": "{\n  \"disposition\": \"inline\"\n}" }
+      }
+    }
+  ]
+}

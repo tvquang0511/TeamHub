@@ -1,6 +1,6 @@
-# TeamHub — Trello-like Kanban + Chat realtime theo Workspace + Email Reminder (SMTP)
+# TeamHub — Trello-like Kanban + Chat realtime theo Board + Email Reminder (SMTP)
 
-> Mục tiêu đồ án: Xây dựng một ứng dụng web quản lý công việc kiểu Trello (Kanban) với mức độ giống Trello “nhiều nhất có thể”, có **realtime** (Socket.IO) để đồng bộ thay đổi ngay lập tức giữa nhiều người dùng, có **chat chung** theo Workspace để luyện WebSocket/Socket.IO, và có **nhắc nhở qua email** (SMTP) theo **reminder do từng người dùng tự đặt**.
+> Mục tiêu đồ án: Xây dựng một ứng dụng web quản lý công việc kiểu Trello (Kanban) với mức độ giống Trello “nhiều nhất có thể”, có **realtime** (Socket.IO) để đồng bộ thay đổi ngay lập tức giữa nhiều người dùng, có **chat** theo **Board** (mỗi board 1 box chat) để luyện WebSocket/Socket.IO, và có **nhắc nhở qua email** (SMTP) theo **reminder do từng người dùng tự đặt**.
 
 ---
 
@@ -12,12 +12,12 @@
 - ORM/DB: **Prisma** + **PostgreSQL**
 - Realtime: **Socket.IO**
 - Cache/đồng bộ realtime nhiều instance (giai đoạn nâng cao): **Redis**
-- Message queue / xử lý bất đồng bộ (giai đoạn nâng cao): **RabbitMQ**
+- Message queue / xử lý bất đồng bộ (giai đoạn nâng cao): **BullMQ (Redis-based)**
 - Email: **SMTP** (Nodemailer)
 - Deploy local: **Docker + docker-compose**
 
 ### 1.2. Phạm vi (scope) đã chốt
-- Chat: **đơn giản** — mỗi Workspace chỉ có **1 box chat chung** cho tất cả thành viên.
+- Chat: **đơn giản** — mỗi Board có **1 box chat** cho các thành viên của board đó.
 - Kanban: tập trung làm **giống Trello** (board/list/card/drag-drop/labels/members/checklists/comments/activity).
 - Reminder: **chỉ gửi email cho người dùng nào tự set reminder**, không gửi cho tất cả assignee.
 
@@ -48,8 +48,9 @@
 - **Owner/Admin** có quyền:
   - mời thành viên
   - đổi role thành viên (tùy mức bạn làm)
-- Mọi thao tác board/list/card yêu cầu:
-  - người dùng là member của workspace chứa board đó.
+- Board privacy (mô hình “workspace = công ty, board = phòng ban”):
+  - Board `PRIVATE`: chỉ **board members** mới xem/ thao tác lists/cards/chat.
+  - Board `WORKSPACE`: workspace members có thể **thấy board**, nhưng (khuyến nghị) chat + write vẫn yêu cầu board membership.
 
 ---
 
@@ -343,7 +344,7 @@
   - label added/removed
 - **Thiết kế**:
   - Có thể ghi trực tiếp khi xử lý API (MVP)
-  - Nâng cao: publish event sang RabbitMQ, worker ghi activity async.
+  - Nâng cao: publish event sang BullMQ, worker ghi activity async.
 
 ---
 
@@ -416,7 +417,7 @@
    - rate-limit chat
    - Socket.IO adapter để scale ngang (nhiều api instance)
 
-6. **RabbitMQ (nâng cao)**
+6. **BullMQ (nâng cao)**
    - event bus cho activity log/notifications
    - pipeline async (không bắt buộc MVP nhưng có trong thiết kế)
 
@@ -561,6 +562,8 @@
 ## 10. API design (mức đặc tả)
 > Chỉ là blueprint, bạn có thể đổi path theo ý, nhưng nên giữ nhất quán.
 
+> Nếu bạn đang bắt đầu làm Front-end, xem thêm **hợp đồng FE/BE (MVP)** tại: `docs/api/frontend-contract.md`.
+
 ### 10.1. Auth
 - `POST /auth/register`
 - `POST /auth/login`
@@ -573,21 +576,33 @@
 - `GET /workspaces`
 - `GET /workspaces/:id`
 - `GET /workspaces/:id/members`
-- `POST /workspaces/:id/invites`
-- `POST /invites/:token/accept`
+- `PATCH /workspaces/:id/members/:userId` (update role ADMIN/MEMBER)
+- `DELETE /workspaces/:id/members/:userId` (remove member)
+- `POST /workspaces/:id/leave`
+- `POST /invites/workspaces/:workspaceId` (create invite)
+- `POST /invites/:token/accept` (accept workspace invite)
+
+### 10.2.1. Users
+- `GET /users/search?q=...&workspaceId=...&limit=10`
 
 ### 10.3. Chat history
 - `GET /workspaces/:id/messages?cursor=...`
 
 ### 10.4. Board/List/Card
 - `POST /workspaces/:wid/boards`
-- `GET /boards/:bid` (trả board + lists + cards)
+- `GET /boards/:bid` (board basic)
+- `GET /boards/:bid/detail` (one-shot payload: board + lists + cards + labels + members)
 - `PATCH /boards/:bid`
 - `POST /boards/:bid/lists`
 - `PATCH /lists/:lid`
 - `POST /lists/:lid/cards`
 - `PATCH /cards/:cid`
 - `POST /cards/:cid/move` (prev/next + toListId)
+
+### 10.4.1. Board membership & invites
+- `POST /boards/:bid/members/by-email`
+- `POST /invites/boards/:boardId` (create board invite)
+- `POST /invites/boards/token/:token/accept` (accept board invite)
 
 ### 10.5. Card details
 - `POST /cards/:cid/comments`
@@ -604,7 +619,37 @@
 
 ---
 
-## 11. Nâng cao (để áp dụng Redis + RabbitMQ đúng nghĩa)
+## 10.7. Front-end contract (MVP)
+
+Mục tiêu: FE có thể dựng UI Kanban mà không phải đoán payload/flow.
+
+### Payload “one-shot” cho Board
+- `GET /boards/:id/detail` trả:
+  - `board`
+  - `lists[]` (sort theo `position`)
+  - `cards[]` (sort theo `position`)
+  - `members[]`
+  - `labels[]`
+
+### Move/Reorder contract (prev/next)
+- List: `POST /lists/:id/move` với `{ prevId, nextId }`
+- Card: `POST /cards/:id/move` với `{ listId?, prevId, nextId }`
+
+### Invites centralized
+- Workspace invite:
+  - `POST /invites/workspaces/:workspaceId`
+  - `POST /invites/:token/accept`
+- Board invite:
+  - `POST /invites/boards/:boardId`
+  - `POST /invites/boards/token/:token/accept`
+
+**Policy**: accept invite yêu cầu **email user đăng nhập trùng email invite**.
+
+Chi tiết đầy đủ (request/response samples + flows): `docs/api/frontend-contract.md`.
+
+---
+
+## 11. Nâng cao (để áp dụng Redis + BullMQ đúng nghĩa)
 
 ### 11.1. Redis (gợi ý triển khai)
 - Cache `GET /boards/:bid` (board detail):
@@ -615,20 +660,19 @@
 - Rate limit chat:
   - key: `rl:chat:{userId}:{workspaceId}`
 
-### 11.2. RabbitMQ (gợi ý triển khai)
-- Exchange: `events`
-- Routing keys:
-  - `card.moved`, `card.updated`, `comment.added`, `reminder.scheduled`
-- Consumer:
-  - activity-log writer
-  - notification sender (tương lai)
+### 11.2. BullMQ (gợi ý triển khai)
+- Dùng Redis làm backend, enqueue job theo loại:
+  - `activity.log.write` (phase 2)
+  - `notification.send` (tương lai)
+  - `reminder.send` (delay đến `remindAt`)
+- Worker consume theo queue + concurrency, và đảm bảo idempotency khi update DB.
 
-> MVP có thể không cần RabbitMQ, nhưng thiết kế sẵn đường đi để bạn “gắn vào” khi muốn.
+> MVP có thể chưa cần BullMQ, nhưng nếu đã chọn BullMQ thì Redis là bắt buộc.
 
 ---
 
 ## 12. Checklist triển khai (gợi ý thứ tự làm)
-1. Setup monorepo + docker-compose (postgres/redis/rabbitmq)
+1. Setup monorepo + docker-compose (postgres/redis)
 2. Prisma schema + migrations
 3. Auth JWT + refresh token
 4. Workspace + membership + invite email
@@ -643,7 +687,7 @@
 8. Reminder:
    - API set/cancel reminder
    - Worker poll + SMTP send
-9. (Nâng cao) Redis cache + RabbitMQ events + activity log async
+9. (Nâng cao) Redis cache + BullMQ jobs + activity log async
 
 ---
 
@@ -692,202 +736,5 @@
   - drag-drop UX giống Trello (có placeholder khi kéo)
 
 ---
-
-## 16. Cây thư mục 
-teamhub/
-├─ README.md
-├─ .gitignore
-├─ .env.example
-├─ docker-compose.yml
-├─ Makefile
-├─ docs/
-│  ├─ architecture/
-│  │  ├─ overview.md
-│  │  └─ realtime-events.md
-│  ├─ api/
-│  │  ├─ endpoints.md
-│  │  └─ errors.md
-│  ├─ db/
-│  │  ├─ schema-notes.md
-│  │  └─ dbml.dbml
-│  └─ backlog/
-│     ├─ epics.md
-│     ├─ tasks-auth.md
-│     ├─ tasks-workspace.md
-│     ├─ tasks-kanban.md
-│     ├─ tasks-chat.md
-│     └─ tasks-reminder.md
-│
-├─ infra/
-│  ├─ postgres/
-│  │  └─ init/
-│  │     └─ 001-init.sql
-│  ├─ redis/
-│  │  └─ redis.conf
-│  └─ rabbitmq/
-│     └─ enabled_plugins
-│
-├─ nginx/
-│  ├─ nginx.conf
-│  └─ conf.d/
-│     └─ teamhub.conf
-│
-├─ frontend/
-│  ├─ Dockerfile
-│  ├─ package.json
-│  ├─ tsconfig.json
-│  ├─ vite.config.ts
-│  ├─ index.html
-│  ├─ public/
-│  └─ src/
-│     ├─ app/
-│     │  ├─ providers/
-│     │  │  ├─ QueryProvider.tsx
-│     │  │  ├─ SocketProvider.tsx
-│     │  │  └─ AuthProvider.tsx
-│     │  ├─ router/
-│     │  │  └─ routes.tsx
-│     │  ├─ layouts/
-│     │  │  ├─ AppLayout.tsx
-│     │  │  └─ BoardLayout.tsx
-│     │  └─ App.tsx
-│     ├─ pages/
-│     │  ├─ auth/
-│     │  │  ├─ LoginPage.tsx
-│     │  │  └─ RegisterPage.tsx
-│     │  ├─ workspaces/
-│     │  │  ├─ WorkspaceListPage.tsx
-│     │  │  └─ WorkspaceDetailPage.tsx
-│     │  └─ boards/
-│     │     ├─ BoardPage.tsx
-│     │     └─ CardModal.tsx
-│     ├─ features/
-│     │  ├─ auth/
-│     │  │  ├─ api/
-│     │  │  ├─ components/
-│     │  │  ├─ hooks/
-│     │  │  └─ types.ts
-│     │  ├─ workspace/
-│     │  ├─ board/
-│     │  ├─ chat/
-│     │  └─ reminder/
-│     ├─ shared/
-│     │  ├─ api/
-│     │  │  ├─ http.ts
-│     │  │  ├─ tokens.ts
-│     │  │  └─ endpoints.ts
-│     │  ├─ components/
-│     │  │  ├─ Button.tsx
-│     │  │  └─ Modal.tsx
-│     │  ├─ hooks/
-│     │  ├─ lib/
-│     │  │  ├─ zod.ts
-│     │  │  └─ dayjs.ts
-│     │  ├─ styles/
-│     │  │  └─ globals.css
-│     │  └─ types/
-│     └─ main.tsx
-│
-├─ backend/
-│  ├─ Dockerfile
-│  ├─ package.json
-│  ├─ tsconfig.json
-│  ├─ prisma/
-│  │  ├─ schema.prisma
-│  │  └─ migrations/
-│  └─ src/
-│     ├─ main.ts
-│     ├─ app.ts
-│     ├─ config/
-│     │  ├─ env.ts
-│     │  ├─ logger.ts
-│     │  └─ constants.ts
-│     ├─ db/
-│     │  ├─ prisma.ts
-│     │  └─ transactions.ts
-│     ├─ common/
-│     │  ├─ errors/
-│     │  │  ├─ ApiError.ts
-│     │  │  └─ errorCodes.ts
-│     │  ├─ middlewares/
-│     │  │  ├─ authJwt.ts
-│     │  │  ├─ validate.ts
-│     │  │  ├─ rateLimit.ts
-│     │  │  └─ errorHandler.ts
-│     │  ├─ utils/
-│     │  │  ├─ password.ts
-│     │  │  ├─ jwt.ts
-│     │  │  └─ positionFloat.ts
-│     │  └─ types/
-│     │     └─ express.d.ts
-│     ├─ modules/
-│     │  ├─ auth/
-│     │  │  ├─ auth.controller.ts
-│     │  │  ├─ auth.routes.ts
-│     │  │  ├─ auth.service.ts
-│     │  │  ├─ auth.schemas.ts
-│     │  │  └─ auth.repo.ts
-│     │  ├─ users/
-│     │  ├─ workspaces/
-│     │  │  ├─ workspace.controller.ts
-│     │  │  ├─ workspace.routes.ts
-│     │  │  ├─ workspace.service.ts
-│     │  │  ├─ workspace.schemas.ts
-│     │  │  └─ workspace.repo.ts
-│     │  ├─ invites/
-│     │  ├─ boards/
-│     │  ├─ lists/
-│     │  ├─ cards/
-│     │  ├─ comments/
-│     │  ├─ labels/
-│     │  ├─ chat/
-│     │  └─ reminders/
-│     ├─ realtime/
-│     │  ├─ socket.server.ts
-│     │  ├─ socket.auth.ts
-│     │  ├─ socket.rooms.ts
-│     │  ├─ events.ts
-│     ��  └─ emitters/
-│     │     ├─ board.emitter.ts
-│     │     └─ chat.emitter.ts
-│     ├─ integrations/
-│     │  ├─ redis/
-│     │  │  ├─ redis.client.ts
-│     │  │  └─ redis.keys.ts
-│     │  ├─ mail/
-│     │  │  ├─ mailer.ts
-│     │  │  └─ templates/
-│     │  │     └─ reminder.html
-│     │  └─ queue/
-│     │     ├─ rabbitmq.conn.ts
-│     │     └─ events.publisher.ts
-│     └─ jobs/
-│        └─ rebalancePosition.job.ts
-│
-├─ worker/
-│  ├─ Dockerfile
-│  ├─ package.json
-│  ├─ tsconfig.json
-│  └─ src/
-│     ├─ main.ts
-│     ├─ config/
-│     │  └─ env.ts
-│     ├─ db/
-│     │  └─ prisma.ts
-│     ├─ mail/
-│     │  ├─ mailer.ts
-│     │  └─ templates/
-│     │     └─ reminder.html
-│     ├─ reminder/
-│     │  ├─ reminder.poller.ts
-│     │  ├─ reminder.service.ts
-│     │  └─ reminder.repo.ts
-│     └─ common/
-│        └─ logger.ts
-│
-└─ scripts/
-   ├─ dev.sh
-   ├─ wait-for.sh
-   └─ seed.ts
 
 Nếu bạn muốn, bước tiếp theo mình có thể viết thêm **tài liệu DB diagram dạng DBML (dbdiagram.io)** và **API contract chi tiết hơn** (request/response JSON mẫu cho từng endpoint + error codes), để bạn cầm README này là code được theo checklist.

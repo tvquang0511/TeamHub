@@ -41,7 +41,7 @@ Related docs:
 - C4 model (L1–L2): see [docs/architecture/c4.md](c4.md)
 - Kanban architecture: see [docs/architecture/kanban.md](kanban.md)
 - Env setup: see [docs/architecture/env.md](env.md)
-- Use case diagram: see [docs/architecture/use-case-diagram.md](use-case-diagram.md)
+- Sequence diagrams (complex flows): see [docs/diagrams/sequence-diagram.md](../diagrams/sequence-diagram.md)
 
 ## 3) Data flow (main)
 ### 3.1 Kanban CRUD + realtime

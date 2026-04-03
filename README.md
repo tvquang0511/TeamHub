@@ -180,7 +180,7 @@ Các trang UI có nhưng không chèn ảnh ở đây:
 
 ## 5) Diagrams (GitHub-friendly)
 
-> Lưu ý: GitHub không render PlantUML mặc định, và Mermaid `usecaseDiagram` thường không được hỗ trợ. Vì vậy README dùng ảnh export + Mermaid flowchart tương thích.
+> Lưu ý: để tránh lỗi render Mermaid/PlantUML giữa các Markdown viewer, README ưu tiên **ảnh export**. Các flow phức tạp dùng sequence diagrams (ảnh + source) trong docs.
 
 ### 5.1 System architecture (image)
 ![System architecture](docs/screenshots/system-architecture.png)
@@ -188,106 +188,10 @@ Các trang UI có nhưng không chèn ảnh ở đây:
 ### 5.2 Component diagram (image)
 ![Component diagram](docs/screenshots/component-diagram.png)
 
-### 5.3 Deployment diagram (prod-like compose)
+### 5.3 Sequence diagrams (complex flows)
 
-```mermaid
-flowchart LR
-  U[User Browser]
-  N["Nginx :80<br/>Reverse Proxy"]
-  FE["Frontend<br/>Vite Preview :5173"]
-  BE["Backend API<br/>Express :4000"]
-  W["Worker<br/>BullMQ Consumers"]
-  PG[(PostgreSQL :5432)]
-  R[(Redis :6379)]
-  S3[(MinIO :9000)]
-  SMTP[(SMTP Provider)]
-
-  U -->|HTTP| N
-  U -->|WebSocket| N
-
-  N -->|/| FE
-  N -->|/api/| BE
-  N -->|/socket.io/| BE
-  N -->|/api-docs<br/>/openapi.json| BE
-
-  BE -->|Prisma| PG
-  BE -->|enqueue jobs<br/>cache<br/>rate limit| R
-  BE -->|presign| S3
-  U -->|upload/download<br/>(presigned)| S3
-
-  W -->|consume jobs| R
-  W -->|read/write| PG
-  W -->|blob cleanup| S3
-  W -->|send emails| SMTP
-```
-
-### 5.4 Use case diagram (renderable on GitHub)
-
-```mermaid
-flowchart LR
-  Guest[Guest]
-  User[User]
-  Admin["Workspace Owner/Admin"]
-  Worker[Worker]
-
-  subgraph TeamHub
-    UC_Auth([Register/Login/Logout])
-    UC_Refresh([Refresh token])
-    UC_Reset([Forgot/Reset password])
-
-    UC_WS_List([View my workspaces])
-    UC_WS_Create([Create workspace])
-    UC_WS_Invite([Invite member])
-    UC_WS_Accept([Accept invite])
-    UC_WS_Roles([Manage workspace members/roles])
-
-    UC_Board_Create([Create board])
-    UC_Board_Join([Join board])
-    UC_Board_Members([Manage board members])
-
-    UC_Lists([Create/rename/reorder lists])
-    UC_Cards([Create/update/move cards])
-    UC_Card_Detail([Card detail: labels/assignees/checklists/comments])
-    UC_Attach([Attachments: upload & preview])
-
-    UC_Chat([Board chat realtime])
-
-    UC_Reminder([Set/cancel reminder])
-    UC_Worker_Reminder([Send reminder emails])
-
-    UC_Analytics([View analytics/statistics])
-    UC_Worker_Analytics([Run analytics jobs])
-  end
-
-  Guest --> UC_Auth
-
-  User --> UC_Auth
-  User --> UC_Refresh
-  User --> UC_Reset
-  User --> UC_WS_List
-  User --> UC_WS_Accept
-
-  Admin --> UC_WS_Create
-  Admin --> UC_WS_Invite
-  Admin --> UC_WS_Roles
-  Admin --> UC_Board_Create
-  Admin --> UC_Board_Members
-
-  User --> UC_Board_Join
-  User --> UC_Lists
-  User --> UC_Cards
-  User --> UC_Card_Detail
-  User --> UC_Attach
-  User --> UC_Chat
-  User --> UC_Reminder
-  User --> UC_Analytics
-
-  Worker --> UC_Worker_Reminder
-  Worker --> UC_Worker_Analytics
-
-  UC_Worker_Reminder -.-> UC_Reminder
-  UC_Worker_Analytics -.-> UC_Analytics
-```
+- Xem bộ sequence diagrams (PlantUML source + ảnh export đặt trong `docs/screenshots/`):
+  - [docs/diagrams/sequence-diagram.md](docs/diagrams/sequence-diagram.md)
 
 ---
 

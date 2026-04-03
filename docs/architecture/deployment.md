@@ -20,8 +20,9 @@ Goal: fast iteration, hot reload.
 
 ### 1.2 Production (prod)
 Goal: stable deployment.
-- Frontend: build static files
-- Nginx serves frontend static + proxies API + Socket.IO
+- Current repo (prod-like compose): frontend runs `vite preview`, Nginx proxies `/` to it.
+- Recommended production: build static files and let Nginx serve them (no Node process for FE).
+- Nginx proxies API + Socket.IO
 - Backend/Worker run compiled JS (no watch)
 
 ---
@@ -46,11 +47,11 @@ Goal: stable deployment.
 - `infra/docker-compose.dev.yml`
   - runs **infra dependencies only** (Postgres + Redis + MinIO)
 - `infra/docker-compose.yml`
-  - prod-like deployment (frontend + backend + worker + postgres + redis + nginx)
+  - prod-like deployment (frontend + backend + worker + postgres + redis + nginx + minio)
 
-Note: `infra/docker-compose.yml` currently does not include MinIO. In production you can:
-- add MinIO to the compose, or
-- point the app to a managed S3-compatible storage.
+Note: production environments can either:
+- keep MinIO in compose, or
+- replace it by managed S3-compatible storage (set `MINIO_*` / S3 endpoint accordingly).
 
 ### 3.2 Run commands
 From project root (example):
@@ -60,6 +61,15 @@ docker compose -f infra/docker-compose.dev.yml up -d
 
 # Prod-like: run everything in containers
 docker compose -f infra/docker-compose.yml up -d --build
+```
+
+Makefile shortcuts:
+```bash
+make dev
+make prod
+
+make dev-down
+make prod-down
 ```
 
 Recommended dev loop (2-4 terminals):

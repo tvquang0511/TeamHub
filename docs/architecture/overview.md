@@ -35,10 +35,13 @@
    - Flow: init/presign -> client upload -> commit
    - Cleanup mechanism: see [docs/architecture/blob-storage.md](blob-storage.md)
 7. **Nginx (prod-like)**
-   - Reverse proxy + serve frontend static (compose prod)
+   - Reverse proxy (compose prod-like: proxy `/` to `vite preview`; production recommendation: serve static)
 
 Related docs:
 - C4 model (L1–L2): see [docs/architecture/c4.md](c4.md)
+- Kanban architecture: see [docs/architecture/kanban.md](kanban.md)
+- Env setup: see [docs/architecture/env.md](env.md)
+- Use case diagram: see [docs/architecture/use-case-diagram.md](use-case-diagram.md)
 
 ## 3) Data flow (main)
 ### 3.1 Kanban CRUD + realtime

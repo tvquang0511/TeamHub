@@ -1,7 +1,8 @@
 # API Endpoints Blueprint
 
-> Convention: Nginx proxies `/api/*` -> backend `/*`.
-> If you keep it this way, backend routes do NOT include `/api`.
+> Convention (current repo): backend mounts routes under `/api`.
+> - Browser calls: `/api/*`
+> - Nginx proxies `/api/*` -> backend `/api/*` (does not strip the prefix)
 
 ## 1) Auth
 ### POST `/auth/register`

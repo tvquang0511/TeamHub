@@ -183,6 +183,9 @@ const envSchema = z.object({
 
   // MinIO / S3-compatible storage
   MINIO_ENDPOINT: z.string().min(1),
+  // Public endpoint used in presigned URLs and public asset URLs (browser-facing).
+  // When behind Nginx with bucket path proxying, set this to the browser origin (e.g. http://localhost).
+  MINIO_PUBLIC_ENDPOINT: z.string().min(1).optional(),
   MINIO_ACCESS_KEY: z.string().min(1),
   MINIO_SECRET_KEY: z.string().min(1),
   MINIO_REGION: z.string().min(1).default('us-east-1'),

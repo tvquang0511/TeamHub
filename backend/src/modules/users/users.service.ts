@@ -60,12 +60,12 @@ export const usersService = {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Unsupported avatar content type');
     }
 
-  const endpoint = env.MINIO_ENDPOINT;
-  const accessKeyId = env.MINIO_ACCESS_KEY;
-  const secretAccessKey = env.MINIO_SECRET_KEY;
-  const region = env.MINIO_REGION;
-  // Use a dedicated public bucket for avatars
-  const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
+    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
+    const accessKeyId = env.MINIO_ACCESS_KEY;
+    const secretAccessKey = env.MINIO_SECRET_KEY;
+    const region = env.MINIO_REGION;
+    // Use a dedicated public bucket for avatars
+    const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
 
     // Fixed key per user to prevent accumulating old avatars.
     // (Content-Type is stored on the object at upload time.)
@@ -89,7 +89,7 @@ export const usersService = {
   async commitAvatarUpload(userId: string, rawBody: unknown) {
     const { objectKey } = avatarCommitBodySchema.parse(rawBody);
     const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
-    const endpoint = env.MINIO_ENDPOINT;
+    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
 
     const expectedKey = `avatars/${userId}`;
     if (objectKey !== expectedKey) {

@@ -1,5 +1,12 @@
 # Component Diagram — TeamHub
 
+> GitHub không render PlantUML mặc định. Hình dưới đây là bản export để xem trực tiếp trên GitHub.
+
+![Component diagram](../screenshots/component-diagram.png)
+
+<details>
+<summary>PlantUML source</summary>
+
 ```plantuml
 @startuml
 skinparam componentStyle rectangle
@@ -40,3 +47,5 @@ API --> WS : emit events\n(board/list/card/chat)
 
 @enduml
 ```
+
+</details>

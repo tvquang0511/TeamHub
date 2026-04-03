@@ -28,13 +28,17 @@ cp backend/env.example backend/.env
 - `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
 - `CORS_ORIGIN`
 - `TRUST_PROXY` (nếu chạy sau nginx)
-- MinIO/S3: `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_BUCKET_PUBLIC`
+- MinIO/S3:
+  - `MINIO_ENDPOINT` (internal endpoint, service-to-service)
+  - `MINIO_PUBLIC_ENDPOINT` (browser-facing endpoint used in presigned URLs / public asset URLs)
+  - `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_BUCKET_PUBLIC`
 
 ### 2.3 Giá trị khuyến nghị theo mode
 **Dev (infra deps qua docker, backend chạy trên host):**
 - `DATABASE_URL=postgresql://teamhub:teamhub@localhost:5432/teamhub?schema=public`
 - `REDIS_URL=redis://localhost:6379`
 - `MINIO_ENDPOINT=http://localhost:9000`
+- `MINIO_PUBLIC_ENDPOINT=http://localhost:9000`
 - `CORS_ORIGIN=http://localhost:5173`
 - `TRUST_PROXY=false`
 
@@ -42,8 +46,9 @@ cp backend/env.example backend/.env
 - `TRUST_PROXY=true`
 - `CORS_ORIGIN=http://localhost`
 - `APP_WEB_URL=http://localhost`
+- `MINIO_PUBLIC_ENDPOINT=http://localhost` (nginx proxy bucket paths)
 
-Lưu ý: trong [infra/docker-compose.yml](../../infra/docker-compose.yml), service `backend` đã set `DATABASE_URL/REDIS_URL/MINIO_ENDPOINT` trỏ về tên service trong docker network.
+Lưu ý: trong [infra/docker-compose.yml](../../infra/docker-compose.yml), service `backend` đã set `DATABASE_URL/REDIS_URL/MINIO_ENDPOINT` trỏ về tên service trong docker network, và set `MINIO_PUBLIC_ENDPOINT` trỏ về origin mà browser truy cập.
 
 ## 3) Worker `.env`
 File mẫu: `worker/env.example`

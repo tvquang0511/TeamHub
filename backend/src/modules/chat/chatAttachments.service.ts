@@ -38,7 +38,7 @@ export class ChatAttachmentsService {
   async presignUpload(userId: string, boardId: string, input: ChatPresignUploadInput) {
     await this.assertBoardMember(userId, boardId);
 
-    const endpoint = env.MINIO_ENDPOINT;
+    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
     const accessKeyId = env.MINIO_ACCESS_KEY;
     const secretAccessKey = env.MINIO_SECRET_KEY;
     const bucket = env.MINIO_BUCKET; // private bucket
@@ -102,7 +102,7 @@ export class ChatAttachmentsService {
       throw new ApiError(404, "ATTACHMENT_NOT_FOUND", "Attachment not found");
     }
 
-    const endpoint = env.MINIO_ENDPOINT;
+    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
     const accessKeyId = env.MINIO_ACCESS_KEY;
     const secretAccessKey = env.MINIO_SECRET_KEY;
     const region = env.MINIO_REGION;

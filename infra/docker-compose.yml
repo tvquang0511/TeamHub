@@ -35,6 +35,9 @@ services:
       DATABASE_URL: postgresql://teamhub:teamhub@postgres:5432/teamhub?schema=public
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: http://minio:9000
+      # Browser-facing endpoint used in presigned PUT/GET and public asset URLs.
+      # Nginx proxies /teamhub and /teamhub-public to the internal MinIO service.
+      MINIO_PUBLIC_ENDPOINT: http://localhost
       TRUST_PROXY: "true"
       # With nginx same-origin, CORS is mostly irrelevant; keep a safe default.
       CORS_ORIGIN: http://localhost

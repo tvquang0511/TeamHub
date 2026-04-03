@@ -163,7 +163,7 @@ export const workspacesService = {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Unsupported background content type');
     }
 
-    const endpoint = env.MINIO_ENDPOINT;
+    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
     const accessKeyId = env.MINIO_ACCESS_KEY;
     const secretAccessKey = env.MINIO_SECRET_KEY;
     const region = env.MINIO_REGION;
@@ -195,7 +195,7 @@ export const workspacesService = {
     }
 
     const bucket = env.MINIO_BUCKET_PUBLIC;
-    const endpoint = env.MINIO_ENDPOINT;
+    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
 
     const baseUrl = new URL(endpoint);
     const encodedPath = ['/', encodeURIComponent(bucket), '/', objectKey

@@ -2,7 +2,7 @@
 
 Use case diagram dưới đây mô tả các tác nhân chính và nhóm chức năng cốt lõi của TeamHub.
 
-> Lưu ý: GitHub Mermaid thường **không** hỗ trợ `usecaseDiagram`. Vì vậy tài liệu này dùng `flowchart` để đảm bảo render trực tiếp trên GitHub.
+> Gợi ý: GitHub Markdown render được Mermaid. Nếu nơi bạn xem không render, hãy copy block `mermaid` sang công cụ Mermaid Live Editor.
 
 ```mermaid
 flowchart LR

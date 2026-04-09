@@ -29,6 +29,13 @@ services:
   backend:
     build: ../backend
     container_name: teamhub-backend
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
     env_file:
       - ../backend/.env
     environment:
@@ -47,9 +54,33 @@ services:
       - |
         npm run prisma:generate && npm run dev
 
+  db-migrate:
+    build: ../backend
+    container_name: teamhub-db-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ../backend/.env
+    environment:
+      DATABASE_URL: postgresql://teamhub:teamhub@postgres:5432/teamhub?schema=public
+    command:
+      - /bin/sh
+      - -c
+      - |
+        npm run prisma:generate && npx prisma migrate deploy
+    restart: "no"
+
   worker:
     build: ../worker
     container_name: teamhub-worker
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
     env_file:
       - ../worker/.env
     environment:
@@ -65,7 +96,12 @@ services:
       POSTGRES_PASSWORD: teamhub
       POSTGRES_DB: teamhub
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - teamhub_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -h localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   redis:
     image: redis:7
@@ -79,7 +115,7 @@ services:
       MINIO_ROOT_USER: teamhub
       MINIO_ROOT_PASSWORD: teamhub-secret
     volumes:
-      - minio_data:/data
+      - teamhub_minio_data:/data
 
   minio-init:
     image: minio/mc:latest
@@ -103,5 +139,7 @@ services:
           mc ilm rule add --expire-days 7 --prefix "tmp/" local/teamhub-public || true
 
 volumes:
-  postgres_data:
-  minio_data:
+  teamhub_postgres_data:
+    name: teamhub_postgres_data
+  teamhub_minio_data:
+    name: teamhub_minio_data

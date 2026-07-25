@@ -25,7 +25,7 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
-import { Plus, LayoutDashboard, Users, ArrowLeft, Trash2 } from "lucide-react";
+import { LayoutDashboard, Users, Trash2, Plus, BarChart3, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { MemberTable } from "../components/MemberTable";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
@@ -216,6 +216,15 @@ export const WorkspaceDetailPage: React.FC = () => {
             <div className="flex items-center gap-2">
               {canManageWorkspace ? (
                 <>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={() => navigate(`/workspaces/${workspaceId}/analytics`)}
+                    className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 border border-amber-500/30"
+                  >
+                    <BarChart3 className="mr-2 h-4 w-4 text-amber-600" />
+                    Báo cáo Workspace
+                  </Button>
                   <Button
                     variant="outline"
                     type="button"

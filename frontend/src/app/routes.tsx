@@ -5,6 +5,7 @@ import { ForgotPasswordPage } from "./features/auth/pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./features/auth/pages/ResetPasswordPage";
 import { WorkspaceListPage } from "./features/workspace/pages/WorkspaceListPage";
 import { WorkspaceDetailPage } from "./features/workspace/pages/WorkspaceDetailPage";
+import { WorkspaceAnalyticsPage } from "./features/workspace/pages/WorkspaceAnalyticsPage";
 import { BoardPage } from "./features/board/pages/BoardPage";
 import { BoardSettingsPage } from "./features/board/pages/BoardSettingsPage";
 import { BoardAnalyticsPage } from "./features/board/pages/BoardAnalyticsPage";
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
       {
         path: "workspaces/:workspaceId",
         Component: WorkspaceDetailPage,
+      },
+      {
+        path: "workspaces/:workspaceId/analytics",
+        Component: WorkspaceAnalyticsPage,
       },
       {
         path: "workspaces/:workspaceId/invites/new",

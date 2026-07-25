@@ -11,4 +11,12 @@ export const analyticsController = {
     const data = await analyticsService.getBoardAnalytics(userId!, boardId, query);
     res.json({ analytics: data });
   },
+
+  getWorkspaceAnalytics: async (req: Request, res: Response) => {
+    const userId = (req as any).user?.id as string | undefined;
+    const workspaceId = String(req.params.workspaceId);
+
+    const data = await analyticsService.getWorkspaceAnalytics(userId!, workspaceId);
+    res.json({ analytics: data });
+  },
 };

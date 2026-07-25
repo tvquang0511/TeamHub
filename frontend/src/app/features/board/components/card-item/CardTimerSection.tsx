@@ -25,6 +25,10 @@ export const CardTimerSection: React.FC<CardTimerSectionProps> = ({ card, boardI
   const [manualMinutes, setManualMinutes] = useState("");
   const [estimateInput, setEstimateInput] = useState(card.estimatedHours ? String(card.estimatedHours) : "");
 
+  useEffect(() => {
+    setEstimateInput(card.estimatedHours ? String(card.estimatedHours) : "");
+  }, [card.estimatedHours]);
+
   const isTimerRunning = !!card.timerStartedAt;
 
   // Live timer interval update

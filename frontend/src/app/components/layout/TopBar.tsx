@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Bell, Check, LogOut, Monitor, Moon, Sun, User, UserCircle, X } from "lucide-react";
+import { Check, LogOut, Mail, Monitor, Moon, Sun, User, UserCircle, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invitesApi } from "../../api/invites.api";
 import { toast } from "sonner";
@@ -142,13 +142,13 @@ export const TopBar: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Invites Dialog */}
+          {/* Workspace Invites Inbox */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full" aria-label="Workspace invites">
-                <Bell className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full" aria-label="Workspace invites inbox" title="Lời mời Workspace">
+                <Mail className="h-4 w-4 text-foreground/80" />
                 {invitesCount > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-background">
+                  <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white ring-2 ring-background">
                     {invitesCount > 99 ? "99+" : invitesCount}
                   </span>
                 ) : null}

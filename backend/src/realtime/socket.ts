@@ -37,6 +37,12 @@ function extractBearerToken(value?: string | string[]) {
   return header.slice("Bearer ".length).trim() || null;
 }
 
+let ioInstance: Server | null = null;
+
+export function getSocketServer(): Server | null {
+  return ioInstance;
+}
+
 export function setupSocketServer(httpServer: HttpServer) {
   const io = new Server(httpServer, {
     cors: {
@@ -44,6 +50,7 @@ export function setupSocketServer(httpServer: HttpServer) {
       credentials: true,
     },
   });
+  ioInstance = io;
 
   io.use((socket, next) => {
     // Admin UI uses its own auth middleware on the /admin namespace.
@@ -74,6 +81,8 @@ export function setupSocketServer(httpServer: HttpServer) {
 
   io.on("connection", (socket) => {
     const userId = socket.data.user!.id;
+    // Join personal user room for direct realtime notifications
+    socket.join(`user:${userId}`);
 
     socket.on("board:join", async (payload: { boardId: string }, ack?: (res: any) => void) => {
       try {

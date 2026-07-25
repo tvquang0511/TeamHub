@@ -27,6 +27,8 @@ import { getToastErrorMessage } from "../../lib/apiError";
 
 import { CommandMenu } from "../shared/CommandMenu";
 
+import { NotificationBell } from "./NotificationBell";
+
 export const TopBar: React.FC = () => {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -108,6 +110,10 @@ export const TopBar: React.FC = () => {
           <div className="md:hidden">
             <CommandMenu iconOnly />
           </div>
+
+          {/* Realtime Notification Hub */}
+          <NotificationBell />
+
           {/* Theme Switcher Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

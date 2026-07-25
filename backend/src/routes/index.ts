@@ -13,9 +13,12 @@ import { assigneesRoutes } from '../modules/assignees/assignees.router';
 import { commentsRoutes } from '../modules/comments/comments.router';
 import { analyticsRoutes } from '../modules/analytics/analytics.router';
 
+import notificationsRoutes from '../modules/notifications/notifications.router';
+
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/notifications', notificationsRoutes);
 router.use('/workspaces', workspacesRoutes);
 router.use('/invites', invitesRoutes);
 router.use('/boards', boardsRoutes);

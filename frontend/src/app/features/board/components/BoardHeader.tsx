@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
-import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3 } from "lucide-react";
+import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3, LayoutGrid, Calendar as CalendarIcon, Table as TableIcon } from "lucide-react";
 import { BoardMembersDialog } from "./BoardMembersDialog";
 import { BoardBackgroundDialog } from "./BoardBackgroundDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
@@ -11,11 +11,19 @@ import { boardsApi } from "../../../api/boards.api";
 import type { BoardDetail } from "../../../types/api";
 import { BoardLabelsDialog } from "./BoardLabelsDialog";
 
+export type ViewMode = "kanban" | "timeline" | "table";
+
 interface BoardHeaderProps {
   board: BoardDetail;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
-export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
+export const BoardHeader: React.FC<BoardHeaderProps> = ({
+  board,
+  viewMode = "kanban",
+  onViewModeChange,
+}) => {
   const navigate = useNavigate();
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
@@ -133,8 +141,6 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
                 (!canToggleVisibility ? "opacity-50" : "")
               }
               onClick={() => {
-                // Always attempt the API call so we can surface the real backend reason (403/404)
-                // instead of feeling like the button is dead.
                 if (!canToggleVisibility) {
                   toast.error(toggleDisabledReason ?? "Bạn không đủ quyền đổi visibility của board");
                   return;
@@ -156,6 +162,48 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
                 <Lock className="h-4 w-4" />
               )}
             </Button>
+
+            {/* View Mode Switcher Segmented Control */}
+            {onViewModeChange && (
+              <div className="hidden sm:flex items-center gap-1 bg-black/25 p-1 rounded-full border border-white/20 ml-2 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("kanban")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    viewMode === "kanban"
+                      ? "bg-white text-slate-900 font-bold shadow-xs"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  <span>Kanban</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("timeline")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    viewMode === "timeline"
+                      ? "bg-white text-slate-900 font-bold shadow-xs"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  <span>Timeline</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("table")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    viewMode === "table"
+                      ? "bg-white text-slate-900 font-bold shadow-xs"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <TableIcon className="h-3.5 w-3.5" />
+                  <span>Bảng dữ liệu</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

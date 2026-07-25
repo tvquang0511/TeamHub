@@ -6,7 +6,9 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { boardsApi } from "../../../api/boards.api";
 import { boardBackgroundToCss } from "../../../api/boards.api";
 import { listsApi } from "../../../api/lists.api";
-import { BoardHeader } from "../components/BoardHeader";
+import { BoardHeader, type ViewMode } from "../components/BoardHeader";
+import { BoardTimelineView } from "../components/BoardTimelineView";
+import { BoardTableView } from "../components/BoardTableView";
 import { ListColumn } from "../components/ListColumn";
 import { AddListButton } from "../components/AddListButton";
 import { ScrollArea, ScrollBar } from "../../../components/ui/scroll-area";
@@ -25,6 +27,13 @@ export const BoardPage: React.FC = () => {
   const selectedCardId = searchParams.get("cardId") || "";
   const queryClient = useQueryClient();
   const [chatOpen, setChatOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+
+  const openCardModal = (cardId: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("cardId", cardId);
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: boardDetail, isLoading } = useQuery({
     queryKey: ["board", boardId, "detail"],
@@ -202,31 +211,45 @@ export const BoardPage: React.FC = () => {
             "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}
       >
-        <BoardHeader board={boardDetail} />
+        <BoardHeader
+          board={boardDetail}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
 
-        <div className="flex min-h-0 flex-1">
-          <ScrollArea className="min-w-0 flex-1">
-            <div className="h-full w-max">
-              <div className="flex h-full gap-4 p-6">
-                {boardDetail.lists
-                  .sort((a, b) => a.position - b.position)
-                  .map((list) => (
-                    <ListColumn
-                      key={list.id}
-                      list={list}
-                      boardId={boardId!}
-                      onListDropCommit={commitListDrop}
-                      selectedCardId={selectedCardId}
-                      onCloseSelectedCard={clearSelectedCard}
-                      canWrite={canWriteBoard}
-                    />
-                  ))}
-                <AddListButton onAdd={handleCreateList} canWrite={canWriteBoard} />
+        {viewMode === "kanban" ? (
+          <div className="flex min-h-0 flex-1">
+            <ScrollArea className="min-w-0 flex-1">
+              <div className="h-full w-max">
+                <div className="flex h-full gap-4 p-6">
+                  {boardDetail.lists
+                    .sort((a, b) => a.position - b.position)
+                    .map((list) => (
+                      <ListColumn
+                        key={list.id}
+                        list={list}
+                        boardId={boardId!}
+                        onListDropCommit={commitListDrop}
+                        selectedCardId={selectedCardId}
+                        onCloseSelectedCard={clearSelectedCard}
+                        canWrite={canWriteBoard}
+                      />
+                    ))}
+                  <AddListButton onAdd={handleCreateList} canWrite={canWriteBoard} />
+                </div>
               </div>
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </div>
+        ) : viewMode === "timeline" ? (
+          <div className="flex-1 min-h-0 p-2">
+            <BoardTimelineView board={boardDetail} onCardClick={openCardModal} />
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 p-2">
+            <BoardTableView board={boardDetail} onCardClick={openCardModal} />
+          </div>
+        )}
 
         <Sheet open={chatOpen} onOpenChange={setChatOpen}>
           <SheetTrigger asChild>

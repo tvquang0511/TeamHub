@@ -24,17 +24,19 @@ export const CardTimerSection: React.FC<CardTimerSectionProps> = ({ card, boardI
   const [liveElapsed, setLiveElapsed] = useState(0);
   const [manualMinutes, setManualMinutes] = useState("");
   const [estimateInput, setEstimateInput] = useState(card.estimatedHours ? String(card.estimatedHours) : "");
+  const [prevEstimate, setPrevEstimate] = useState(card.estimatedHours);
 
-  useEffect(() => {
+  // Adjust state during render when prop changes
+  if (card.estimatedHours !== prevEstimate) {
+    setPrevEstimate(card.estimatedHours);
     setEstimateInput(card.estimatedHours ? String(card.estimatedHours) : "");
-  }, [card.estimatedHours]);
+  }
 
   const isTimerRunning = !!card.timerStartedAt;
 
   // Live timer interval update
   useEffect(() => {
     if (!isTimerRunning || !card.timerStartedAt) {
-      setLiveElapsed(0);
       return;
     }
 

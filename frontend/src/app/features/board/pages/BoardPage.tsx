@@ -17,6 +17,8 @@ import { Sheet, SheetContent, SheetTrigger } from "../../../components/ui/sheet"
 import { Button } from "../../../components/ui/button";
 import { MessageCircle } from "lucide-react";
 
+import { BoardSkeleton } from "../../../components/shared/BoardSkeleton";
+
 export const BoardPage: React.FC = () => {
   const { boardId } = useParams<{ boardId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -171,11 +173,7 @@ export const BoardPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-linear-to-br from-blue-400 to-purple-500">
-        <div className="text-lg text-white">Đang tải board...</div>
-      </div>
-    );
+    return <BoardSkeleton />;
   }
 
   if (!boardDetail) {

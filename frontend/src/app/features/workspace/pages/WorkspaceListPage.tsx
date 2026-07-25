@@ -25,6 +25,8 @@ import { Textarea } from "../../../components/ui/textarea";
 import { Plus, Briefcase, ChevronRight } from "lucide-react";
 // toast placeholder (wire real toast later)
 
+import { WorkspaceListSkeleton } from "../../../components/shared/WorkspaceListSkeleton";
+
 export const WorkspaceListPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -61,11 +63,7 @@ export const WorkspaceListPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-lg">Đang tải workspaces...</div>
-      </div>
-    );
+    return <WorkspaceListSkeleton />;
   }
 
   return (

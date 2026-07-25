@@ -26,6 +26,7 @@ import { Plus, Briefcase, ChevronRight } from "lucide-react";
 // toast placeholder (wire real toast later)
 
 import { WorkspaceListSkeleton } from "../../../components/shared/WorkspaceListSkeleton";
+import { EmptyState } from "../../../components/shared/EmptyState";
 
 export const WorkspaceListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -162,21 +163,17 @@ export const WorkspaceListPage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Briefcase className="mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="mb-2 text-lg font-semibold">
-              Chưa có workspace nào
-            </h3>
-            <p className="mb-4 text-center text-sm text-gray-600">
-              Tạo workspace đầu tiên để bắt đầu quản lý dự án
-            </p>
+        <EmptyState
+          title="Chưa có Workspace nào"
+          description="Tạo workspace đầu tiên để bắt đầu quản lý dự án cùng đồng nghiệp."
+          icon={Briefcase}
+          action={
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Tạo Workspace đầu tiên
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       )}
     </div>
   );

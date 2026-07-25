@@ -791,7 +791,7 @@ export const CardItem: React.FC<CardItemProps> = ({
                         toast.error("Bạn không đủ quyền để cập nhật card");
                         return;
                       }
-                      setDoneMutation.mutate(!Boolean(card.isDone));
+                      setDoneMutation.mutate(!card.isDone);
                     }}
                     disabled={setDoneMutation.isPending}
                     className={isReadOnlyBoard ? "opacity-50" : undefined}

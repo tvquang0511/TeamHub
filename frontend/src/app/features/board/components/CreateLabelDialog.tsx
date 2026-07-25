@@ -53,6 +53,7 @@ export function CreateLabelDialog(props: {
 
   useEffect(() => {
     if (!props.open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName("");
       setColor(DEFAULT_COLORS[0]!);
     }

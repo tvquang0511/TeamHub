@@ -440,9 +440,9 @@ export const CardItem: React.FC<CardItemProps> = ({
           cardRef.current = node;
         }}
         onClick={() => setIsModalOpen(true)}
-        className={`cursor-pointer rounded-md bg-white p-2 shadow-sm transition-shadow hover:shadow-md ${
-          isDragging ? "opacity-50" : ""
-        } ${isOver ? "ring-2 ring-blue-400" : ""}
+        className={`group relative cursor-pointer rounded-xl border border-border/70 bg-card/90 p-3 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md hover:bg-card ${
+          isDragging ? "rotate-2 scale-105 opacity-60 shadow-xl ring-2 ring-primary/80" : ""
+        } ${isOver ? "ring-2 ring-primary border-primary/50 bg-primary/5" : ""}
         }`}
       >
         {/* Trello-like label bars */}

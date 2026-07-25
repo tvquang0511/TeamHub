@@ -267,10 +267,10 @@ export const ListColumn: React.FC<ListColumnProps> = ({
         dropCard(node);
       }}
       data-list-column="true"
-      className={`flex h-fit min-w-70 max-w-70 flex-col rounded-lg bg-gray-100 transition-colors ${
-        isOverCard ? "bg-gray-200" : ""
-      } ${isOverList ? "ring-2 ring-white/60" : ""} ${
-        isListDragging ? "opacity-60" : ""
+      className={`flex h-fit min-w-72 max-w-72 flex-col rounded-xl border border-border/60 bg-muted/60 backdrop-blur-md p-1.5 shadow-sm transition-all duration-200 ${
+        isOverCard ? "bg-muted/90 ring-2 ring-primary/60 border-primary/50" : ""
+      } ${isOverList ? "ring-2 ring-primary/80 scale-102" : ""} ${
+        isListDragging ? "opacity-50 rotate-1 shadow-2xl" : ""
       }`}
     >
       {/* List Header */}

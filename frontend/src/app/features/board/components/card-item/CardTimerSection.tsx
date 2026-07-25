@@ -45,30 +45,59 @@ export const CardTimerSection: React.FC<CardTimerSectionProps> = ({ card, boardI
     return () => clearInterval(interval);
   }, [isTimerRunning, card.timerStartedAt]);
 
-  const refreshBoardDetail = () => {
-    queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
+  const updateCardCache = (updatedCard: Card) => {
+    queryClient.setQueryData(["board", boardId, "detail"], (oldData: any) => {
+      if (!oldData || !oldData.lists) return oldData;
+      return {
+        ...oldData,
+        lists: oldData.lists.map((list: any) => ({
+          ...list,
+          cards: list.cards.map((c: any) =>
+            c.id === card.id ? { ...c, ...updatedCard } : c
+          ),
+        })),
+      };
+    });
   };
 
   const startTimerMutation = useMutation({
     mutationFn: () => cardsApi.startTimer(card.id),
-    onSuccess: () => {
-      refreshBoardDetail();
+    onMutate: () => {
+      // Instant Optimistic update
+      const now = new Date().toISOString();
+      updateCardCache({ ...card, timerStartedAt: now });
+    },
+    onSuccess: (updatedCard) => {
+      updateCardCache(updatedCard);
       toast.success("Đã bắt đầu bấm giờ!");
+    },
+    onError: () => {
+      // Rollback on error
+      queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
     },
   });
 
   const stopTimerMutation = useMutation({
     mutationFn: () => cardsApi.stopTimer(card.id),
-    onSuccess: () => {
-      refreshBoardDetail();
+    onMutate: () => {
+      // Instant Optimistic update
+      const addedSec = liveElapsed;
+      const newLogged = (card.loggedSeconds || 0) + addedSec;
+      updateCardCache({ ...card, loggedSeconds: newLogged, timerStartedAt: null, timerStartedBy: null });
+    },
+    onSuccess: (updatedCard) => {
+      updateCardCache(updatedCard);
       toast.success("Đã dừng bấm giờ và lưu thời gian!");
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
     },
   });
 
   const logManualMutation = useMutation({
     mutationFn: (seconds: number) => cardsApi.logTimeManual(card.id, seconds),
-    onSuccess: () => {
-      refreshBoardDetail();
+    onSuccess: (updatedCard) => {
+      updateCardCache(updatedCard);
       setManualMinutes("");
       toast.success("Đã ghi nhận thời gian thủ công!");
     },
@@ -76,8 +105,8 @@ export const CardTimerSection: React.FC<CardTimerSectionProps> = ({ card, boardI
 
   const setEstimateMutation = useMutation({
     mutationFn: (hours: number | null) => cardsApi.setEstimate(card.id, hours),
-    onSuccess: () => {
-      refreshBoardDetail();
+    onSuccess: (updatedCard) => {
+      updateCardCache(updatedCard);
       toast.success("Đã cập nhật thời gian ước tính (Estimate)!");
     },
   });

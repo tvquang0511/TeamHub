@@ -14,11 +14,13 @@ import { commentsRoutes } from '../modules/comments/comments.router';
 import { analyticsRoutes } from '../modules/analytics/analytics.router';
 
 import notificationsRoutes from '../modules/notifications/notifications.router';
+import { activitiesRoutes } from '../modules/activities/activities.router';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/notifications', notificationsRoutes);
+router.use('/activities', activitiesRoutes);
 router.use('/workspaces', workspacesRoutes);
 router.use('/invites', invitesRoutes);
 router.use('/boards', boardsRoutes);

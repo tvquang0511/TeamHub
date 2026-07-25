@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
-import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3, LayoutGrid, Calendar as CalendarIcon, Table as TableIcon } from "lucide-react";
+import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3, LayoutGrid, Calendar as CalendarIcon, Table as TableIcon, History } from "lucide-react";
 import { BoardMembersDialog } from "./BoardMembersDialog";
 import { BoardBackgroundDialog } from "./BoardBackgroundDialog";
+import { BoardActivityDialog } from "./BoardActivityDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
   const [isLabelsOpen, setIsLabelsOpen] = useState(false);
+  const [isActivityOpen, setIsActivityOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Best-effort permission gating:
@@ -276,6 +278,16 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           <Button
             variant="secondary"
             size="sm"
+            onClick={() => setIsActivityOpen(true)}
+            title="Xem nhật ký hoạt động trên board"
+          >
+            <History className="mr-2 h-4 w-4 text-primary" />
+            Nhật ký
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setIsMembersOpen(true)}
           >
             <Users className="mr-2 h-4 w-4" />
@@ -283,6 +295,12 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           </Button>
         </div>
       </div>
+
+      <BoardActivityDialog
+        boardId={board.id}
+        open={isActivityOpen}
+        onOpenChange={setIsActivityOpen}
+      />
 
       <BoardMembersDialog
         boardId={board.id}

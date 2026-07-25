@@ -21,6 +21,12 @@ cardsRoutes.patch("/:id", cardsController.update);
 cardsRoutes.patch("/:id/due-date", cardsController.setDueDate);
 cardsRoutes.patch("/:id/done", cardsController.setDone);
 
+// Timer & Time tracking
+cardsRoutes.patch("/:id/timer/start", cardsController.startTimer);
+cardsRoutes.patch("/:id/timer/stop", cardsController.stopTimer);
+cardsRoutes.post("/:id/log-time", cardsController.logTimeManual);
+cardsRoutes.patch("/:id/estimate", cardsController.setEstimate);
+
 // Reminders (per-user)
 cardsRoutes.get("/:id/reminders", cardsController.listReminders);
 cardsRoutes.put("/:id/reminders", cardsController.setReminder);

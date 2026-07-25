@@ -128,6 +128,36 @@ export class CardsController {
     const result = await cardsService.detachLabel(userId, cardId, labelId);
     res.status(200).json(result);
   };
+
+  startTimer = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const result = await cardsService.startTimer(userId, cardId);
+    res.status(200).json(result);
+  };
+
+  stopTimer = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const result = await cardsService.stopTimer(userId, cardId);
+    res.status(200).json(result);
+  };
+
+  logTimeManual = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const seconds = parseInt(req.body.seconds) || 0;
+    const result = await cardsService.logTimeManual(userId, cardId, seconds);
+    res.status(200).json(result);
+  };
+
+  setEstimate = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const estimatedHours = req.body.estimatedHours !== undefined && req.body.estimatedHours !== null ? parseFloat(req.body.estimatedHours) : null;
+    const result = await cardsService.setEstimate(userId, cardId, estimatedHours);
+    res.status(200).json(result);
+  };
 }
 
 export const cardsController = new CardsController();

@@ -8,6 +8,7 @@ import { LabelsPopover } from "./LabelsPopover";
 import { CardAssigneesSection } from "./card-item/CardAssigneesSection";
 import { CardAttachmentsSection } from "./card-item/CardAttachmentsSection";
 import { CardChecklistsSection } from "./card-item/CardChecklistsSection";
+import { CardTimerSection } from "./card-item/CardTimerSection";
 import {
   Dialog,
   DialogContent,
@@ -461,7 +462,7 @@ export const CardItem: React.FC<CardItemProps> = ({
           <p className="text-sm leading-5">{card.title}</p>
         </div>
 
-        {(card.dueAt || (card.checklistTotal ?? 0) > 0 || card.isDone) ? (
+        {(card.dueAt || (card.checklistTotal ?? 0) > 0 || card.isDone || (card.loggedSeconds || 0) > 0 || card.timerStartedAt) ? (
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {card.isDone ? (
               <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-emerald-700">
@@ -481,6 +482,12 @@ export const CardItem: React.FC<CardItemProps> = ({
             {(card.checklistTotal ?? 0) > 0 ? (
               <span className="rounded bg-muted px-2 py-1">
                 ✓ {card.checklistDone ?? 0}/{card.checklistTotal ?? 0}
+              </span>
+            ) : null}
+
+            {(card.loggedSeconds || 0) > 0 || card.timerStartedAt ? (
+              <span className={`inline-flex items-center gap-1 rounded px-2 py-1 ${card.timerStartedAt ? "bg-red-500/10 text-red-600 font-bold animate-pulse border border-red-500/30" : "bg-muted text-muted-foreground"}`}>
+                ⏱️ {((card.loggedSeconds || 0) / 3600).toFixed(1)}h
               </span>
             ) : null}
           </div>
@@ -657,6 +664,12 @@ export const CardItem: React.FC<CardItemProps> = ({
                 </div>
               )}
             </div>
+
+            <CardTimerSection
+              card={card}
+              boardId={boardId}
+              canWrite={canWriteBoard}
+            />
 
             <CardChecklistsSection
               boardId={boardId}

@@ -116,6 +116,10 @@ export interface Card {
   checklistDone?: number;
   labels?: Label[];
   assignees?: User[];
+  estimatedHours?: number | null;
+  loggedSeconds?: number;
+  timerStartedAt?: string | null;
+  timerStartedBy?: string | null;
   createdAt: string;
   updatedAt: string;
 }

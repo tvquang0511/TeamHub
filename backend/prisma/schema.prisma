@@ -295,6 +295,11 @@ model cards {
   position    Decimal  @db.Decimal(65, 30)
   archivedAt  DateTime? @map("archived_at")
 
+  estimatedHours Float?    @map("estimated_hours")
+  loggedSeconds  Int       @default(0) @map("logged_seconds")
+  timerStartedAt DateTime? @map("timer_started_at")
+  timerStartedBy String?   @db.Uuid @map("timer_started_by")
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

@@ -1,5 +1,6 @@
 import { Prisma, activity_type } from "@prisma/client";
 import { z } from "zod";
+import prisma from "../../db/prisma";
 
 import { ApiError } from "../../common/errors/ApiError";
 import { computeBetweenPosition } from "../../common/utils/position";
@@ -478,6 +479,87 @@ export class CardsService {
     await bumpBoardCacheVersion(card.list.board.id);
 
     return { ok: true };
+  }
+
+  async startTimer(userId: string, cardId: string) {
+    const card = await cardsRepo.findCardWorkspaceAndBoard(cardId);
+    if (!card || card.archivedAt) throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+
+    const membership = await cardsRepo.isWorkspaceMember(card.list.board.workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "Not a workspace member");
+
+    const updated = await prisma.cards.update({
+      where: { id: cardId },
+      data: {
+        timerStartedAt: new Date(),
+        timerStartedBy: userId,
+      },
+    });
+
+    await cacheDel(this.cardDetailCacheKey(cardId));
+    await bumpBoardCacheVersion(card.list.board.id);
+    return updated;
+  }
+
+  async stopTimer(userId: string, cardId: string) {
+    const card = await cardsRepo.findCardWorkspaceAndBoard(cardId);
+    if (!card || card.archivedAt) throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+
+    const fullCard = await prisma.cards.findUnique({ where: { id: cardId } });
+    if (!fullCard || !fullCard.timerStartedAt) {
+      return fullCard || card;
+    }
+
+    const elapsedSeconds = Math.max(1, Math.floor((Date.now() - new Date(fullCard.timerStartedAt).getTime()) / 1000));
+    const newLoggedSeconds = (fullCard.loggedSeconds || 0) + elapsedSeconds;
+
+    const updated = await prisma.cards.update({
+      where: { id: cardId },
+      data: {
+        loggedSeconds: newLoggedSeconds,
+        timerStartedAt: null,
+        timerStartedBy: null,
+      },
+    });
+
+    await cacheDel(this.cardDetailCacheKey(cardId));
+    await bumpBoardCacheVersion(card.list.board.id);
+    return updated;
+  }
+
+  async logTimeManual(userId: string, cardId: string, secondsToAdd: number) {
+    const card = await cardsRepo.findCardWorkspaceAndBoard(cardId);
+    if (!card || card.archivedAt) throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+
+    const fullCard = await prisma.cards.findUnique({ where: { id: cardId } });
+    const currentLogged = fullCard?.loggedSeconds || 0;
+
+    const updated = await prisma.cards.update({
+      where: { id: cardId },
+      data: {
+        loggedSeconds: Math.max(0, currentLogged + secondsToAdd),
+      },
+    });
+
+    await cacheDel(this.cardDetailCacheKey(cardId));
+    await bumpBoardCacheVersion(card.list.board.id);
+    return updated;
+  }
+
+  async setEstimate(userId: string, cardId: string, estimatedHours: number | null) {
+    const card = await cardsRepo.findCardWorkspaceAndBoard(cardId);
+    if (!card || card.archivedAt) throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+
+    const updated = await prisma.cards.update({
+      where: { id: cardId },
+      data: {
+        estimatedHours,
+      },
+    });
+
+    await cacheDel(this.cardDetailCacheKey(cardId));
+    await bumpBoardCacheVersion(card.list.board.id);
+    return updated;
   }
 }
 

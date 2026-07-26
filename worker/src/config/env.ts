@@ -16,8 +16,9 @@ const envSchema = z.object({
 
   CACHE_PREFIX: z.string().min(1).default('cache:v1'),
 
-  // Resend HTTP API (Port 443 - Không bao giờ bị Cloud chặn)
+  // Resend / Brevo HTTP APIs (Port 443 - Gửi email không bao giờ bị Cloud chặn)
   RESEND_API_KEY: z.string().optional(),
+  BREVO_API_KEY: z.string().optional(),
 
   SMTP_HOST: z.string().default('smtp.gmail.com'),
   SMTP_PORT: z.coerce.number().int().positive().default(465),

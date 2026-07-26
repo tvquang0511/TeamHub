@@ -88,6 +88,33 @@ async function sendMailWithFallback(options: {
 	text: string;
 	html: string;
 }) {
+	if (env.BREVO_API_KEY && env.BREVO_API_KEY.trim()) {
+		console.log(`[mailer] Sending email to ${options.to} via Brevo HTTP API (Port 443)...`);
+		const senderEmail = env.SMTP_USER || 'tvquang.working@gmail.com';
+		const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+			method: 'POST',
+			headers: {
+				'api-key': env.BREVO_API_KEY.trim(),
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+			},
+			body: JSON.stringify({
+				sender: { name: 'TeamHub', email: senderEmail },
+				to: [{ email: options.to }],
+				subject: options.subject,
+				htmlContent: options.html,
+				textContent: options.text,
+			}),
+		});
+
+		const data = (await res.json()) as any;
+		if (!res.ok) {
+			throw new Error(`Brevo API Error (${res.status}): ${JSON.stringify(data)}`);
+		}
+		console.log(`[mailer] Email sent successfully via Brevo API! messageId=${data.messageId || data.id}`);
+		return data;
+	}
+
 	if (env.RESEND_API_KEY && env.RESEND_API_KEY.trim()) {
 		console.log(`[mailer] Sending email to ${options.to} via Resend HTTP API (Port 443)...`);
 		const fromEmail = env.SMTP_FROM && env.SMTP_FROM.includes('@') ? env.SMTP_FROM : 'TeamHub <onboarding@resend.dev>';

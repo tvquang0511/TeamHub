@@ -33,6 +33,14 @@ const connection = new IORedis(env.REDIS_URL, {
 	maxRetriesPerRequest: null,
 });
 
+connection.on('connect', () => {
+	console.log(`[redis] Connected to Redis server successfully (${env.REDIS_URL.split('@')[1] || 'localhost'})`);
+});
+
+connection.on('error', (err) => {
+	console.error(`[redis] Redis Connection Error:`, err);
+});
+
 const RemindersWorker = new Worker(
 	REMINDERS_QUEUE_NAME,
 	async (job) => {
@@ -52,6 +60,7 @@ const RemindersWorker = new Worker(
 const emailsWorker = new Worker(
 	EMAILS_QUEUE_NAME,
 	async (job) => {
+		console.log(`[emails] Worker starting to process job id=${job.id}, name=${job.name}, data=`, JSON.stringify(job.data));
 		await processEmailJob(job.data);
 	},
 	{
@@ -97,14 +106,22 @@ RemindersWorker.on('failed', (job, err) => {
 	console.error(`[reminders] failed job ${job?.id}:`, err);
 });
 
+emailsWorker.on('active', (job) => {
+	console.log(`[emails] ACTIVE job ${job.id} picked up by worker`);
+});
+
 emailsWorker.on('completed', (job) => {
 	// eslint-disable-next-line no-console
-	console.log(`[emails] completed job ${job.id}`);
+	console.log(`[emails] COMPLETED job ${job.id}`);
 });
 
 emailsWorker.on('failed', (job, err) => {
 	// eslint-disable-next-line no-console
-	console.error(`[emails] failed job ${job?.id}:`, err);
+	console.error(`[emails] FAILED job ${job?.id}:`, err);
+});
+
+emailsWorker.on('error', (err) => {
+	console.error(`[emailsWorker] Worker Error:`, err);
 });
 
 analyticsWorker.on('completed', (job) => {

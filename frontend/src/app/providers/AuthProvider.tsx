@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { authApi } from "../api/auth.api";
 import { setAccessToken, getAccessToken } from "../api/http";
 import { notify } from "../lib/toastHelper";
@@ -36,6 +37,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   // Bootstrap: try to refresh token on mount
   useEffect(() => {
@@ -67,14 +69,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const handleLogout = () => {
       setUser(null);
       setAccessToken(null);
+      queryClient.clear();
     };
 
     window.addEventListener("auth:logout", handleLogout);
     return () => window.removeEventListener("auth:logout", handleLogout);
-  }, []);
+  }, [queryClient]);
 
   const login = useCallback(async (data: LoginRequest) => {
     try {
+      queryClient.clear();
       const response = await authApi.login(data);
       setAccessToken(response.accessToken);
       setUser(response.user);
@@ -83,10 +87,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       notify.error(error, "Đăng nhập thất bại");
       throw error;
     }
-  }, []);
+  }, [queryClient]);
 
   const register = useCallback(async (data: RegisterRequest) => {
     try {
+      queryClient.clear();
       const response = await authApi.register(data);
       setAccessToken(response.accessToken);
       setUser(response.user);
@@ -95,20 +100,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       notify.error(error, "Đăng ký thất bại");
       throw error;
     }
-  }, []);
+  }, [queryClient]);
 
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
-      setUser(null);
-      setAccessToken(null);
-      // toast can be wired later
     } catch (error) {
       // Even if logout fails on server, clear local state
+    } finally {
       setUser(null);
       setAccessToken(null);
+      queryClient.clear();
+      notify.info("Đã đăng xuất", "Bạn đã đăng xuất khỏi ứng dụng.");
     }
-  }, []);
+  }, [queryClient]);
 
   const isAuthenticated = !isLoading && (!!getAccessToken() || !!user);
 

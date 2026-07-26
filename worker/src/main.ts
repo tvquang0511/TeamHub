@@ -1,3 +1,4 @@
+import { createServer } from 'http';
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 
@@ -8,6 +9,17 @@ import { processEmailJob } from './modules/email/email.processor';
 import { processBoardMetricsDailyJob } from './modules/analytics/analytics.processor';
 import { BLOBS_QUEUE_NAME } from './modules/blobs/blobs.constants';
 import { processBlobsJob } from './modules/blobs/blobs.processor';
+
+// Dummy HTTP Health Check server to enable FREE Web Service hosting on Render.com
+const port = process.env.PORT || 4001;
+const httpServer = createServer((_req, res) => {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ status: 'ok', worker: 'running' }));
+});
+
+httpServer.listen(port, () => {
+  console.log(`[worker-http] Health check listening on port ${port}`);
+});
 
 const REMINDERS_QUEUE_NAME = 'reminders';
 const REMINDERS_JOB_NAME = 'send';

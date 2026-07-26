@@ -88,6 +88,31 @@ async function sendMailWithFallback(options: {
 	text: string;
 	html: string;
 }) {
+	if (env.MAILTRAP_TOKEN && env.MAILTRAP_TOKEN.trim()) {
+		console.log(`[mailer] Sending email to ${options.to} via Mailtrap HTTP API (Port 443)...`);
+		const res = await fetch('https://send.api.mailtrap.io/api/send', {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${env.MAILTRAP_TOKEN.trim()}`,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				from: { email: 'hello@demomailtrap.com', name: 'TeamHub' },
+				to: [{ email: options.to }],
+				subject: options.subject,
+				text: options.text,
+				html: options.html,
+			}),
+		});
+
+		const data = (await res.json()) as any;
+		if (!res.ok) {
+			throw new Error(`Mailtrap API Error (${res.status}): ${JSON.stringify(data)}`);
+		}
+		console.log(`[mailer] Email sent successfully via Mailtrap API! message_ids=${JSON.stringify(data.message_ids)}`);
+		return data;
+	}
+
 	if (env.BREVO_API_KEY && env.BREVO_API_KEY.trim()) {
 		console.log(`[mailer] Sending email to ${options.to} via Brevo HTTP API (Port 443)...`);
 		const senderEmail = env.SMTP_USER || 'tvquang.working@gmail.com';

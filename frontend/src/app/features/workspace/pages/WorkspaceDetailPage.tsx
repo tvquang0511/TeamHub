@@ -25,7 +25,7 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
-import { LayoutDashboard, Users, Trash2, Plus, BarChart3, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, Users, Trash2, Plus, BarChart3, ArrowLeft, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { MemberTable } from "../components/MemberTable";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
@@ -47,7 +47,28 @@ export const WorkspaceDetailPage: React.FC = () => {
   );
   const [newBoardName, setNewBoardName] = useState("");
   const [newBoardDescription, setNewBoardDescription] = useState("");
-  const backgroundFileInputRef = useRef<HTMLInputElement | null>(null);
+  const backgroundFileInputRef = useRef<HTMLInputElement>(null);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportBoardJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      toast.info("Đang xử lý file sao lưu Board...");
+      const text = await file.text();
+      const importData = JSON.parse(text);
+
+      const newBoard = await boardsApi.importBoard(workspaceId!, importData);
+      queryClient.invalidateQueries({ queryKey: ["boards", workspaceId] });
+      toast.success(`Đã khôi phục thành công Board "${newBoard.name}"!`);
+      navigate(`/boards/${newBoard.id}`);
+    } catch {
+      toast.error("File JSON không hợp lệ hoặc bị lỗi cấu trúc sao lưu");
+    } finally {
+      e.target.value = "";
+    }
+  };
 
   const workspaceMutations = useWorkspaceMutations({ workspaceId });
 
@@ -225,6 +246,22 @@ export const WorkspaceDetailPage: React.FC = () => {
                     <BarChart3 className="mr-2 h-4 w-4 text-amber-600" />
                     Báo cáo Workspace
                   </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => importFileInputRef.current?.click()}
+                    title="Khôi phục Board từ file sao lưu JSON"
+                  >
+                    <Upload className="mr-2 h-4 w-4 text-blue-600" />
+                    Nhập Board (JSON)
+                  </Button>
+                  <input
+                    ref={importFileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={handleImportBoardJson}
+                  />
                   <Button
                     variant="outline"
                     type="button"

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
+import prisma from "../../db/prisma";
 
 import { ApiError } from "../../common/errors/ApiError";
 import env from "../../config/env";
@@ -489,6 +490,194 @@ export class BoardsService {
     await boardsRepo.removeBoardMember(boardId, userId);
     await bumpBoardCacheVersion(boardId);
     return { ok: true };
+  }
+
+  async exportBoard(userId: string, boardId: string) {
+    const board = await boardsRepo.findById(boardId);
+    if (!board || board.archivedAt) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    const wsMembership = await boardsRepo.isWorkspaceMember(board.workspaceId, userId);
+    if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "Not a workspace member");
+
+    const fullBoard = await prisma.boards.findUnique({
+      where: { id: boardId },
+      include: {
+        labels: true,
+        lists: {
+          where: { archivedAt: null },
+          orderBy: { position: "asc" },
+          include: {
+            cards: {
+              where: { archivedAt: null },
+              orderBy: { position: "asc" },
+              include: {
+                checklists: {
+                  include: {
+                    items: { orderBy: { position: "asc" } },
+                  },
+                  orderBy: { position: "asc" },
+                },
+                cardLabels: {
+                  include: { label: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!fullBoard) throw new ApiError(404, "BOARD_NOT_FOUND", "Board not found");
+
+    return {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      board: {
+        name: fullBoard.name,
+        description: fullBoard.description,
+        visibility: fullBoard.visibility,
+        backgroundColor: fullBoard.backgroundColor,
+        labels: fullBoard.labels.map((l) => ({ name: l.name, color: l.color })),
+        lists: fullBoard.lists.map((l) => ({
+          name: l.name,
+          position: typeof l.position === "number" ? l.position : Number(l.position),
+          isDoing: l.isDoing,
+          isDone: l.isDone,
+          cards: l.cards.map((c) => ({
+            title: c.title,
+            description: c.description,
+            position: typeof c.position === "number" ? c.position : Number(c.position),
+            dueAt: c.dueAt,
+            isDone: c.isDone,
+            estimatedHours: c.estimatedHours,
+            loggedSeconds: c.loggedSeconds,
+            labels: c.cardLabels.map((cl) => cl.label.name),
+            checklists: c.checklists.map((chk) => ({
+              title: chk.title,
+              position: typeof chk.position === "number" ? chk.position : Number(chk.position),
+              items: chk.items.map((item) => ({
+                title: item.title,
+                isDone: item.isDone,
+                position: typeof item.position === "number" ? item.position : Number(item.position),
+              })),
+            })),
+          })),
+        })),
+      },
+    };
+  }
+
+  async importBoard(userId: string, workspaceId: string, importData: any) {
+    const wsMembership = await boardsRepo.isWorkspaceMember(workspaceId, userId);
+    if (!wsMembership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "Not a workspace member");
+
+    if (!importData || !importData.board || !importData.board.name) {
+      throw new ApiError(400, "INVALID_IMPORT_DATA", "Invalid JSON format for board import");
+    }
+
+    const bData = importData.board;
+
+    const newBoard = await prisma.boards.create({
+      data: {
+        workspaceId,
+        name: `${bData.name} (Imported)`,
+        description: bData.description ?? null,
+        visibility: bData.visibility === "PRIVATE" ? "PRIVATE" : "WORKSPACE",
+        backgroundColor: bData.backgroundColor ?? "#667eea",
+        members: {
+          create: {
+            userId,
+            role: "OWNER",
+          },
+        },
+      },
+    });
+
+    const labelMap: Record<string, string> = {};
+    if (Array.isArray(bData.labels)) {
+      for (const l of bData.labels) {
+        const createdLabel = await prisma.labels.create({
+          data: {
+            boardId: newBoard.id,
+            name: l.name,
+            color: l.color ?? "#64748B",
+          },
+        });
+        labelMap[l.name] = createdLabel.id;
+      }
+    }
+
+    if (Array.isArray(bData.lists)) {
+      for (const l of bData.lists) {
+        const createdList = await prisma.lists.create({
+          data: {
+            boardId: newBoard.id,
+            name: l.name,
+            position: l.position ?? 1000,
+            isDoing: l.isDoing ?? false,
+            isDone: l.isDone ?? false,
+          },
+        });
+
+        if (Array.isArray(l.cards)) {
+          for (const c of l.cards) {
+            const createdCard = await prisma.cards.create({
+              data: {
+                listId: createdList.id,
+                title: c.title,
+                description: c.description ?? null,
+                position: c.position ?? 1000,
+                dueAt: c.dueAt ? new Date(c.dueAt) : null,
+                isDone: c.isDone ?? false,
+                estimatedHours: c.estimatedHours ?? null,
+                loggedSeconds: c.loggedSeconds ?? 0,
+              },
+            });
+
+            if (Array.isArray(c.labels)) {
+              for (const labelName of c.labels) {
+                const labelId = labelMap[labelName];
+                if (labelId) {
+                  await prisma.card_labels.create({
+                    data: {
+                      cardId: createdCard.id,
+                      labelId,
+                    },
+                  }).catch(() => {});
+                }
+              }
+            }
+
+            if (Array.isArray(c.checklists)) {
+              for (const chk of c.checklists) {
+                const createdChk = await prisma.checklists.create({
+                  data: {
+                    cardId: createdCard.id,
+                    title: chk.title,
+                    position: chk.position ?? 1000,
+                  },
+                });
+
+                if (Array.isArray(chk.items)) {
+                  for (const item of chk.items) {
+                    await prisma.checklist_items.create({
+                      data: {
+                        checklistId: createdChk.id,
+                        title: item.title,
+                        isDone: item.isDone ?? false,
+                        position: item.position ?? 1000,
+                      },
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return { board: newBoard };
   }
 }
 

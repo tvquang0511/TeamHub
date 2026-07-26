@@ -74,6 +74,23 @@ export class BoardsController {
     const result = await boardsService.leaveBoard(userId, boardId);
     res.status(200).json(result);
   };
+
+  exportBoard = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const boardId = String(req.params.id);
+    const data = await boardsService.exportBoard(userId, boardId);
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Disposition", `attachment; filename="board-export-${boardId}.json"`);
+    res.status(200).json(data);
+  };
+
+  importBoard = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const workspaceId = String(req.body.workspaceId);
+    const importData = req.body.importData || req.body;
+    const result = await boardsService.importBoard(userId, workspaceId, importData);
+    res.status(201).json(result);
+  };
 }
 
 export const boardsController = new BoardsController();

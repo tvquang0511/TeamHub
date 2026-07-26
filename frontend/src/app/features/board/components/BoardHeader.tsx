@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
-import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3, LayoutGrid, Calendar as CalendarIcon, Table as TableIcon, History } from "lucide-react";
+import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3, LayoutGrid, Calendar as CalendarIcon, Table as TableIcon, History, Download } from "lucide-react";
 import { BoardMembersDialog } from "./BoardMembersDialog";
 import { BoardBackgroundDialog } from "./BoardBackgroundDialog";
 import { BoardActivityDialog } from "./BoardActivityDialog";
@@ -120,8 +120,25 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
       .slice(0, 2);
   };
 
+  const handleExportBoard = async () => {
+    try {
+      toast.info("Đang xuất dữ liệu Board...");
+      const data = await boardsApi.exportBoard(board.id);
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", jsonString);
+      downloadAnchor.setAttribute("download", `teamhub-board-${board.name.toLowerCase().replace(/\s+/g, "-")}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      toast.success("Đã tải xuống file sao lưu Board (JSON)!");
+    } catch {
+      toast.error("Không thể xuất dữ liệu Board");
+    }
+  };
+
   return (
-    <div className="border-b border-white/20 bg-black/10 backdrop-blur-sm">
+    <div className="border-b border-white/20 bg-black/10 backdrop-blur-xs">
       <div className="flex items-center justify-between px-6 py-3">
         <div className="flex items-center gap-4">
           <Button
@@ -131,7 +148,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
             className="text-white hover:bg-white/20"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-
+            Quay lại
           </Button>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-white">{board.name}</h1>
@@ -273,6 +290,16 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           >
             <BarChart3 className="mr-2 h-4 w-4" />
             Thống kê
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportBoard}
+            title="Xuất file sao lưu dữ liệu Board (JSON)"
+          >
+            <Download className="mr-2 h-4 w-4 text-emerald-600" />
+            Xuất JSON
           </Button>
 
           <Button

@@ -316,4 +316,19 @@ export const boardsApi = {
     );
     return response.data;
   },
+
+  // Export Board JSON
+  exportBoard: async (boardId: string): Promise<any> => {
+    const response = await httpClient.get<any>(`/boards/${boardId}/export`);
+    return response.data;
+  },
+
+  // Import Board JSON
+  importBoard: async (workspaceId: string, importData: any): Promise<Board> => {
+    const response = await httpClient.post<{ board: Board }>(`/boards/import`, {
+      workspaceId,
+      importData,
+    });
+    return response.data.board;
+  },
 };

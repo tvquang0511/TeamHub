@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 
-import { cardsService, createCardInputSchema, updateCardInputSchema } from "./cards.service";
+import { cardsService, createCardInputSchema, createCardFromMessageInputSchema, updateCardInputSchema } from "./cards.service";
 
 const dueDateInputSchema = z.object({
   dueAt: z.string().datetime().nullable(),
@@ -27,6 +27,13 @@ export class CardsController {
     const userId = req.user!.id;
     const input = createCardInputSchema.parse(req.body);
     const result = await cardsService.create(userId, input);
+    res.status(201).json(result);
+  };
+
+  createFromMessage = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const input = createCardFromMessageInputSchema.parse(req.body);
+    const result = await cardsService.createFromMessage(userId, input);
     res.status(201).json(result);
   };
 

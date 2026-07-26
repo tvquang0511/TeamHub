@@ -143,4 +143,14 @@ export const cardsApi = {
     const response = await httpClient.patch<any>(`/cards/${cardId}/estimate`, { estimatedHours });
     return mapCard(response.data.card || response.data);
   },
+
+  createCardFromMessage: async (payload: {
+    listId: string;
+    messageId?: string;
+    title: string;
+    description?: string;
+  }): Promise<Card> => {
+    const response = await httpClient.post<any>(`/cards/from-message`, payload);
+    return mapCard(response.data.card || response.data);
+  },
 };

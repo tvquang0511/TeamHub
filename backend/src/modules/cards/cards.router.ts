@@ -13,6 +13,7 @@ cardsRoutes.use(cardsRateLimit);
 // GET /cards?listId=:listId
 cardsRoutes.get("/", cardsController.list);
 cardsRoutes.post("/", cardsController.create);
+cardsRoutes.post("/from-message", cardsController.createFromMessage);
 
 cardsRoutes.get("/:id", cardDetailRateLimit, cardsController.get);
 cardsRoutes.patch("/:id", cardsController.update);

@@ -24,6 +24,13 @@ export const createCardInputSchema = z.object({
   position: z.number().optional(),
 });
 
+export const createCardFromMessageInputSchema = z.object({
+  listId: z.string().uuid(),
+  messageId: z.string().uuid().optional(),
+  title: z.string().min(1).max(200),
+  description: z.string().max(5000).optional(),
+});
+
 export const updateCardInputSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(5000).nullable().optional(),
@@ -560,6 +567,45 @@ export class CardsService {
     await cacheDel(this.cardDetailCacheKey(cardId));
     await bumpBoardCacheVersion(card.list.board.id);
     return updated;
+  }
+
+  async createFromMessage(userId: string, input: z.infer<typeof createCardFromMessageInputSchema>) {
+    const list = await cardsRepo.findList(input.listId);
+    if (!list || list.archivedAt || list.board.archivedAt) {
+      throw new ApiError(404, "LIST_NOT_FOUND", "List not found");
+    }
+
+    const membership = await cardsRepo.isWorkspaceMember(list.board.workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await cardsRepo.isBoardMember(list.board.id, userId);
+    if (!boardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
+
+    const card = await cardsRepo.create({
+      listId: input.listId,
+      title: input.title,
+      description: input.description ?? null,
+      position: new Prisma.Decimal(Date.now()),
+    });
+
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: list.board.workspaceId,
+      boardId: list.board.id,
+      cardId: card.id,
+      type: activity_type.CARD_CREATED,
+      payload: {
+        listId: input.listId,
+        source: "CHAT_MESSAGE",
+        messageId: input.messageId,
+      },
+    });
+
+    await bumpBoardCacheVersion(list.board.id);
+
+    return { card };
   }
 }
 

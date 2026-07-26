@@ -266,7 +266,7 @@ export const BoardPage: React.FC = () => {
             </div>
           </SheetTrigger>
           <SheetContent side="right" className="p-0">
-            <BoardChatPanel board={boardDetail} variant="sheet" />
+            <BoardChatPanel board={boardDetail} variant="sheet" onOpenCard={openCardModal} />
           </SheetContent>
         </Sheet>
       </div>

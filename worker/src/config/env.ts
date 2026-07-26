@@ -16,15 +16,16 @@ const envSchema = z.object({
 
   CACHE_PREFIX: z.string().min(1).default('cache:v1'),
 
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_HOST: z.string().default('smtp.gmail.com'),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_SECURE: z
     .enum(['true', 'false'])
     .optional()
+    .default('false')
     .transform((v) => v === 'true'),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().optional(),
+  SMTP_USER: z.string().default('tvquang.working@gmail.com'),
+  SMTP_PASS: z.string().default('hucy mzlr zwzq mvqr'),
+  SMTP_FROM: z.string().default('TeamHub <tvquang.working@gmail.com>'),
 
   APP_TIMEZONE: z.string().min(1).default('Asia/Ho_Chi_Minh'),
   ACTIVITY_RETENTION_DAYS: z.coerce.number().int().positive().optional(),

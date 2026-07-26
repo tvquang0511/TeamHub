@@ -34,10 +34,19 @@ function requireSmtpConfig() {
 		throw new Error(`SMTP is not configured (${missing.join(', ')})`);
 	}
 
+	let port = env.SMTP_PORT!;
+	let secure = env.SMTP_PORT === 465 || env.SMTP_SECURE === true;
+
+	// Automatically upgrade Gmail SMTP from blocked port 587 to SSL port 465 on cloud environments
+	if (env.SMTP_HOST === 'smtp.gmail.com' && port === 587) {
+		port = 465;
+		secure = true;
+	}
+
 	return {
 		host: env.SMTP_HOST!,
-		port: env.SMTP_PORT!,
-		secure: env.SMTP_PORT === 465 || env.SMTP_SECURE === true,
+		port,
+		secure,
 		from: env.SMTP_FROM!,
 		auth:
 			env.SMTP_USER && env.SMTP_PASS

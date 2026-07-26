@@ -1,7 +1,7 @@
 services:
 
   postgres:
-    image: postgres:15
+    image: postgres:16
     container_name: teamhub-postgres
     ports:
       - "5432:5432"
@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: teamhub
       POSTGRES_DB: teamhub
     volumes:
-      - teamhub_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
   minio:
     image: minio/minio:latest
@@ -23,7 +23,7 @@ services:
       MINIO_ROOT_USER: teamhub
       MINIO_ROOT_PASSWORD: teamhub-secret
     volumes:
-      - teamhub_minio_data:/data
+      - minio_data:/data
 
   # One-shot container to create the bucket on startup.
   minio-init:
@@ -59,7 +59,5 @@ services:
       - "6379:6379"
 
 volumes:
-  teamhub_postgres_data:
-    name: teamhub_postgres_data
-  teamhub_minio_data:
-    name: teamhub_minio_data
+  postgres_data:
+  minio_data:

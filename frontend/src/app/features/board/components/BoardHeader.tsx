@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
-import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3 } from "lucide-react";
+import { ArrowLeft, Users, Lock, Unlock, Palette, Tag, BarChart3, LayoutGrid, Calendar as CalendarIcon, Table as TableIcon, History, Download } from "lucide-react";
 import { BoardMembersDialog } from "./BoardMembersDialog";
 import { BoardBackgroundDialog } from "./BoardBackgroundDialog";
+import { BoardActivityDialog } from "./BoardActivityDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -11,15 +12,24 @@ import { boardsApi } from "../../../api/boards.api";
 import type { BoardDetail } from "../../../types/api";
 import { BoardLabelsDialog } from "./BoardLabelsDialog";
 
+export type ViewMode = "kanban" | "timeline" | "table";
+
 interface BoardHeaderProps {
   board: BoardDetail;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
-export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
+export const BoardHeader: React.FC<BoardHeaderProps> = ({
+  board,
+  viewMode = "kanban",
+  onViewModeChange,
+}) => {
   const navigate = useNavigate();
   const [isMembersOpen, setIsMembersOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
   const [isLabelsOpen, setIsLabelsOpen] = useState(false);
+  const [isActivityOpen, setIsActivityOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Best-effort permission gating:
@@ -110,8 +120,25 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
       .slice(0, 2);
   };
 
+  const handleExportBoard = async () => {
+    try {
+      toast.info("Đang xuất dữ liệu Board...");
+      const data = await boardsApi.exportBoard(board.id);
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", jsonString);
+      downloadAnchor.setAttribute("download", `teamhub-board-${board.name.toLowerCase().replace(/\s+/g, "-")}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      toast.success("Đã tải xuống file sao lưu Board (JSON)!");
+    } catch {
+      toast.error("Không thể xuất dữ liệu Board");
+    }
+  };
+
   return (
-    <div className="border-b border-white/20 bg-black/10 backdrop-blur-sm">
+    <div className="border-b border-white/20 bg-black/10 backdrop-blur-xs">
       <div className="flex items-center justify-between px-6 py-3">
         <div className="flex items-center gap-4">
           <Button
@@ -121,7 +148,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
             className="text-white hover:bg-white/20"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-
+            Quay lại
           </Button>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-white">{board.name}</h1>
@@ -133,8 +160,6 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
                 (!canToggleVisibility ? "opacity-50" : "")
               }
               onClick={() => {
-                // Always attempt the API call so we can surface the real backend reason (403/404)
-                // instead of feeling like the button is dead.
                 if (!canToggleVisibility) {
                   toast.error(toggleDisabledReason ?? "Bạn không đủ quyền đổi visibility của board");
                   return;
@@ -156,6 +181,48 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
                 <Lock className="h-4 w-4" />
               )}
             </Button>
+
+            {/* View Mode Switcher Segmented Control */}
+            {onViewModeChange && (
+              <div className="hidden sm:flex items-center gap-1 bg-black/25 p-1 rounded-full border border-white/20 ml-2 shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("kanban")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    viewMode === "kanban"
+                      ? "bg-white text-slate-900 font-bold shadow-xs"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  <span>Kanban</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("timeline")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    viewMode === "timeline"
+                      ? "bg-white text-slate-900 font-bold shadow-xs"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  <span>Timeline</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onViewModeChange("table")}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    viewMode === "table"
+                      ? "bg-white text-slate-900 font-bold shadow-xs"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <TableIcon className="h-3.5 w-3.5" />
+                  <span>Bảng dữ liệu</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -228,6 +295,26 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           <Button
             variant="secondary"
             size="sm"
+            onClick={handleExportBoard}
+            title="Xuất file sao lưu dữ liệu Board (JSON)"
+          >
+            <Download className="mr-2 h-4 w-4 text-emerald-600" />
+            Xuất JSON
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsActivityOpen(true)}
+            title="Xem nhật ký hoạt động trên board"
+          >
+            <History className="mr-2 h-4 w-4 text-primary" />
+            Nhật ký
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setIsMembersOpen(true)}
           >
             <Users className="mr-2 h-4 w-4" />
@@ -235,6 +322,12 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({ board }) => {
           </Button>
         </div>
       </div>
+
+      <BoardActivityDialog
+        boardId={board.id}
+        open={isActivityOpen}
+        onOpenChange={setIsActivityOpen}
+      />
 
       <BoardMembersDialog
         boardId={board.id}

@@ -80,11 +80,11 @@ export class AttachmentsService {
   async presignUpload(userId: string, cardId: string, input: z.infer<typeof presignUploadInputSchema>) {
     await this.assertCanWriteCard(userId, cardId);
 
-    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
-    const accessKeyId = env.MINIO_ACCESS_KEY;
-    const secretAccessKey = env.MINIO_SECRET_KEY;
-    const bucket = env.MINIO_BUCKET;
-    const region = env.MINIO_REGION;
+    const endpoint = env.STORAGE_ENDPOINT;
+    const accessKeyId = env.STORAGE_ACCESS_KEY;
+    const secretAccessKey = env.STORAGE_SECRET_KEY;
+    const bucket = env.STORAGE_BUCKET;
+    const region = env.STORAGE_REGION;
 
     const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const objectKey = `cards/${cardId}/${Date.now()}_${safeFileName}`;
@@ -233,10 +233,10 @@ export class AttachmentsService {
       throw new ApiError(400, "ATTACHMENT_INVALID", "Attachment storage info missing");
     }
 
-    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
-    const accessKeyId = env.MINIO_ACCESS_KEY;
-    const secretAccessKey = env.MINIO_SECRET_KEY;
-    const region = env.MINIO_REGION;
+  const endpoint = env.STORAGE_ENDPOINT;
+  const accessKeyId = env.STORAGE_ACCESS_KEY;
+  const secretAccessKey = env.STORAGE_SECRET_KEY;
+  const region = env.STORAGE_REGION;
 
     const safeFileName = String(existing.fileName || "file")
       .replace(/[\\/]/g, "_")

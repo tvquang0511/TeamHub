@@ -73,7 +73,7 @@ export async function sweepOrphanObjects(client: PoolClient) {
   }
 
   // List objects in the buckets we manage.
-  const buckets = [env.MINIO_BUCKET, env.MINIO_BUCKET_PUBLIC];
+  const buckets = [env.STORAGE_BUCKET, env.STORAGE_BUCKET_PUBLIC];
 
   const candidates: Array<{ bucket: string; objectKey: string; lastModified?: Date }> = [];
   for (const bucket of buckets) {

@@ -22,8 +22,12 @@ import {
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
-import { Plus, Briefcase, ChevronRight } from "lucide-react";
+import { Badge } from "../../../components/ui/badge";
+import { Plus, Briefcase, ChevronRight, Sparkles } from "lucide-react";
 // toast placeholder (wire real toast later)
+
+import { WorkspaceListSkeleton } from "../../../components/shared/WorkspaceListSkeleton";
+import { EmptyState } from "../../../components/shared/EmptyState";
 
 export const WorkspaceListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,7 +48,6 @@ export const WorkspaceListPage: React.FC = () => {
       setIsCreateDialogOpen(false);
       setNewWorkspaceName("");
       setNewWorkspaceDescription("");
-      // toast: created
     },
     onError: (error: any) => {
       console.error(error.response?.data?.error?.message || "Tạo workspace thất bại");
@@ -61,27 +64,29 @@ export const WorkspaceListPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-lg">Đang tải workspaces...</div>
-      </div>
-    );
+    return <WorkspaceListSkeleton />;
   }
 
   return (
-    <div className="container mx-auto max-w-6xl py-8">
-      <div className="mb-8 flex items-center justify-between">
+    <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-8 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6">
         <div>
-          <h1 className="text-3xl font-bold">Workspaces của bạn</h1>
-          <p className="mt-2 text-gray-600">
-            Quản lý tất cả workspaces và boards
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Không gian Làm việc Nhóm</span>
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            Danh sách Workspace của bạn
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Quản lý tất cả không gian làm việc và các bảng công việc (Boards) liên quan.
           </p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="lg">
+            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-500/20 hover:opacity-95">
               <Plus className="mr-2 h-5 w-5" />
-              Tạo Workspace
+              Tạo Workspace mới
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -132,53 +137,54 @@ export const WorkspaceListPage: React.FC = () => {
       </div>
 
       {workspaces && workspaces.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {workspaces.map((workspace) => (
             <Card
               key={workspace.id}
-              className="cursor-pointer transition-shadow hover:shadow-lg"
+              className="group cursor-pointer rounded-2xl border border-border/80 bg-card p-2 shadow-xs transition-all duration-200 hover:shadow-xl hover:border-indigo-500/40 hover:-translate-y-1"
               onClick={() => navigate(`/workspaces/${workspace.id}`)}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-white">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform">
                     <Briefcase className="h-6 w-6" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
                 </div>
-                <CardTitle className="mt-4">{workspace.name}</CardTitle>
+                <CardTitle className="mt-4 text-lg font-bold group-hover:text-indigo-600 transition-colors">
+                  {workspace.name}
+                </CardTitle>
                 {workspace.description && (
-                  <CardDescription className="line-clamp-2">
+                  <CardDescription className="line-clamp-2 text-xs">
                     {workspace.description}
                   </CardDescription>
                 )}
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-gray-500">
-                  {workspace.createdAt
-                    ? `Tạo lúc ${new Date(workspace.createdAt).toLocaleDateString("vi-VN")}`
-                    : ""}
+                <div className="text-xs text-muted-foreground pt-2 border-t flex items-center justify-between">
+                  <span>
+                    {workspace.createdAt
+                      ? `Tạo ngày ${new Date(workspace.createdAt).toLocaleDateString("vi-VN")}`
+                      : ""}
+                  </span>
+                  <Badge variant="outline" className="text-[10px] border-indigo-500/30 text-indigo-600">Workspace Active</Badge>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Briefcase className="mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="mb-2 text-lg font-semibold">
-              Chưa có workspace nào
-            </h3>
-            <p className="mb-4 text-center text-sm text-gray-600">
-              Tạo workspace đầu tiên để bắt đầu quản lý dự án
-            </p>
+        <EmptyState
+          title="Chưa có Workspace nào"
+          description="Tạo workspace đầu tiên để bắt đầu quản lý dự án cùng đồng nghiệp."
+          icon={Briefcase}
+          action={
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Tạo Workspace đầu tiên
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       )}
     </div>
   );

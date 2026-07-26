@@ -4,6 +4,7 @@ import { cardsRepo } from "../cards/cards.repo";
 import { activitiesRepo } from "../activities/activities.repo";
 import { activity_type } from "@prisma/client";
 import { assigneesRepo } from "./assignees.repo";
+import { notificationsService } from "../notifications/notifications.service";
 
 export class AssigneesService {
   private async assertCardAndMembership(userId: string, cardId: string) {
@@ -107,6 +108,17 @@ export class AssigneesService {
         type: activity_type.ASSIGNEE_ADDED,
         payload: { userId: targetUserId },
       });
+
+      if (actorId !== targetUserId) {
+        notificationsService.createAndPushNotification({
+          userId: targetUserId,
+          actorId,
+          title: "Bạn vừa được gán vào Card mới",
+          content: card.title,
+          type: "CARD_ASSIGNED",
+          linkUrl: `/boards/${card.list.board.id}?cardId=${card.id}`,
+        });
+      }
       return {
         assignee: {
           id: c.user.id,

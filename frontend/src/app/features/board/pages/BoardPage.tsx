@@ -6,23 +6,45 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { boardsApi } from "../../../api/boards.api";
 import { boardBackgroundToCss } from "../../../api/boards.api";
 import { listsApi } from "../../../api/lists.api";
-import { BoardHeader } from "../components/BoardHeader";
+import { BoardHeader, type ViewMode } from "../components/BoardHeader";
+import { BoardFilterBar, type BoardFilterState } from "../components/BoardFilterBar";
+import { BoardTimelineView } from "../components/BoardTimelineView";
+import { BoardTableView } from "../components/BoardTableView";
 import { ListColumn } from "../components/ListColumn";
 import { AddListButton } from "../components/AddListButton";
 import { ScrollArea, ScrollBar } from "../../../components/ui/scroll-area";
 import { toast } from "sonner";
-import type { BoardDetail } from "../../../types/api";
+import type { BoardDetail, Card } from "../../../types/api";
 import { BoardChatPanel } from "../components/BoardChatPanel";
 import { Sheet, SheetContent, SheetTrigger } from "../../../components/ui/sheet";
 import { Button } from "../../../components/ui/button";
 import { MessageCircle } from "lucide-react";
+import { useAuth } from "../../../providers/AuthProvider";
+
+import { BoardSkeleton } from "../../../components/shared/BoardSkeleton";
 
 export const BoardPage: React.FC = () => {
   const { boardId } = useParams<{ boardId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedCardId = searchParams.get("cardId") || "";
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [chatOpen, setChatOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+
+  const [filters, setFilters] = useState<BoardFilterState>({
+    search: "",
+    onlyMyCards: false,
+    assigneeIds: [],
+    labelIds: [],
+    dueDate: "all",
+  });
+
+  const openCardModal = (cardId: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("cardId", cardId);
+    setSearchParams(next, { replace: true });
+  };
 
   const { data: boardDetail, isLoading } = useQuery({
     queryKey: ["board", boardId, "detail"],
@@ -30,6 +52,73 @@ export const BoardPage: React.FC = () => {
     enabled: !!boardId,
     refetchInterval: 30000, // Refresh every 30 seconds for real-time feel
   });
+
+  const filteredBoardDetail = React.useMemo(() => {
+    if (!boardDetail) return undefined;
+
+    const filterCard = (card: Card) => {
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        const matchTitle = card.title.toLowerCase().includes(q);
+        const matchDesc = card.description?.toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc) return false;
+      }
+
+      if (filters.onlyMyCards && user?.id) {
+        const isAssignedToMe = card.assignees?.some(
+          (a: any) => a.userId === user.id || a.id === user.id || a.user?.id === user.id
+        );
+        if (!isAssignedToMe) return false;
+      }
+
+      if (filters.assigneeIds.length > 0) {
+        const hasAssignee = card.assignees?.some((a: any) =>
+          filters.assigneeIds.includes(a.userId || a.id || a.user?.id)
+        );
+        if (!hasAssignee) return false;
+      }
+
+      if (filters.labelIds.length > 0) {
+        const hasLabel = card.labels?.some((l) => filters.labelIds.includes(l.id));
+        if (!hasLabel) return false;
+      }
+
+      if (filters.dueDate !== "all") {
+        if (filters.dueDate === "no_due") {
+          if (card.dueAt) return false;
+        } else {
+          if (!card.dueAt) return false;
+          const due = new Date(card.dueAt);
+          const now = new Date();
+
+          if (filters.dueDate === "overdue") {
+            if (due >= now || card.isDone) return false;
+          } else if (filters.dueDate === "due_today") {
+            const isToday =
+              due.getDate() === now.getDate() &&
+              due.getMonth() === now.getMonth() &&
+              due.getFullYear() === now.getFullYear();
+            if (!isToday) return false;
+          } else if (filters.dueDate === "due_this_week") {
+            const diffDays = (due.getTime() - now.getTime()) / (1000 * 3600 * 24);
+            if (diffDays < 0 || diffDays > 7) return false;
+          }
+        }
+      }
+
+      return true;
+    };
+
+    const filteredLists = boardDetail.lists.map((l) => ({
+      ...l,
+      cards: l.cards.filter(filterCard),
+    }));
+
+    return {
+      ...boardDetail,
+      lists: filteredLists,
+    };
+  }, [boardDetail, filters, user]);
 
   const createListMutation = useMutation({
     mutationFn: listsApi.create,
@@ -171,11 +260,7 @@ export const BoardPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-linear-to-br from-blue-400 to-purple-500">
-        <div className="text-lg text-white">Đang tải board...</div>
-      </div>
-    );
+    return <BoardSkeleton />;
   }
 
   if (!boardDetail) {
@@ -194,6 +279,8 @@ export const BoardPage: React.FC = () => {
     setSearchParams(next, { replace: true });
   };
 
+  const activeBoard = filteredBoardDetail || boardDetail;
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div
@@ -204,31 +291,51 @@ export const BoardPage: React.FC = () => {
             "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         }}
       >
-        <BoardHeader board={boardDetail} />
+        <BoardHeader
+          board={boardDetail}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
 
-        <div className="flex min-h-0 flex-1">
-          <ScrollArea className="min-w-0 flex-1">
-            <div className="h-full w-max">
-              <div className="flex h-full gap-4 p-6">
-                {boardDetail.lists
-                  .sort((a, b) => a.position - b.position)
-                  .map((list) => (
-                    <ListColumn
-                      key={list.id}
-                      list={list}
-                      boardId={boardId!}
-                      onListDropCommit={commitListDrop}
-                      selectedCardId={selectedCardId}
-                      onCloseSelectedCard={clearSelectedCard}
-                      canWrite={canWriteBoard}
-                    />
-                  ))}
-                <AddListButton onAdd={handleCreateList} canWrite={canWriteBoard} />
+        <BoardFilterBar
+          board={boardDetail}
+          filters={filters}
+          onFilterChange={setFilters}
+        />
+
+        {viewMode === "kanban" ? (
+          <div className="flex min-h-0 flex-1">
+            <ScrollArea className="min-w-0 flex-1">
+              <div className="h-full w-max">
+                <div className="flex h-full gap-4 p-6">
+                  {activeBoard.lists
+                    .sort((a, b) => a.position - b.position)
+                    .map((list) => (
+                      <ListColumn
+                        key={list.id}
+                        list={list}
+                        boardId={boardId!}
+                        onListDropCommit={commitListDrop}
+                        selectedCardId={selectedCardId}
+                        onCloseSelectedCard={clearSelectedCard}
+                        canWrite={canWriteBoard}
+                      />
+                    ))}
+                  <AddListButton onAdd={handleCreateList} canWrite={canWriteBoard} />
+                </div>
               </div>
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+          </div>
+        ) : viewMode === "timeline" ? (
+          <div className="flex-1 min-h-0 p-2">
+            <BoardTimelineView board={activeBoard} onCardClick={openCardModal} />
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 p-2">
+            <BoardTableView board={activeBoard} onCardClick={openCardModal} />
+          </div>
+        )}
 
         <Sheet open={chatOpen} onOpenChange={setChatOpen}>
           <SheetTrigger asChild>
@@ -245,7 +352,7 @@ export const BoardPage: React.FC = () => {
             </div>
           </SheetTrigger>
           <SheetContent side="right" className="p-0">
-            <BoardChatPanel board={boardDetail} variant="sheet" />
+            <BoardChatPanel board={boardDetail} variant="sheet" onOpenCard={openCardModal} />
           </SheetContent>
         </Sheet>
       </div>

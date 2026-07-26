@@ -10,3 +10,4 @@ analyticsRoutes.use(authJwt);
 analyticsRoutes.use(analyticsRateLimit);
 
 analyticsRoutes.get("/boards/:id/analytics", analyticsController.getBoardAnalytics);
+analyticsRoutes.get("/workspaces/:workspaceId/analytics", analyticsController.getWorkspaceAnalytics);

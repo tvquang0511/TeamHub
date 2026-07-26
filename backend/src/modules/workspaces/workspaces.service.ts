@@ -163,11 +163,11 @@ export const workspacesService = {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Unsupported background content type');
     }
 
-    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
-    const accessKeyId = env.MINIO_ACCESS_KEY;
-    const secretAccessKey = env.MINIO_SECRET_KEY;
-    const region = env.MINIO_REGION;
-    const bucket = env.MINIO_BUCKET_PUBLIC;
+    const endpoint = env.STORAGE_ENDPOINT;
+    const accessKeyId = env.STORAGE_ACCESS_KEY;
+    const secretAccessKey = env.STORAGE_SECRET_KEY;
+    const region = env.STORAGE_REGION;
+    const bucket = env.STORAGE_BUCKET_PUBLIC;
 
     // Fixed key per workspace to prevent accumulating old backgrounds.
     const objectKey = `workspace-backgrounds/${workspaceId}`;
@@ -194,8 +194,8 @@ export const workspacesService = {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid workspace background objectKey');
     }
 
-    const bucket = env.MINIO_BUCKET_PUBLIC;
-    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
+    const bucket = env.STORAGE_BUCKET_PUBLIC;
+    const endpoint = env.STORAGE_ENDPOINT;
 
     const baseUrl = new URL(endpoint);
     const encodedPath = ['/', encodeURIComponent(bucket), '/', objectKey

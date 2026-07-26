@@ -19,13 +19,13 @@ function parseEndpoint(endpoint: string): { endPoint: string; port?: number; use
   return { endPoint: url.hostname, useSSL };
 }
 
-const endpoint = parseEndpoint(env.MINIO_ENDPOINT);
+const endpoint = parseEndpoint(env.STORAGE_ENDPOINT);
 
 export const minio = new Client({
   endPoint: endpoint.endPoint,
   ...(endpoint.port ? { port: endpoint.port } : {}),
-  accessKey: env.MINIO_ACCESS_KEY,
-  secretKey: env.MINIO_SECRET_KEY,
+  accessKey: env.STORAGE_ACCESS_KEY,
+  secretKey: env.STORAGE_SECRET_KEY,
   useSSL: endpoint.useSSL,
 });
 

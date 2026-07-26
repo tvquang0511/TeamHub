@@ -1,12 +1,5 @@
 # System Architecture Diagram — TeamHub (MVP + Nâng cao)
 
-> GitHub không render PlantUML mặc định. Hình dưới đây là bản export để xem trực tiếp trên GitHub.
-
-![System architecture](../screenshots/system-architecture.png)
-
-<details>
-<summary>PlantUML source</summary>
-
 ```plantuml
 @startuml
 skinparam linetype ortho
@@ -56,5 +49,3 @@ api --> redis : rate limit\n+ cache (optional)
 
 @enduml
 ```
-
-</details>

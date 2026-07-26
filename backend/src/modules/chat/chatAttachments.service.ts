@@ -38,11 +38,11 @@ export class ChatAttachmentsService {
   async presignUpload(userId: string, boardId: string, input: ChatPresignUploadInput) {
     await this.assertBoardMember(userId, boardId);
 
-    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
-    const accessKeyId = env.MINIO_ACCESS_KEY;
-    const secretAccessKey = env.MINIO_SECRET_KEY;
-    const bucket = env.MINIO_BUCKET; // private bucket
-    const region = env.MINIO_REGION;
+    const endpoint = env.STORAGE_ENDPOINT;
+    const accessKeyId = env.STORAGE_ACCESS_KEY;
+    const secretAccessKey = env.STORAGE_SECRET_KEY;
+    const bucket = env.STORAGE_BUCKET; // private bucket
+    const region = env.STORAGE_REGION;
 
     const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const objectKey = `boards/${boardId}/messages/${Date.now()}_${safeFileName}`;
@@ -65,7 +65,7 @@ export class ChatAttachmentsService {
     await this.assertBoardMember(userId, boardId);
 
     // Safety: only allow committing into configured private bucket.
-    if (input.bucket !== env.MINIO_BUCKET) {
+    if (input.bucket !== env.STORAGE_BUCKET) {
       throw new ApiError(400, "ATTACHMENT_INVALID", "Invalid bucket");
     }
 
@@ -102,10 +102,10 @@ export class ChatAttachmentsService {
       throw new ApiError(404, "ATTACHMENT_NOT_FOUND", "Attachment not found");
     }
 
-    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
-    const accessKeyId = env.MINIO_ACCESS_KEY;
-    const secretAccessKey = env.MINIO_SECRET_KEY;
-    const region = env.MINIO_REGION;
+    const endpoint = env.STORAGE_ENDPOINT;
+    const accessKeyId = env.STORAGE_ACCESS_KEY;
+    const secretAccessKey = env.STORAGE_SECRET_KEY;
+    const region = env.STORAGE_REGION;
 
     const safeFileName = String(existing.fileName || "file")
       .replace(/[\\/]/g, "_")

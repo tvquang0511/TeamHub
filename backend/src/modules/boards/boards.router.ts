@@ -39,4 +39,8 @@ boardsRoutes.post("/:id/members/by-email", requireBoardAdmin(), boardMembersCont
 boardsRoutes.patch("/:id/members/:userId", requireBoardAdmin(), boardMembersController.updateRole);
 boardsRoutes.delete("/:id/members/:userId", requireBoardAdmin(), boardMembersController.remove);
 
+// Export & Import Board
+boardsRoutes.get("/:id/export", boardsController.exportBoard);
+boardsRoutes.post("/import", boardsController.importBoard);
+
 boardsRoutes.post("/:id/leave", requireBoardMember(), boardsController.leave);

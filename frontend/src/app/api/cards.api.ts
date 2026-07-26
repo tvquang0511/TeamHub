@@ -38,6 +38,10 @@ const mapCard = (c: any): Card => ({
   position: typeof c.position === "number" ? c.position : Number(c.position ?? 0),
   dueAt: c.dueAt ?? undefined,
   isDone: c.isDone ?? undefined,
+  estimatedHours: c.estimatedHours !== undefined ? c.estimatedHours : null,
+  loggedSeconds: c.loggedSeconds ?? 0,
+  timerStartedAt: c.timerStartedAt ?? null,
+  timerStartedBy: c.timerStartedBy ?? null,
   labels: Array.isArray(c.labels) ? c.labels.map(mapLabel) : [],
   assignees: Array.isArray(c.assignees) ? c.assignees.map(mapUser) : [],
   createdAt: c.createdAt ?? new Date().toISOString(),
@@ -118,5 +122,35 @@ export const cardsApi = {
 
   cancelReminder: async (cardId: string, reminderJobId: string): Promise<void> => {
     await httpClient.delete(`/cards/${cardId}/reminders/${reminderJobId}`);
+  },
+
+  startTimer: async (cardId: string): Promise<Card> => {
+    const response = await httpClient.patch<any>(`/cards/${cardId}/timer/start`);
+    return mapCard(response.data.card || response.data);
+  },
+
+  stopTimer: async (cardId: string): Promise<Card> => {
+    const response = await httpClient.patch<any>(`/cards/${cardId}/timer/stop`);
+    return mapCard(response.data.card || response.data);
+  },
+
+  logTimeManual: async (cardId: string, seconds: number): Promise<Card> => {
+    const response = await httpClient.post<any>(`/cards/${cardId}/log-time`, { seconds });
+    return mapCard(response.data.card || response.data);
+  },
+
+  setEstimate: async (cardId: string, estimatedHours: number | null): Promise<Card> => {
+    const response = await httpClient.patch<any>(`/cards/${cardId}/estimate`, { estimatedHours });
+    return mapCard(response.data.card || response.data);
+  },
+
+  createCardFromMessage: async (payload: {
+    listId: string;
+    messageId?: string;
+    title: string;
+    description?: string;
+  }): Promise<Card> => {
+    const response = await httpClient.post<any>(`/cards/from-message`, payload);
+    return mapCard(response.data.card || response.data);
   },
 };

@@ -60,12 +60,12 @@ export const usersService = {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Unsupported avatar content type');
     }
 
-    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
-    const accessKeyId = env.MINIO_ACCESS_KEY;
-    const secretAccessKey = env.MINIO_SECRET_KEY;
-    const region = env.MINIO_REGION;
-    // Use a dedicated public bucket for avatars
-    const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
+  const endpoint = env.STORAGE_ENDPOINT;
+  const accessKeyId = env.STORAGE_ACCESS_KEY;
+  const secretAccessKey = env.STORAGE_SECRET_KEY;
+  const region = env.STORAGE_REGION;
+  // Use a dedicated public bucket for avatars
+  const bucket = env.STORAGE_BUCKET_PUBLIC || env.STORAGE_BUCKET;
 
     // Fixed key per user to prevent accumulating old avatars.
     // (Content-Type is stored on the object at upload time.)
@@ -88,8 +88,8 @@ export const usersService = {
 
   async commitAvatarUpload(userId: string, rawBody: unknown) {
     const { objectKey } = avatarCommitBodySchema.parse(rawBody);
-    const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
-    const endpoint = env.MINIO_PUBLIC_ENDPOINT ?? env.MINIO_ENDPOINT;
+    const bucket = env.STORAGE_BUCKET_PUBLIC || env.STORAGE_BUCKET;
+    const endpoint = env.STORAGE_ENDPOINT;
 
     const expectedKey = `avatars/${userId}`;
     if (objectKey !== expectedKey) {
@@ -142,7 +142,7 @@ export const usersService = {
     const updated = await usersRepo.updateProfile(userId, { avatarUrl: null });
 
     // Delete fixed key (current design)
-    const bucket = env.MINIO_BUCKET_PUBLIC || env.MINIO_BUCKET;
+    const bucket = env.STORAGE_BUCKET_PUBLIC || env.STORAGE_BUCKET;
     await enqueueDeleteObject({ bucket, objectKey: `avatars/${userId}` });
 
     // Best-effort: delete legacy timestamped key (if any)

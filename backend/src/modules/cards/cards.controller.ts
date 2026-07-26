@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { z } from "zod";
 
-import { cardsService, createCardInputSchema, updateCardInputSchema } from "./cards.service";
+import { cardsService, createCardInputSchema, createCardFromMessageInputSchema, updateCardInputSchema } from "./cards.service";
 
 const dueDateInputSchema = z.object({
   dueAt: z.string().datetime().nullable(),
@@ -27,6 +27,13 @@ export class CardsController {
     const userId = req.user!.id;
     const input = createCardInputSchema.parse(req.body);
     const result = await cardsService.create(userId, input);
+    res.status(201).json(result);
+  };
+
+  createFromMessage = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const input = createCardFromMessageInputSchema.parse(req.body);
+    const result = await cardsService.createFromMessage(userId, input);
     res.status(201).json(result);
   };
 
@@ -126,6 +133,36 @@ export class CardsController {
     const cardId = String(req.params.id);
     const labelId = String(req.params.labelId);
     const result = await cardsService.detachLabel(userId, cardId, labelId);
+    res.status(200).json(result);
+  };
+
+  startTimer = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const result = await cardsService.startTimer(userId, cardId);
+    res.status(200).json(result);
+  };
+
+  stopTimer = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const result = await cardsService.stopTimer(userId, cardId);
+    res.status(200).json(result);
+  };
+
+  logTimeManual = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const seconds = parseInt(req.body.seconds) || 0;
+    const result = await cardsService.logTimeManual(userId, cardId, seconds);
+    res.status(200).json(result);
+  };
+
+  setEstimate = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const estimatedHours = req.body.estimatedHours !== undefined && req.body.estimatedHours !== null ? parseFloat(req.body.estimatedHours) : null;
+    const result = await cardsService.setEstimate(userId, cardId, estimatedHours);
     res.status(200).json(result);
   };
 }

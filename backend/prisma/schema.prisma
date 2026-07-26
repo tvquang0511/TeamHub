@@ -80,6 +80,8 @@ model users {
     cardAttachments   card_attachments[]
     reminderJobs      reminder_jobs[]
   activities        activities[]
+  notificationsReceived notifications[] @relation("NotificationReceiver")
+  notificationsTriggered notifications[] @relation("NotificationActor")
 
   @@map("users")
 }
@@ -292,6 +294,11 @@ model cards {
   isDone      Boolean  @default(false) @map("is_done")
   position    Decimal  @db.Decimal(65, 30)
   archivedAt  DateTime? @map("archived_at")
+
+  estimatedHours Float?    @map("estimated_hours")
+  loggedSeconds  Int       @default(0) @map("logged_seconds")
+  timerStartedAt DateTime? @map("timer_started_at")
+  timerStartedBy String?   @db.Uuid @map("timer_started_by")
 
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -529,4 +536,32 @@ model board_metrics_monthly {
   @@unique([boardId, month], map: "uq_board_metrics_monthly_board_month")
   @@index([month], map: "idx_board_metrics_monthly_month")
   @@map("board_metrics_monthly")
+}
+
+enum notification_type {
+  CARD_ASSIGNED
+  COMMENT_MENTION
+  DUE_DATE_REMINDER
+  WORKSPACE_INVITE
+  GENERAL
+}
+
+model notifications {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  actorId   String?  @db.Uuid @map("actor_id")
+
+  title     String
+  content   String
+  type      notification_type @default(GENERAL)
+  linkUrl   String?  @map("link_url")
+  isRead    Boolean  @default(false) @map("is_read")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  users  @relation("NotificationReceiver", fields: [userId], references: [id], onDelete: Cascade)
+  actor users? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt], map: "idx_notifications_user_read_created")
+  @@map("notifications")
 }

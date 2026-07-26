@@ -5,6 +5,7 @@ import prisma from "../../db/prisma";
 import env from "../../config/env";
 import { cacheGetJson, cacheKey, cacheSetJson, getAnalyticsCacheVersion } from "../../integrations/cache/redisCache";
 import { boardsRepo } from "../boards/boards.repo";
+import { workspacesRepo } from "../workspaces/workspaces.repo";
 
 export const analyticsQuerySchema = z.object({
   range: z.enum(["7d", "30d", "90d", "1y"]).optional(),
@@ -110,6 +111,142 @@ export class AnalyticsService {
 
     await cacheSetJson(cacheKeyStr, response, env.CACHE_ANALYTICS_TTL_SEC);
     return response;
+  }
+
+  async getWorkspaceAnalytics(userId: string, workspaceId: string) {
+    const membership = await workspacesRepo.findMembership(workspaceId, userId);
+    if (!membership || (membership.role !== "OWNER" && membership.role !== "ADMIN")) {
+      throw new ApiError(403, "WORKSPACE_FORBIDDEN", "Only workspace OWNER/ADMIN can access analytics");
+    }
+
+    const workspace = await prisma.workspaces.findUnique({
+      where: { id: workspaceId },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, displayName: true, email: true, avatarUrl: true },
+            },
+          },
+        },
+        boards: {
+          where: { archivedAt: null },
+          include: {
+            lists: {
+              where: { archivedAt: null },
+              include: {
+                cards: {
+                  where: { archivedAt: null },
+                  include: {
+                    assignees: {
+                      include: {
+                        user: { select: { id: true, displayName: true, email: true, avatarUrl: true } },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!workspace) throw new ApiError(404, "WORKSPACE_NOT_FOUND", "Workspace not found");
+
+    let totalCards = 0;
+    let completedCards = 0;
+    let overdueCards = 0;
+    let totalEstimatedHours = 0;
+    let totalLoggedSeconds = 0;
+
+    const now = new Date();
+
+    const boardStats = workspace.boards.map((b) => {
+      let bCards = 0;
+      let bDone = 0;
+      let bOverdue = 0;
+      let bEstimated = 0;
+      let bLogged = 0;
+
+      b.lists.forEach((l) => {
+        l.cards.forEach((c) => {
+          bCards++;
+          if (c.isDone) bDone++;
+          if (c.dueAt && new Date(c.dueAt) < now && !c.isDone) bOverdue++;
+          if (c.estimatedHours) bEstimated += c.estimatedHours;
+          if (c.loggedSeconds) bLogged += c.loggedSeconds;
+        });
+      });
+
+      totalCards += bCards;
+      completedCards += bDone;
+      overdueCards += bOverdue;
+      totalEstimatedHours += bEstimated;
+      totalLoggedSeconds += bLogged;
+
+      return {
+        id: b.id,
+        name: b.name,
+        totalCards: bCards,
+        completedCards: bDone,
+        overdueCards: bOverdue,
+        estimatedHours: bEstimated,
+        loggedHours: +(bLogged / 3600).toFixed(1),
+        completionRate: bCards > 0 ? +((bDone / bCards) * 100).toFixed(0) : 0,
+      };
+    });
+
+    const memberStatsMap: Record<string, { user: any; assignedCards: number; completedCards: number; loggedHours: number }> = {};
+
+    workspace.members.forEach((m) => {
+      memberStatsMap[m.userId] = {
+        user: m.user,
+        assignedCards: 0,
+        completedCards: 0,
+        loggedHours: 0,
+      };
+    });
+
+    workspace.boards.forEach((b) => {
+      b.lists.forEach((l) => {
+        l.cards.forEach((c) => {
+          c.assignees.forEach((a) => {
+            if (!memberStatsMap[a.userId]) {
+              memberStatsMap[a.userId] = {
+                user: a.user,
+                assignedCards: 0,
+                completedCards: 0,
+                loggedHours: 0,
+              };
+            }
+            memberStatsMap[a.userId].assignedCards++;
+            if (c.isDone) memberStatsMap[a.userId].completedCards++;
+            if (c.loggedSeconds) memberStatsMap[a.userId].loggedHours += c.loggedSeconds / 3600;
+          });
+        });
+      });
+    });
+
+    const memberStats = Object.values(memberStatsMap).map((ms) => ({
+      ...ms,
+      loggedHours: +ms.loggedHours.toFixed(1),
+    }));
+
+    return {
+      workspace: { id: workspace.id, name: workspace.name },
+      kpis: {
+        totalBoards: workspace.boards.length,
+        totalCards,
+        completedCards,
+        overdueCards,
+        completionRate: totalCards > 0 ? +((completedCards / totalCards) * 100).toFixed(0) : 0,
+        totalEstimatedHours: +totalEstimatedHours.toFixed(1),
+        totalLoggedHours: +(totalLoggedSeconds / 3600).toFixed(1),
+      },
+      boardStats,
+      memberStats,
+    };
   }
 }
 

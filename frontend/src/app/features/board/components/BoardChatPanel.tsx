@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { toast } from "sonner";
-import { FileText, FileUp, ImageUp, MoreHorizontal } from "lucide-react";
+import { FileText, FileUp, ImageUp, MoreHorizontal, Sparkles } from "lucide-react";
 
 import { boardsApi } from "../../../api/boards.api";
 import { chatAttachmentsApi, type ChatMessageAttachment } from "../../../api/chatAttachments.api";
 import { getAccessToken } from "../../../api/http";
 import { useAuth } from "../../../providers/AuthProvider";
 import type { BoardDetail, BoardMessage } from "../../../types/api";
+import { ConvertMessageToCardDialog } from "./ConvertMessageToCardDialog";
 import { API_BASE_URL } from "../../../../config/env";
 import { Button } from "../../../components/ui/button";
 import { ScrollArea } from "../../../components/ui/scroll-area";
@@ -59,8 +60,12 @@ type UpdateAck = AckOk<{ message: BoardMessage }> | AckErr;
 
 type DeleteAck = AckOk<{ ok: true }> | AckErr;
 
-export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" | "sheet" }) {
-  const { board } = props;
+export function BoardChatPanel(props: {
+  board: BoardDetail;
+  variant?: "inline" | "sheet";
+  onOpenCard?: (cardId: string) => void;
+}) {
+  const { board, onOpenCard } = props;
   const variant = props.variant ?? "inline";
   const { user } = useAuth();
 
@@ -72,6 +77,47 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
 
   const [draft, setDraft] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  const [convertMessage, setConvertMessage] = useState<BoardMessage | null>(null);
+  const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
+
+  const boardCards = useMemo(() => {
+    const list: { id: string; title: string; listName: string }[] = [];
+    board.lists?.forEach((l) => {
+      l.cards?.forEach((c) => {
+        if (!(c as any).archivedAt) {
+          list.push({ id: c.id, title: c.title, listName: l.name });
+        }
+      });
+    });
+    return list;
+  }, [board.lists]);
+
+  const cardsMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    boardCards.forEach((c) => {
+      map[c.title.toLowerCase().replace(/\s+/g, "")] = c.id;
+      map[c.id.toLowerCase()] = c.id;
+    });
+    return map;
+  }, [boardCards]);
+
+  const hashMatch = draft.match(/#([^\s#]*)$/);
+  const showCardAutocomplete = !!hashMatch;
+  const cardSearchQuery = hashMatch ? hashMatch[1].toLowerCase() : "";
+
+  const filteredAutocompleteCards = useMemo(() => {
+    if (!showCardAutocomplete) return [];
+    if (!cardSearchQuery) return boardCards.slice(0, 5);
+    return boardCards
+      .filter((c) => c.title.toLowerCase().includes(cardSearchQuery))
+      .slice(0, 5);
+  }, [boardCards, showCardAutocomplete, cardSearchQuery]);
+
+  const handleSelectCardAutocomplete = (card: { id: string; title: string }) => {
+    const updatedDraft = draft.replace(/#([^\s#]*)$/, `[#${card.title}](#card:${card.id}) `);
+    setDraft(updatedDraft);
+  };
 
   const [pendingUploads, setPendingUploads] = useState<
     { file: File; uploading: boolean; error?: string }[]
@@ -481,8 +527,6 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
                 const fileAttachments = hasAttachments ? m.attachments.filter((a) => !isImageMime(a.mimeType)) : [];
                 const canEditMessage = editable && !hasAttachments;
 
-                const showMenu = !deleted && mine;
-
                 return (
                   <div key={m.id} className={mine ? "text-right" : "text-left"}>
                     <div className="text-xs text-muted-foreground">
@@ -505,7 +549,7 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
                         </Avatar>
                       ) : null}
 
-                      {showMenu ? (
+                      {!deleted ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -518,18 +562,29 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {hasAttachments ? null : (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setConvertMessage(m);
+                                setIsConvertDialogOpen(true);
+                              }}
+                            >
+                              <Sparkles className="mr-2 h-4 w-4 text-indigo-500" />
+                              Tạo Card từ tin nhắn
+                            </DropdownMenuItem>
+                            {mine && !hasAttachments ? (
                               <DropdownMenuItem disabled={!canEditMessage} onClick={() => startEdit(m)}>
                                 Chỉnh sửa
                               </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              variant="destructive"
-                              disabled={!editable}
-                              onClick={() => deleteMessage(m)}
-                            >
-                              Xoá
-                            </DropdownMenuItem>
+                            ) : null}
+                            {mine ? (
+                              <DropdownMenuItem
+                                variant="destructive"
+                                disabled={!editable}
+                                onClick={() => deleteMessage(m)}
+                              >
+                                Xoá
+                              </DropdownMenuItem>
+                            ) : null}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : null}
@@ -557,7 +612,45 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
                               (mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")
                             }
                           >
-                            <div className="whitespace-pre-wrap wrap-break-word">{m.content}</div>
+                            <div className="whitespace-pre-wrap wrap-break-word">
+                              {m.content.split(/(\[#[^\]]+\]\(\#card:[a-f0-9-]+\)|#[A-Za-z0-9_\-À-ỹ]+)/gi).map((part, idx) => {
+                                const linkMatch = part.match(/^\[#([^\]]+)\]\(\#card:([a-f0-9-]+)\)$/i);
+                                if (linkMatch) {
+                                  const cardTitle = linkMatch[1];
+                                  const cardId = linkMatch[2];
+                                  return (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => onOpenCard?.(cardId)}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 rounded-md bg-blue-500/20 text-blue-700 dark:text-blue-300 font-semibold text-xs border border-blue-500/30 hover:bg-blue-500/30 transition-colors cursor-pointer"
+                                    >
+                                      <span>#{cardTitle}</span>
+                                    </button>
+                                  );
+                                }
+
+                                const tagMatch = part.match(/^#([A-Za-z0-9_\-À-ỹ]+)$/);
+                                if (tagMatch) {
+                                  const tag = tagMatch[1];
+                                  const matchedCardId = cardsMap[tag.toLowerCase()];
+                                  return (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => matchedCardId && onOpenCard?.(matchedCardId)}
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 rounded-md bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-500/30 hover:bg-indigo-500/30 transition-colors ${
+                                        matchedCardId ? "cursor-pointer" : "cursor-default"
+                                      }`}
+                                    >
+                                      <span>#{tag}</span>
+                                    </button>
+                                  );
+                                }
+
+                                return part;
+                              })}
+                            </div>
                           </div>
                         ) : null}
 
@@ -631,7 +724,27 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
             </div>
           </ScrollArea>
 
-          <div className="border-t p-3">
+          <div className="border-t p-3 relative">
+            {/* Autocomplete Card Dropdown */}
+            {showCardAutocomplete && filteredAutocompleteCards.length > 0 ? (
+              <div className="absolute bottom-full left-3 right-3 mb-2 bg-popover text-popover-foreground border shadow-lg rounded-md overflow-hidden z-30 divide-y max-h-48 overflow-y-auto">
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase bg-muted/50">
+                  Gợi ý Đề cập Card (Nhấn để chọn)
+                </div>
+                {filteredAutocompleteCards.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleSelectCardAutocomplete(c)}
+                    className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground text-xs flex items-center justify-between transition-colors"
+                  >
+                    <span className="font-medium truncate">{c.title}</span>
+                    <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{c.listName}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
             {editingMessageId ? (
               <div className="mb-2 text-xs text-muted-foreground">Đang chỉnh sửa…</div>
             ) : null}
@@ -663,12 +776,10 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
             <Textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={editingMessageId ? "Chỉnh sửa tin nhắn" : "Nhập tin nhắn"}
+              placeholder={editingMessageId ? "Chỉnh sửa tin nhắn" : "Nhập tin nhắn (Gõ # để đề cập Card)"}
               rows={2}
               className="max-h-32 resize-none overflow-y-auto"
               onKeyDown={(e) => {
-                // Enter = send, Shift+Enter = newline
-                // Avoid sending while IME composing
                 const native = e.nativeEvent as any;
                 const composing = !!native?.isComposing;
 
@@ -742,6 +853,17 @@ export function BoardChatPanel(props: { board: BoardDetail; variant?: "inline" |
           </div>
         </>
       )}
+
+      {convertMessage ? (
+        <ConvertMessageToCardDialog
+          open={isConvertDialogOpen}
+          onOpenChange={setIsConvertDialogOpen}
+          boardId={board.id}
+          messageId={convertMessage.id}
+          defaultTitle={convertMessage.content.slice(0, 100) || "Card mới từ Chat"}
+          defaultDescription={`Tạo từ tin nhắn chat của ${convertMessage.sender.displayName}:\n"${convertMessage.content}"`}
+        />
+      ) : null}
     </div>
   );
 }

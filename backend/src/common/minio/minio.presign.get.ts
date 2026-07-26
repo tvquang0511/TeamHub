@@ -52,7 +52,9 @@ export function presignGetObject(params: {
   const endpointUrl = new URL(params.endpoint);
   const host = endpointUrl.host;
 
-  const canonicalUri = `/${encodeURIComponent(params.bucket)}/${params.objectKey
+  // Handle path-style with optional path prefix (e.g. Supabase S3 /storage/v1/s3)
+  const basePath = endpointUrl.pathname.replace(/\/+$/, "");
+  const canonicalUri = `${basePath}/${encodeURIComponent(params.bucket)}/${params.objectKey
     .split("/")
     .map(encodeURIComponent)
     .join("/")}`;

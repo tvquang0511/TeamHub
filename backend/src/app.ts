@@ -13,17 +13,32 @@ const app = express();
 
 // Important for correct req.ip when running behind Nginx/reverse proxy.
 app.set("trust proxy", env.TRUST_PROXY ? 1 : false);
+
 app.use(
   cors({
-    origin: env.CORS_ORIGIN
-      ?.split(',')
-      .map((s) => s.trim())
-      .filter(Boolean) ?? [
-      'http://localhost:5173',
-    ],
+    origin: (requestOrigin, callback) => {
+      // Allow non-browser requests (Postman, curl, server-to-server)
+      if (!requestOrigin) return callback(null, true);
+
+      const rawCorsEnv = env.CORS_ORIGIN ?? '*';
+      const configuredOrigins = rawCorsEnv.split(',').map((s) => s.trim()).filter(Boolean);
+
+      // Dynamically reflect origin to satisfy credentials: true spec
+      if (
+        configuredOrigins.includes('*') ||
+        configuredOrigins.includes(requestOrigin) ||
+        requestOrigin.endsWith('.vercel.app') ||
+        requestOrigin.includes('localhost')
+      ) {
+        return callback(null, requestOrigin);
+      }
+
+      return callback(null, requestOrigin);
+    },
     credentials: true,
   }),
 );
+
 app.use(helmet());
 app.use(morgan("dev"));
 
@@ -39,32 +54,16 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
-    service: "teamhub-backend",
-    time: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Math.floor(process.uptime()),
+    environment: env.NODE_ENV,
   });
 });
 
-// API routes
-app.use("/api", routes);
+// App Routes
+app.use(routes);
 
-// not found
-app.use((req, res) => {
-  res.status(404).json({
-    error: {
-      code: 'NOT_FOUND',
-      message: `Cannot ${req.method} ${req.path}`,
-      details: {},
-    },
-  });
-});
-
+// Error Handler
 app.use(errorHandler);
-
-// root
-app.get("/", (req, res) => {
-  res.json({
-    message: "Backend running",
-  });
-});
 
 export default app;

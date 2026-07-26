@@ -118,7 +118,7 @@ export const BoardPage: React.FC = () => {
       ...boardDetail,
       lists: filteredLists,
     };
-  }, [boardDetail, filters, user?.id]);
+  }, [boardDetail, filters, user]);
 
   const createListMutation = useMutation({
     mutationFn: listsApi.create,

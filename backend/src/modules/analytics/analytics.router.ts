@@ -6,8 +6,5 @@ import { analyticsController } from "./analytics.controller";
 
 export const analyticsRoutes = Router();
 
-analyticsRoutes.use(authJwt);
-analyticsRoutes.use(analyticsRateLimit);
-
-analyticsRoutes.get("/boards/:id/analytics", analyticsController.getBoardAnalytics);
-analyticsRoutes.get("/workspaces/:workspaceId/analytics", analyticsController.getWorkspaceAnalytics);
+analyticsRoutes.get("/boards/:id/analytics", authJwt, analyticsRateLimit, analyticsController.getBoardAnalytics);
+analyticsRoutes.get("/workspaces/:workspaceId/analytics", authJwt, analyticsRateLimit, analyticsController.getWorkspaceAnalytics);

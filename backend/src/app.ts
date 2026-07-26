@@ -50,7 +50,11 @@ const openApiDocument = buildOpenApiDocument();
 app.get('/openapi.json', (_req, res) => res.json(openApiDocument));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
-// health check
+// Root & Health check
+app.get('/', (_req, res) => {
+  res.json({ name: 'TeamHub Backend API', status: 'ok' });
+});
+
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",

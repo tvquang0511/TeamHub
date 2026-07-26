@@ -62,6 +62,12 @@ function getTransporter(): AnyTransporter {
 		port: cfg.port,
 		secure: cfg.secure,
 		auth: cfg.auth,
+		connectionTimeout: 10000,
+		greetingTimeout: 10000,
+		socketTimeout: 15000,
+		tls: {
+			rejectUnauthorized: false,
+		},
 	});
 
 	return _transporter!;
@@ -83,13 +89,21 @@ export async function sendReminderEmail(params: {
 		dueAt: params.dueAt,
 	});
 
-	await getTransporter().sendMail({
-		from: cfg.from,
-		to: params.to,
-		subject,
-		text,
-		html,
-	});
+	try {
+		console.log(`[mailer] Sending reminder email to ${params.to} via ${cfg.host}:${cfg.port}...`);
+		const info = await getTransporter().sendMail({
+			from: cfg.from,
+			to: params.to,
+			subject,
+			text,
+			html,
+		});
+		console.log(`[mailer] Reminder email sent successfully! messageId=${info.messageId}`);
+		return info;
+	} catch (err) {
+		console.error(`[mailer] Failed to send reminder email to ${params.to}:`, err);
+		throw err;
+	}
 }
 
 export async function sendPasswordResetEmail(params: {
@@ -106,11 +120,19 @@ export async function sendPasswordResetEmail(params: {
 		expiresAt: params.expiresAt,
 	});
 
-	await getTransporter().sendMail({
-		from: cfg.from,
-		to: params.to,
-		subject,
-		text,
-		html,
-	});
+	try {
+		console.log(`[mailer] Sending password reset email to ${params.to} via ${cfg.host}:${cfg.port}...`);
+		const info = await getTransporter().sendMail({
+			from: cfg.from,
+			to: params.to,
+			subject,
+			text,
+			html,
+		});
+		console.log(`[mailer] Password reset email sent successfully! messageId=${info.messageId}`);
+		return info;
+	} catch (err) {
+		console.error(`[mailer] Failed to send password reset email to ${params.to}:`, err);
+		throw err;
+	}
 }

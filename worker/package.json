@@ -1,11 +1,13 @@
 {
   "name": "worker",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "TeamHub Standalone BullMQ Worker Service",
+  "main": "dist/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec ts-node src/main.ts",
+    "build": "tsc",
+    "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "keywords": [],
@@ -13,20 +15,20 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@types/node": "^25.5.0",
+    "@types/nodemailer": "^6.4.18",
+    "@types/pg": "^8.15.5",
     "bullmq": "^5.58.5",
     "dotenv": "^17.3.1",
     "ioredis": "^5.6.1",
     "minio": "^8.0.6",
     "nodemailer": "^7.0.6",
     "pg": "^8.20.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "@types/nodemailer": "^6.4.18",
-    "@types/pg": "^8.15.5",
-    "nodemon": "^3.1.14",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "nodemon": "^3.1.14"
   }
 }

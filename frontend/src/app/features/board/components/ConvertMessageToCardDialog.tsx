@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { notify } from "../../../lib/toastHelper";
 import { Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../../components/ui/dialog";
 import { Button } from "../../../components/ui/button";
@@ -64,11 +64,11 @@ export const ConvertMessageToCardDialog: React.FC<ConvertMessageToCardDialogProp
     onSuccess: (card) => {
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
       queryClient.invalidateQueries({ queryKey: ["activities", "board", boardId] });
-      toast.success(`Đã tạo Card "${card.title}" từ tin nhắn chat!`);
+      notify.success(`Đã tạo Card "${card.title}" từ tin nhắn chat!`);
       onOpenChange(false);
     },
     onError: (err: any) => {
-      toast.error(err.message || "Không thể chuyển tin nhắn thành Card");
+      notify.error(err, "Không thể chuyển tin nhắn thành Card");
     },
   });
 

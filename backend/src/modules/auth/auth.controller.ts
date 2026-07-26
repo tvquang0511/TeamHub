@@ -29,21 +29,29 @@ const resetPasswordBodySchema = z.object({
 });
 
 function setRefreshCookie(res: Response, refreshToken: string) {
-  const maxAgeMs = 7 * 24 * 60 * 60 * 1000; // client-side maxAge; server still validates JWT exp
+  const maxAgeMs = 7 * 24 * 60 * 60 * 1000;
+  const isProduction = env.NODE_ENV === 'production';
+  const secure = isProduction ? true : env.AUTH_COOKIE_SECURE;
+  const sameSite = isProduction ? 'none' : (env.AUTH_COOKIE_SAME_SITE as any);
+
   res.cookie(env.AUTH_COOKIE_NAME, refreshToken, {
     httpOnly: true,
-    secure: env.AUTH_COOKIE_SECURE,
-    sameSite: env.AUTH_COOKIE_SAME_SITE as any,
+    secure,
+    sameSite,
     path: '/api/auth',
     maxAge: maxAgeMs,
   });
 }
 
 function clearRefreshCookie(res: Response) {
+  const isProduction = env.NODE_ENV === 'production';
+  const secure = isProduction ? true : env.AUTH_COOKIE_SECURE;
+  const sameSite = isProduction ? 'none' : (env.AUTH_COOKIE_SAME_SITE as any);
+
   res.clearCookie(env.AUTH_COOKIE_NAME, {
     httpOnly: true,
-    secure: env.AUTH_COOKIE_SECURE,
-    sameSite: env.AUTH_COOKIE_SAME_SITE as any,
+    secure,
+    sameSite,
     path: '/api/auth',
   });
 }

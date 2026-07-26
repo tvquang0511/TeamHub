@@ -43,19 +43,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        const { accessToken } = await authApi.refresh();
-        setAccessToken(accessToken);
+        const refreshRes = await authApi.refresh();
+        setAccessToken(refreshRes.accessToken);
+        if (refreshRes.user) {
+          setUser(refreshRes.user);
+        }
 
-        // Fetch user info (backend should implement /auth/me)
+        // Fetch latest user info
         try {
           const me = await authApi.me();
           setUser(me);
         } catch {
-          // If /auth/me is not available or fails, keep user null
+          // If /auth/me is not available or fails, keep user from refresh
         }
       } catch (error) {
         // No valid refresh token, user is not authenticated
         setAccessToken(null);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }

@@ -153,7 +153,7 @@ export const authService = {
       expiresAt: newExpiresAt,
     });
 
-    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken, user: publicUser(user) };
   },
 
   async logout(input: { refreshToken: string }) {

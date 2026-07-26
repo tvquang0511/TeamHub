@@ -221,7 +221,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
                   }`}
                 >
                   <TableIcon className="h-3.5 w-3.5" />
-                  <span>Bảng dữ liệu</span>
+                  <span>Bảng</span>
                 </button>
               </div>
             )}

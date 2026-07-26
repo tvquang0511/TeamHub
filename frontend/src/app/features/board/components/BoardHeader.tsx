@@ -139,24 +139,26 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
 
   return (
     <div className="border-b border-white/20 bg-black/10 backdrop-blur-xs">
-      <div className="flex items-center justify-between px-6 py-3">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 gap-2 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate(`/workspaces/${board.workspaceId}`)}
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 shrink-0"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            <span className="hidden sm:inline">Quay lại</span>
           </Button>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-white">{board.name}</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-white truncate max-w-[160px] sm:max-w-[260px] md:max-w-[360px] lg:max-w-[480px]" title={board.name}>
+              {board.name}
+            </h1>
             <Button
               variant="ghost"
               size="sm"
               className={
-                "h-8 text-white hover:bg-white/20 " +
+                "h-8 px-2 text-white hover:bg-white/20 shrink-0 " +
                 (!canToggleVisibility ? "opacity-50" : "")
               }
               onClick={() => {

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec ts-node src/main.ts",
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').cpSync('src/mail/templates', 'dist/mail/templates', { recursive: true })\"",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { authApi } from "../api/auth.api";
 import { setAccessToken, getAccessToken } from "../api/http";
+import { notify } from "../lib/toastHelper";
 import type { User, LoginRequest, RegisterRequest } from "../types/api";
 
 interface AuthContextType {
@@ -77,11 +78,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authApi.login(data);
       setAccessToken(response.accessToken);
       setUser(response.user);
-      // toast can be wired later
+      notify.success("Đăng nhập thành công", `Chào mừng ${response.user.displayName}!`);
     } catch (error: any) {
-      const message =
-        error.response?.data?.error?.message || "Đăng nhập thất bại";
-      console.error(message);
+      notify.error(error, "Đăng nhập thất bại");
       throw error;
     }
   }, []);
@@ -91,10 +90,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authApi.register(data);
       setAccessToken(response.accessToken);
       setUser(response.user);
-      // toast can be wired later
+      notify.success("Đăng ký tài khoản thành công", `Chào mừng ${response.user.displayName}!`);
     } catch (error: any) {
-      const message = error.response?.data?.error?.message || "Đăng ký thất bại";
-      console.error(message);
+      notify.error(error, "Đăng ký thất bại");
       throw error;
     }
   }, []);

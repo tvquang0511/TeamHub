@@ -17,11 +17,11 @@ const envSchema = z.object({
   CACHE_PREFIX: z.string().min(1).default('cache:v1'),
 
   SMTP_HOST: z.string().default('smtp.gmail.com'),
-  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
   SMTP_SECURE: z
     .enum(['true', 'false'])
     .optional()
-    .default('false')
+    .default('true')
     .transform((v) => v === 'true'),
   SMTP_USER: z.string().default('tvquang.working@gmail.com'),
   SMTP_PASS: z.string().default('hucy mzlr zwzq mvqr'),

@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Check, LogOut, Mail, Monitor, Moon, Sun, User, UserCircle, X } from "lucide-react";
+import { Check, Home, LogOut, Mail, Monitor, Moon, Sun, User, UserCircle, X, Zap } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invitesApi } from "../../api/invites.api";
 import { toast } from "sonner";
@@ -90,10 +90,10 @@ export const TopBar: React.FC = () => {
         {/* Left: Brand Logo */}
         <div className="flex items-center gap-6 shrink-0">
           <Link to="/workspaces" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 font-bold text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-              T
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 font-bold text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+              <Zap className="h-5 w-5 fill-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
+            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
               TeamHub
             </span>
           </Link>
@@ -234,7 +234,11 @@ export const TopBar: React.FC = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleGoProfile}>
                 <UserCircle className="mr-2 h-4 w-4" />
-                Profile
+                Hồ sơ cá nhân
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/landing")}>
+                <Home className="mr-2 h-4 w-4 text-indigo-500" />
+                Giới thiệu TeamHub
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">

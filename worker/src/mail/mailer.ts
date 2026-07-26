@@ -82,6 +82,52 @@ function getTransporter(): AnyTransporter {
 	return _transporter!;
 }
 
+async function sendMailWithFallback(options: {
+	to: string;
+	subject: string;
+	text: string;
+	html: string;
+}) {
+	if (env.RESEND_API_KEY && env.RESEND_API_KEY.trim()) {
+		console.log(`[mailer] Sending email to ${options.to} via Resend HTTP API (Port 443)...`);
+		const fromEmail = env.SMTP_FROM && env.SMTP_FROM.includes('@') ? env.SMTP_FROM : 'TeamHub <onboarding@resend.dev>';
+		const res = await fetch('https://api.resend.com/emails', {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${env.RESEND_API_KEY.trim()}`,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				from: fromEmail.includes('resend.dev') ? fromEmail : 'TeamHub <onboarding@resend.dev>',
+				to: [options.to],
+				subject: options.subject,
+				text: options.text,
+				html: options.html,
+			}),
+		});
+
+		const data = (await res.json()) as any;
+		if (!res.ok) {
+			throw new Error(`Resend API Error (${res.status}): ${JSON.stringify(data)}`);
+		}
+		console.log(`[mailer] Email sent successfully via Resend API! id=${data.id}`);
+		return data;
+	}
+
+	// Fallback to Nodemailer SMTP
+	const cfg = requireSmtpConfig();
+	console.log(`[mailer] Sending email to ${options.to} via SMTP ${cfg.host}:${cfg.port}...`);
+	const info = await getTransporter().sendMail({
+		from: cfg.from,
+		to: options.to,
+		subject: options.subject,
+		text: options.text,
+		html: options.html,
+	});
+	console.log(`[mailer] Email sent successfully via Nodemailer! messageId=${info.messageId}`);
+	return info;
+}
+
 export async function sendReminderEmail(params: {
 	to: string;
 	workspaceName: string;
@@ -89,8 +135,6 @@ export async function sendReminderEmail(params: {
 	cardTitle: string;
 	dueAt: Date | null;
 }) {
-	const cfg = requireSmtpConfig();
-
 	const { subject, text, html } = buildReminderEmail({
 		workspaceName: params.workspaceName,
 		boardName: params.boardName,
@@ -99,16 +143,12 @@ export async function sendReminderEmail(params: {
 	});
 
 	try {
-		console.log(`[mailer] Sending reminder email to ${params.to} via ${cfg.host}:${cfg.port}...`);
-		const info = await getTransporter().sendMail({
-			from: cfg.from,
+		return await sendMailWithFallback({
 			to: params.to,
 			subject,
 			text,
 			html,
 		});
-		console.log(`[mailer] Reminder email sent successfully! messageId=${info.messageId}`);
-		return info;
 	} catch (err) {
 		console.error(`[mailer] Failed to send reminder email to ${params.to}:`, err);
 		throw err;
@@ -121,8 +161,6 @@ export async function sendPasswordResetEmail(params: {
 	resetUrl: string;
 	expiresAt: Date;
 }) {
-	const cfg = requireSmtpConfig();
-
 	const { subject, text, html } = buildPasswordResetEmail({
 		email: params.email,
 		resetUrl: params.resetUrl,
@@ -130,16 +168,12 @@ export async function sendPasswordResetEmail(params: {
 	});
 
 	try {
-		console.log(`[mailer] Sending password reset email to ${params.to} via ${cfg.host}:${cfg.port}...`);
-		const info = await getTransporter().sendMail({
-			from: cfg.from,
+		return await sendMailWithFallback({
 			to: params.to,
 			subject,
 			text,
 			html,
 		});
-		console.log(`[mailer] Password reset email sent successfully! messageId=${info.messageId}`);
-		return info;
 	} catch (err) {
 		console.error(`[mailer] Failed to send password reset email to ${params.to}:`, err);
 		throw err;

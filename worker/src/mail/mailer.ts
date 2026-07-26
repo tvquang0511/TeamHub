@@ -37,7 +37,7 @@ function requireSmtpConfig() {
 	return {
 		host: env.SMTP_HOST!,
 		port: env.SMTP_PORT!,
-		secure: env.SMTP_SECURE ?? (env.SMTP_PORT === 465),
+		secure: env.SMTP_PORT === 465 || env.SMTP_SECURE === true,
 		from: env.SMTP_FROM!,
 		auth:
 			env.SMTP_USER && env.SMTP_PASS

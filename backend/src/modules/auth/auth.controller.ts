@@ -38,7 +38,7 @@ function setRefreshCookie(res: Response, refreshToken: string) {
     httpOnly: true,
     secure,
     sameSite,
-    path: '/api/auth',
+    path: '/',
     maxAge: maxAgeMs,
   });
 }
@@ -52,7 +52,7 @@ function clearRefreshCookie(res: Response) {
     httpOnly: true,
     secure,
     sameSite,
-    path: '/api/auth',
+    path: '/',
   });
 }
 
@@ -117,7 +117,7 @@ export const refresh = async (req: Request, res: Response) => {
 
   const result = await authService.refresh({ refreshToken });
   setRefreshCookie(res, result.refreshToken);
-  return res.json({ accessToken: result.accessToken });
+  return res.json({ accessToken: result.accessToken, user: result.user });
 };
 
 export const logout = async (req: Request, res: Response) => {

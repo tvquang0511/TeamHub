@@ -20,8 +20,8 @@ export const authApi = {
   },
 
   // Refresh access token (cookie-based, no body needed)
-  refresh: async (): Promise<{ accessToken: string }> => {
-    const response = await httpClient.post<{ accessToken: string }>(
+  refresh: async (): Promise<{ accessToken: string; user?: User }> => {
+    const response = await httpClient.post<{ accessToken: string; user?: User }>(
       "/auth/refresh",
       {}
     );

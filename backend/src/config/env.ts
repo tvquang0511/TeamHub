@@ -139,8 +139,8 @@ const envSchema = z.object({
   BLOB_SWEEP_TZ: z.string().min(1).default('UTC'),
   BLOB_DELETE_DELAY_MS: z.coerce.number().int().nonnegative().default(60_000),
 
-  JWT_ACCESS_SECRET: z.string().min(1).default('9fA7xQ2LmP8vR4sTzWcY1uKjH6bN0eD3GqZrX5VtCwM8pL2hJkS9aF7dU1yEoB4nI6'),
-  JWT_REFRESH_SECRET: z.string().min(1).default('U3mZ8KqP1xVdR7sYwT4LhJcN9A2fE6gB5oWk0QzXvCjIuH7pS1tM8nD4rF2aYlE6'),
+  JWT_ACCESS_SECRET: z.string().min(1),
+  JWT_REFRESH_SECRET: z.string().min(1),
   JWT_ACCESS_TTL: z.string().min(1).default('15m'),
   JWT_REFRESH_TTL: z.string().min(1).default('7d'),
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { User, Mail, Camera, Save, ShieldCheck, Sparkles, CheckCircle2, Lock } from "lucide-react";
 
@@ -28,14 +28,15 @@ export const ProfilePage: React.FC = () => {
     queryFn: () => usersApi.me(),
   });
 
+  const [syncedId, setSyncedId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [description, setDescription] = useState<string>("");
 
-  useEffect(() => {
-    if (!me) return;
+  if (me && me.id !== syncedId) {
+    setSyncedId(me.id);
     setDisplayName(me.displayName ?? "");
     setDescription(me.description ?? "");
-  }, [me]);
+  }
 
   const updateMutation = useMutation({
     mutationFn: (payload: { displayName?: string; description?: string | null }) => usersApi.updateMe(payload),

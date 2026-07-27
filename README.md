@@ -16,7 +16,7 @@
 > ⚠️ **LƯU Ý VỀ TIẾN TRÌNH WORKER (BullMQ Email & AI Daily Standup)**:
 > Vì lý do giới hạn ngân sách & tài chính, tiến trình Standalone Worker (BullMQ Worker) được cài đặt mặc định chạy ở môi trường **Local/Self-hosted** (`cd worker && npm start`).
 > 
-> **Nếu Nhà tuyển dụng / Reviewer muốn kiểm thử trực tiếp full luồng tính năng gửi Email tự động và AI Daily Standup Worker trên môi trường Cloud Staging**, xin vui lòng liên hệ trực tiếp với tác giả để mình bật worker instance ngay lập tức:
+> **Nếu Nhà tuyển dụng / Reviewer muốn kiểm thử trực tiếp full luồng tính năng gửi Email tự động và AI Daily Standup Worker trên môi trường Cloud Staging**, xin vui lòng liên hệ trực tiếp với tác giả để bật worker instance ngay lập tức:
 > - 📞 **Số điện thoại / Zalo**: `0357131476`
 > - ✉️ **Email**: `tvquang.working@gmail.com`
 

@@ -9,7 +9,7 @@ import { getAccessToken } from "../../../api/http";
 import { useAuth } from "../../../providers/AuthProvider";
 import type { BoardDetail, BoardMessage } from "../../../types/api";
 import { ConvertMessageToCardDialog } from "./ConvertMessageToCardDialog";
-import { API_BASE_URL } from "../../../../config/env";
+import { API_BASE_URL, SOCKET_BASE_URL } from "../../../../config/env";
 import { Button } from "../../../components/ui/button";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import { Textarea } from "../../../components/ui/textarea";
@@ -22,16 +22,6 @@ import {
 } from "../../../components/ui/dropdown-menu";
 
 const EDIT_DELETE_WINDOW_MS = 20 * 60 * 1000;
-
-function apiBaseToSocketBase(apiBase: string) {
-  // API base is like http://localhost:4000/api
-  // Socket server is on http://localhost:4000
-  return apiBase.endsWith("/api") ? apiBase.slice(0, -"/api".length) : apiBase;
-}
-
-const SOCKET_BASE_URL = apiBaseToSocketBase(
-  API_BASE_URL,
-);
 
 type InlineImageState = {
   url: string;

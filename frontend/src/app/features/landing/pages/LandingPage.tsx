@@ -15,6 +15,7 @@ import {
   Pause,
   CheckCircle2,
   ShieldCheck,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
@@ -127,23 +128,26 @@ export const LandingPage: React.FC = () => {
             <span>Nền tảng Quản lý Dự án & Cộng tác Nhóm Chuyên nghiệp</span>
           </div>
 
-          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl leading-tight max-w-5xl mx-auto">
-            Giải Pháp Quản Lý Công Việc Tất-Cả-Trong-Một. <br />
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              Nâng Tầm Hiệu Suất Cộng Tác Nhóm.
-            </span>
-          </h1>
+          {/* Hero Banner Title Container with Gradient & Glassmorphism */}
+          <div className="mx-auto max-w-5xl rounded-3xl border border-indigo-500/20 bg-gradient-to-b from-indigo-500/5 via-purple-500/5 to-background p-6 sm:p-10 shadow-2xl backdrop-blur-xl mb-8">
+            <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl md:text-6xl leading-tight">
+              Giải Pháp Quản Lý Công Việc Tất-Cả-Trong-Một. <br />
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                Nâng Tầm Hiệu Suất Cộng Tác Nhóm.
+              </span>
+            </h1>
 
-          <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            TeamHub cung cấp bộ công cụ quản trị công việc toàn diện: Chuyển đổi mượt mà giữa{" "}
-            <strong className="font-semibold text-foreground">Bảng Kanban</strong>,{" "}
-            <strong className="font-semibold text-foreground">Gantt Chart Timeline</strong>, và{" "}
-            <strong className="font-semibold text-foreground">Bảng Notion-style</strong>, kết hợp cùng{" "}
-            <strong className="font-semibold text-foreground">Bấm giờ Realtime</strong> và{" "}
-            <strong className="font-semibold text-foreground">Chat-to-Card</strong> linh hoạt.
-          </p>
+            <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              TeamHub cung cấp bộ công cụ quản trị công việc toàn diện: Chuyển đổi mượt mà giữa{" "}
+              <strong className="font-semibold text-foreground">Bảng Kanban</strong>,{" "}
+              <strong className="font-semibold text-foreground">Gantt Chart Timeline</strong>, và{" "}
+              <strong className="font-semibold text-foreground">Bảng Notion-style</strong>, kết hợp cùng{" "}
+              <strong className="font-semibold text-foreground">Bấm giờ Realtime</strong> và{" "}
+              <strong className="font-semibold text-foreground">Chat-to-Card</strong> linh hoạt.
+            </p>
+          </div>
 
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
               onClick={() => navigate(user ? "/workspaces" : "/register")}
@@ -342,7 +346,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🤖 CORE FEATURE #2: GOOGLE GEMINI AI BREAKDOWN SHOWCASE SECTION */}
+      {/* 🤖 CORE FEATURE #2: GOOGLE GEMINI AI BREAKDOWN SHOWCASE SECTION (Text Left, Demo Right) */}
       <section id="ai-breakdown" className="py-20 bg-muted/30 border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -375,7 +379,7 @@ export const LandingPage: React.FC = () => {
               </ul>
             </div>
 
-            {/* Right Interactive AI Demo Panel Showcase */}
+            {/* Right Interactive AI Demo Panel */}
             <div className="lg:col-span-7">
               <div className="rounded-2xl border border-indigo-500/30 bg-card p-6 shadow-xl text-left space-y-5 relative overflow-hidden">
                 <div className="flex items-center justify-between border-b pb-3">
@@ -433,39 +437,12 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🌟 CORE FEATURE #3: REALTIME TASK STOPWATCH & TIME TRACKING (LARGE DEMO PANEL) */}
+      {/* 🌟 CORE FEATURE #3: REALTIME TASK STOPWATCH & TIME TRACKING (Demo Left, Text Right) */}
       <section id="time-tracking" className="py-20 bg-background border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Description */}
-            <div className="lg:col-span-5 space-y-6 text-left">
-              <Badge variant="outline" className="border-indigo-500/30 text-indigo-600 bg-indigo-500/10 font-bold">
-                CORE #3 · BẤM GIỜ & QUẢN LÝ THỜI GIAN
-              </Badge>
-              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
-                Đồng Hồ Bấm Giờ Realtime 0ms Optimistic UI
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Đo lường thời gian làm việc thực tế (<strong className="font-semibold text-foreground">Logged Hours</strong>) so với số giờ ước tính (<strong className="font-semibold text-foreground">Estimate Hours</strong>) với độ chính xác đến từng giây.
-              </p>
-              <ul className="space-y-3 text-xs sm:text-sm">
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Bấm giờ trực tiếp trên Card với phản hồi 0ms.</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Cập nhật tiến độ % hoàn thành tự động.</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Đồng bộ trạng thái đang chạy giữa các thành viên.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Right Interactive Live Stopwatch Panel */}
-            <div className="lg:col-span-7">
+            {/* Left Interactive Live Stopwatch Panel */}
+            <div className="lg:col-span-7 order-2 lg:order-1">
               <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-xl text-left space-y-6 relative overflow-hidden">
                 <div className="flex items-center justify-between border-b pb-4">
                   <div className="flex items-center gap-3">
@@ -526,16 +503,70 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Right Description */}
+            <div className="lg:col-span-5 space-y-6 text-left order-1 lg:order-2">
+              <Badge variant="outline" className="border-indigo-500/30 text-indigo-600 bg-indigo-500/10 font-bold">
+                CORE #3 · BẤM GIỜ & QUẢN LÝ THỜI GIAN
+              </Badge>
+              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
+                Đồng Hồ Bấm Giờ Realtime 0ms Optimistic UI
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Đo lường thời gian làm việc thực tế (<strong className="font-semibold text-foreground">Logged Hours</strong>) so với số giờ ước tính (<strong className="font-semibold text-foreground">Estimate Hours</strong>) với độ chính xác đến từng giây.
+              </p>
+              <ul className="space-y-3 text-xs sm:text-sm">
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Bấm giờ trực tiếp trên Card với phản hồi 0ms.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Cập nhật tiến độ % hoàn thành tự động.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Đồng bộ trạng thái đang chạy giữa các thành viên.</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 🌟 CORE FEATURE #4: CHAT-TO-CARD & #CARD MENTIONS ENGINE (LARGE DEMO PANEL) */}
+      {/* 🌟 CORE FEATURE #4: CHAT-TO-CARD & #CARD MENTIONS ENGINE (Text Left, Demo Right) */}
       <section id="chat-to-card" className="py-20 bg-muted/30 border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Interactive Chat Showcase */}
-            <div className="lg:col-span-7 order-2 lg:order-1">
+            {/* Left Description */}
+            <div className="lg:col-span-5 space-y-6 text-left">
+              <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-500/10 font-bold">
+                CORE #4 · CHAT & MENTION ENGINE
+              </Badge>
+              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
+                Kết Nối Thông Suốt Giữa Chat & Kanban
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Biến bất kỳ tin nhắn thảo luận nào thành Card công việc mới chỉ với 1 click. Gõ <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono text-indigo-600 font-bold">#</code> để tự động gợi ý và tạo Chip tương tác mở thẳng Card.
+              </p>
+              <ul className="space-y-3 text-xs sm:text-sm">
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Menu ngữ cảnh 1-click "Tạo Card từ tin nhắn".</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Autocomplete gợi ý danh sách Card khi gõ `#`.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Chip #Card tương tác mở trực tiếp Modal Card Detail.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Right Interactive Chat Showcase */}
+            <div className="lg:col-span-7">
               <div className="rounded-2xl border bg-card p-6 shadow-xl space-y-4 text-left">
                 <div className="flex items-center justify-between border-b pb-3 text-xs">
                   <div className="flex items-center gap-2 font-bold">
@@ -579,70 +610,16 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Right Description */}
-            <div className="lg:col-span-5 space-y-6 text-left order-1 lg:order-2">
-              <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-500/10 font-bold">
-                CORE #4 · CHAT & MENTION ENGINE
-              </Badge>
-              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
-                Kết Nối Thông Suốt Giữa Chat & Kanban
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Biến bất kỳ tin nhắn thảo luận nào thành Card công việc mới chỉ với 1 click. Gõ <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono text-indigo-600 font-bold">#</code> để tự động gợi ý và tạo Chip tương tác mở thẳng Card.
-              </p>
-              <ul className="space-y-3 text-xs sm:text-sm">
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Menu ngữ cảnh 1-click "Tạo Card từ tin nhắn".</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Autocomplete gợi ý danh sách Card khi gõ `#`.</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Chip #Card tương tác mở trực tiếp Modal Card Detail.</span>
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* 🌟 CORE FEATURE #5: BOARD JSON BACKUP & RESTORE (LARGE DEMO PANEL) */}
+      {/* 🌟 CORE FEATURE #5: BOARD JSON BACKUP & RESTORE (Demo Left, Text Right) */}
       <section id="json-backup" className="py-20 bg-background border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Description */}
-            <div className="lg:col-span-5 space-y-6 text-left">
-              <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 bg-emerald-500/10 font-bold">
-                CORE #5 · AN TOÀN & SAO LƯU DỮ LIỆU
-              </Badge>
-              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
-                Sao Lưu & Phục Hồi Dữ Liệu Board 1-Click
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Xuất toàn bộ cấu hình Bảng, Cột, Thẻ, Checklist và Nhãn thành file JSON chuẩn hóa. Khôi phục dự án bất kỳ lúc nào với độ an toàn 100%.
-              </p>
-              <ul className="space-y-3 text-xs sm:text-sm">
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Xuất file JSON cấu trúc đầy đủ 1-click.</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Nhập JSON tái tạo lại toàn bộ Board mới lập tức.</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Bảo toàn 100% Checklist, Thẻ, và Nhãn phân loại.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Right Interactive Demo Panel */}
-            <div className="lg:col-span-7">
+            {/* Left Interactive Demo Panel */}
+            <div className="lg:col-span-7 order-2 lg:order-1">
               <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-xl text-left space-y-6">
                 <div className="flex items-center justify-between border-b pb-4">
                   <div className="flex items-center gap-3">
@@ -707,6 +684,33 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Right Description */}
+            <div className="lg:col-span-5 space-y-6 text-left order-1 lg:order-2">
+              <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 bg-emerald-500/10 font-bold">
+                CORE #5 · AN TOÀN & SAO LƯU DỮ LIỆU
+              </Badge>
+              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
+                Sao Lưu & Phục Hồi Dữ Liệu Board 1-Click
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Xuất toàn bộ cấu hình Bảng, Cột, Thẻ, Checklist và Nhãn thành file JSON chuẩn hóa. Khôi phục dự án bất kỳ lúc nào với độ an toàn 100%.
+              </p>
+              <ul className="space-y-3 text-xs sm:text-sm">
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Xuất file JSON cấu trúc đầy đủ 1-click.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Nhập JSON tái tạo lại toàn bộ Board mới lập tức.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Bảo toàn 100% Checklist, Thẻ, và Nhãn phân loại.</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -716,7 +720,7 @@ export const LandingPage: React.FC = () => {
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight">
-              Bảo Mật, Sao Lưu & Đồng Bộ Realtime
+              Bảo Mật, Thống Kê & Đồng Bộ Realtime
             </h2>
             <p className="mt-4 text-sm sm:text-base text-muted-foreground">
               Đảm bảo an toàn dữ liệu 100% và tốc độ phản hồi tức thì cho toàn bộ team.
@@ -735,12 +739,12 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="rounded-2xl border bg-card p-6 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 mb-5">
-                <Download className="h-6 w-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 mb-5">
+                <BarChart3 className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold">Sao lưu & Khôi phục dữ liệu (JSON)</h3>
+              <h3 className="text-lg font-bold">Báo Cáo & Thống Kê Hiệu Suất (Executive Analytics)</h3>
               <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Xuất toàn bộ dữ liệu Board thành file JSON an toàn. Dễ dàng khôi phục dự án bất kỳ lúc nào mà không lo mất dữ liệu.
+                Thống kê trực quan tiến độ dự án, tỷ lệ thẻ hoàn thành đúng hạn/quá hạn, biểu đồ khối lượng công việc và hiệu suất thời gian thực.
               </p>
             </div>
 

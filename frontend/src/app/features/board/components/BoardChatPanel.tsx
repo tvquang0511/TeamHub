@@ -9,7 +9,7 @@ import { getAccessToken } from "../../../api/http";
 import { useAuth } from "../../../providers/AuthProvider";
 import type { BoardDetail, BoardMessage } from "../../../types/api";
 import { ConvertMessageToCardDialog } from "./ConvertMessageToCardDialog";
-import { API_BASE_URL, SOCKET_BASE_URL } from "../../../../config/env";
+import { SOCKET_BASE_URL } from "../../../../config/env";
 import { Button } from "../../../components/ui/button";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 import { Textarea } from "../../../components/ui/textarea";

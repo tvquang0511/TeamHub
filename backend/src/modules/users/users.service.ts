@@ -97,15 +97,9 @@ export const usersService = {
     }
 
     // Build a public path-style URL pointing directly to the avatar in the public bucket.
-    const baseUrl = new URL(endpoint);
-    const encodedPath = ['/', encodeURIComponent(bucket), '/', objectKey
-      .split('/')
-      .map(encodeURIComponent)
-      .join('/')
-    ].join('');
-    const avatarUrlBase = new URL(encodedPath, baseUrl).toString();
-
-    // Cache busting: keep a stable key but change URL so browsers re-fetch.
+    const cleanEndpoint = endpoint.replace(/\/+$/, '');
+    const encodedObjectKey = objectKey.split('/').map(encodeURIComponent).join('/');
+    const avatarUrlBase = `${cleanEndpoint}/${encodeURIComponent(bucket)}/${encodedObjectKey}`;
     const avatarUrl = `${avatarUrlBase}?v=${Date.now()}`;
 
     const existing = await usersRepo.getById(userId);

@@ -197,13 +197,9 @@ export const workspacesService = {
     const bucket = env.STORAGE_BUCKET_PUBLIC;
     const endpoint = env.STORAGE_ENDPOINT;
 
-    const baseUrl = new URL(endpoint);
-    const encodedPath = ['/', encodeURIComponent(bucket), '/', objectKey
-      .split('/')
-      .map(encodeURIComponent)
-      .join('/')
-    ].join('');
-    const backgroundImageUrlBase = new URL(encodedPath, baseUrl).toString();
+    const cleanEndpoint = endpoint.replace(/\/+$/, '');
+    const encodedObjectKey = objectKey.split('/').map(encodeURIComponent).join('/');
+    const backgroundImageUrlBase = `${cleanEndpoint}/${encodeURIComponent(bucket)}/${encodedObjectKey}`;
     const backgroundImageUrl = `${backgroundImageUrlBase}?v=${Date.now()}`;
 
     const existing = await workspacesRepo.getWorkspaceById(workspaceId);

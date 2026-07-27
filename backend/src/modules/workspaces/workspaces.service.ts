@@ -3,7 +3,7 @@ import { ApiError } from '../../common/errors/ApiError';
 import { workspacesRepo } from './workspaces.repo';
 import { workspace_member_role } from '@prisma/client';
 import env from '../../config/env';
-import { presignPutObject } from '../../common/minio/minio.presign.put';
+import { presignPutObject, buildPublicStorageUrl } from '../../infrastructure/storage';
 import { enqueueDeleteObject } from '../../integrations/queue/blobs.queue';
 
 export const createWorkspaceInputSchema = z.object({
@@ -195,11 +195,7 @@ export const workspacesService = {
     }
 
     const bucket = env.STORAGE_BUCKET_PUBLIC;
-    const endpoint = env.STORAGE_ENDPOINT;
-
-    const cleanEndpoint = endpoint.replace(/\/+$/, '');
-    const encodedObjectKey = objectKey.split('/').map(encodeURIComponent).join('/');
-    const backgroundImageUrlBase = `${cleanEndpoint}/${encodeURIComponent(bucket)}/${encodedObjectKey}`;
+    const backgroundImageUrlBase = buildPublicStorageUrl(bucket, objectKey);
     const backgroundImageUrl = `${backgroundImageUrlBase}?v=${Date.now()}`;
 
     const existing = await workspacesRepo.getWorkspaceById(workspaceId);

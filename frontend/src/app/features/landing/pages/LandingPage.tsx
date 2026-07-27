@@ -15,6 +15,7 @@ import {
   Pause,
   CheckCircle2,
   ShieldCheck,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
@@ -49,36 +50,41 @@ export const LandingPage: React.FC = () => {
     const hrs = Math.floor(totalSec / 3600);
     const mins = Math.floor((totalSec % 3600) / 60);
     const secs = totalSec % 60;
-    return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${hrs.toString().padStart(2, "0")}:${mins
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
-      {/* Sticky Navigation Bar */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
-        <div className="container mx-auto max-w-7xl flex h-16 items-center justify-between px-4 sm:px-8">
+    <div className="min-h-screen bg-background text-foreground selection:bg-indigo-500 selection:text-white font-sans antialiased">
+      {/* Sticky Top Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
+        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-8">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-500/20">
-              <Zap className="h-5 w-5 fill-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 shadow-md">
+              <Zap className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
               TeamHub
             </span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-muted-foreground">
-            <a href="#ai-breakdown" className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-bold hover:opacity-80 transition-opacity">
-              <Sparkles className="h-3.5 w-3.5 fill-indigo-500/20" />
-              Gemini AI Breakdown
-            </a>
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-xs font-semibold text-muted-foreground">
             <a href="#multi-view" className="hover:text-foreground transition-colors">
               Chế độ xem Đa chiều
+            </a>
+            <a href="#ai-breakdown" className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-bold hover:opacity-80 transition-opacity">
+              <Sparkles className="h-3.5 w-3.5 fill-indigo-500/20" />
+              AI Breakdown
             </a>
             <a href="#time-tracking" className="hover:text-foreground transition-colors">
               Bấm giờ Realtime
             </a>
             <a href="#chat-to-card" className="hover:text-foreground transition-colors">
               Chat & Card Engine
+            </a>
+            <a href="#json-backup" className="hover:text-foreground transition-colors">
+              Sao lưu JSON
             </a>
             <a href="#features-grid" className="hover:text-foreground transition-colors">
               Tính năng khác
@@ -89,20 +95,25 @@ export const LandingPage: React.FC = () => {
             {user ? (
               <Button
                 onClick={() => navigate("/workspaces")}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-semibold"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs h-9 px-4 shadow-md hover:opacity-90"
               >
-                Vào Workspace của tôi
-                <ArrowRight className="ml-2 h-4 w-4" />
+                Vào Workspace
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Button>
             ) : (
               <>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/login")}
+                  className="text-xs font-semibold hover:bg-muted"
+                >
                   Đăng nhập
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => navigate("/register")}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 font-semibold hover:opacity-95 transition-opacity"
+                  className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-xs h-9 px-4 shadow-md hover:opacity-90"
                 >
                   Đăng ký miễn phí
                 </Button>
@@ -113,9 +124,15 @@ export const LandingPage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 bg-gradient-to-b from-background via-muted/30 to-background">
+      <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 bg-gradient-to-b from-indigo-950/20 via-background/95 to-background border-b border-border/40">
+        {/* Glow orbs in hero section background */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none overflow-hidden">
+          <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-indigo-500/15 blur-3xl" />
+          <div className="absolute top-10 right-1/4 h-96 w-96 rounded-full bg-purple-500/15 blur-3xl" />
+        </div>
+
         <div className="container mx-auto max-w-6xl px-4 sm:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 mb-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 mb-8 backdrop-blur-md">
             <Sparkles className="h-3.5 w-3.5" />
             <span>Nền tảng Quản lý Dự án & Cộng tác Nhóm Chuyên nghiệp</span>
           </div>
@@ -128,7 +145,12 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            TeamHub cung cấp bộ công cụ quản trị công việc toàn diện: Chuyển đổi mượt mà giữa **Bảng Kanban**, **Gantt Chart Timeline**, và **Bảng Notion-style**, kết hợp cùng **Bấm giờ Realtime** và **Chat-to-Card** linh hoạt.
+            TeamHub cung cấp bộ công cụ quản trị công việc toàn diện: Chuyển đổi mượt mà giữa{" "}
+            <strong className="font-semibold text-foreground">Bảng Kanban</strong>,{" "}
+            <strong className="font-semibold text-foreground">Gantt Chart Timeline</strong>, và{" "}
+            <strong className="font-semibold text-foreground">Bảng Notion-style</strong>, kết hợp cùng{" "}
+            <strong className="font-semibold text-foreground">Bấm giờ Realtime</strong> và{" "}
+            <strong className="font-semibold text-foreground">Chat-to-Card</strong> linh hoạt.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -152,92 +174,12 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🤖 GOOGLE GEMINI AI BREAKDOWN SHOWCASE SECTION */}
-      <section id="ai-breakdown" className="py-20 bg-gradient-to-b from-indigo-950/20 via-background to-background border-y border-indigo-500/20 relative overflow-hidden">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/40 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 px-4 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-4 shadow-sm">
-              <Sparkles className="h-4 w-4 text-indigo-500 animate-pulse" />
-              <span>TÍNH NĂNG ĐỘT PHÁ MỚI · GOOGLE GEMINI 2.5 FLASH AI</span>
-            </div>
-            <h2 className="text-3xl font-extrabold sm:text-4xl md:text-5xl tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Tự Động Phân Rã Công Việc Với Trí Tuệ Nhân Tạo
-            </h2>
-            <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-              Biến các ý tưởng công việc phức tạp thành danh sách **3-5 sub-tasks chi tiết, thực tế và sẵn sàng hành động** bằng Tiếng Việt chỉ trong **1-Click**.
-            </p>
-          </div>
-
-          {/* Interactive AI Demo Card Showcase */}
-          <div className="max-w-4xl mx-auto rounded-2xl border border-indigo-500/30 bg-card/90 p-6 md:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 space-y-6">
-              {/* Task Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Badge className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-semibold text-xs">
-                      ⚡ Card Detail Demo
-                    </Badge>
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground">Xây dựng trang Đăng nhập & Đăng ký cho TeamHub</h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Yêu cầu: Hỗ trợ mã hóa mật khẩu bcrypt, phát hành JWT token & tích hợp Google OAuth 2.0.
-                  </p>
-                </div>
-
-                <Button
-                  size="sm"
-                  onClick={() => navigate(user ? "/workspaces" : "/register")}
-                  className="h-10 px-5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-all self-start sm:self-auto shrink-0"
-                >
-                  <Sparkles className="mr-2 h-4 w-4 fill-white" />
-                  ✨ AI Breakdown
-                </Button>
-              </div>
-
-              {/* AI Sub-tasks Result Output */}
-              <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4 space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                  <span className="flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-indigo-500" />
-                    Danh sách Sub-tasks do Gemini AI tự động phân tích:
-                  </span>
-                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 bg-emerald-500/10 font-bold">100% Accuracy</Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 shadow-2xs">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-xs">✓</div>
-                    <span className="text-xs font-semibold text-foreground">1. Khởi tạo Prisma Schema cho dữ liệu Người dùng và nạp Migration CSDL</span>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 shadow-2xs">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-xs">✓</div>
-                    <span className="text-xs font-semibold text-foreground">2. Viết REST API Controller xử lý Đăng ký, Đăng nhập và Refresh Token</span>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 shadow-2xs">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-xs">✓</div>
-                    <span className="text-xs font-semibold text-foreground">3. Thiết kế giao diện Form Đăng nhập với React Hook Form & Zod Validation</span>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 shadow-2xs">
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-600 font-bold text-xs">4</div>
-                    <span className="text-xs font-semibold text-foreground">4. Tích hợp luồng gửi Email khôi phục mật khẩu qua SMTP Nodemailer</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 🌟 BRAND PILLAR 1: MULTI-VIEW WORKSPACE ENGINE (LARGE DEMO PANEL) */}
-      <section id="multi-view" className="py-20 bg-background">
+      {/* 🌟 CORE FEATURE #1: MULTI-VIEW WORKSPACE ENGINE (LARGE DEMO PANEL) */}
+      <section id="multi-view" className="py-20 bg-background border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <Badge variant="outline" className="mb-3 border-blue-500/30 text-blue-600 bg-blue-500/10">
-              TRỤ CỘT #1 · CHẾ ĐỘ XEM ĐA CHIỀU
+            <Badge variant="outline" className="mb-3 border-blue-500/30 text-blue-600 bg-blue-500/10 font-bold">
+              CORE #1 · CHẾ ĐỘ XEM ĐA CHIỀU
             </Badge>
             <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight">
               Linh hoạt Quan sát Dự án theo 3 Chế độ Xem
@@ -321,7 +263,7 @@ export const LandingPage: React.FC = () => {
                         <span className="text-[10px] text-amber-600 font-bold">⏱️ 1h 42m (Running)</span>
                       </div>
                       <h4 className="font-semibold text-xs">Bấm giờ Task Stopwatch Realtime</h4>
-                      <p className="text-[11px] text-muted-foreground">Đồng hồ bấm giờ 0ms đồng bộ 100% qua Socket.IO...</p>
+                      <p className="text-[11px] text-muted-foreground">Đồng đồng bấm giờ 0ms đồng bộ 100% qua Socket.IO...</p>
                     </div>
                   </div>
 
@@ -351,7 +293,6 @@ export const LandingPage: React.FC = () => {
                   <Badge variant="secondary" className="bg-indigo-500/10 text-indigo-600">Live Schedule Bar</Badge>
                 </div>
                 <div className="space-y-3 p-2 bg-muted/20 rounded-xl">
-                  {/* Task 1 Timeline Bar */}
                   <div className="flex items-center gap-4 text-xs">
                     <span className="w-44 font-semibold truncate shrink-0">1. Thiết kế UI Dashboard</span>
                     <div className="flex-1 bg-muted h-7 rounded-md relative overflow-hidden flex items-center px-2">
@@ -359,7 +300,6 @@ export const LandingPage: React.FC = () => {
                       <span className="relative z-10 text-[10px] font-bold text-white px-2">12 Thg 7 - 18 Thg 7 (Done 45%)</span>
                     </div>
                   </div>
-                  {/* Task 2 Timeline Bar */}
                   <div className="flex items-center gap-4 text-xs">
                     <span className="w-44 font-semibold truncate shrink-0">2. Realtime Stopwatch Engine</span>
                     <div className="flex-1 bg-muted h-7 rounded-md relative overflow-hidden flex items-center px-2">
@@ -412,39 +352,103 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🌟 BRAND PILLAR 2: REALTIME TASK STOPWATCH & TIME TRACKING (LARGE DEMO PANEL) */}
-      <section id="time-tracking" className="py-20 bg-muted/30 border-t">
+      {/* 🤖 CORE FEATURE #2: SMART AI BREAKDOWN SHOWCASE SECTION (Text Left, Demo Right) */}
+      <section id="ai-breakdown" className="py-20 bg-muted/30 border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Description */}
             <div className="lg:col-span-5 space-y-6 text-left">
-              <Badge variant="outline" className="border-indigo-500/30 text-indigo-600 bg-indigo-500/10">
-                TRỤ CỘT #2 · BẤM GIỜ & QUẢN LÝ THỜI GIAN
+              <Badge variant="outline" className="border-indigo-500/30 text-indigo-600 bg-indigo-500/10 font-bold">
+                CORE #2 · SMART AI SUB-TASK ENGINE
               </Badge>
               <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
-                Đồng Hồ Bấm Giờ Realtime 0ms Optimistic UI
+                Tự Động Phân Rã Công Việc Với AI
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Đo lường thời gian làm việc thực tế (**Logged Hours**) so with số giờ ước tính (**Estimate Hours**) với độ chính xác đến từng giây.
+                Biến các ý tưởng công việc phức tạp thành danh sách{" "}
+                <strong className="font-semibold text-foreground">3-5 sub-tasks chi tiết, thực tế và sẵn sàng hành động</strong> bằng Tiếng Việt chỉ trong{" "}
+                <strong className="font-semibold text-foreground">1-Click</strong>.
               </p>
               <ul className="space-y-3 text-xs sm:text-sm">
                 <li className="flex items-center gap-2 font-medium">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Bấm giờ trực tiếp trên Card với phản hồi 0ms.</span>
+                  <span>Nút "✨ AI Breakdown" được tích hợp sẵn trong Card Detail.</span>
                 </li>
                 <li className="flex items-center gap-2 font-medium">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Cập nhật tiến độ % hoàn thành tự động.</span>
+                  <span>Phân tích chính xác ngữ cảnh Tiêu đề & Mô tả công việc.</span>
                 </li>
                 <li className="flex items-center gap-2 font-medium">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Đồng bộ trạng thái đang chạy giữa các thành viên.</span>
+                  <span>Tự động chèn Checklist items chuẩn hóa vào CSDL PostgreSQL.</span>
                 </li>
               </ul>
             </div>
 
-            {/* Right Interactive Live Stopwatch Panel */}
+            {/* Right Interactive AI Demo Panel */}
             <div className="lg:col-span-7">
+              <div className="rounded-2xl border border-indigo-500/30 bg-card p-6 shadow-xl text-left space-y-5 relative overflow-hidden">
+                <div className="flex items-center justify-between border-b pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-foreground">Thẻ: Xây dựng trang Đăng nhập & Đăng ký</h4>
+                      <p className="text-[11px] text-muted-foreground">Mã hóa bcrypt, phát hành JWT token & Google OAuth</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(user ? "/workspaces" : "/register")}
+                    className="h-8 px-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xs shadow-sm hover:opacity-90"
+                  >
+                    <Sparkles className="mr-1.5 h-3.5 w-3.5 fill-white" />
+                    ✨ AI Breakdown
+                  </Button>
+                </div>
+
+                {/* AI Sub-tasks Result Output */}
+                <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-1">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                      Danh sách Sub-tasks do AI phân tích:
+                    </span>
+                    <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 bg-emerald-500/10 text-[10px]">100% Accuracy</Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-background p-2.5 shadow-2xs">
+                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-[10px]">✓</div>
+                      <span className="text-xs font-semibold text-foreground">1. Khởi tạo Prisma Schema cho dữ liệu Người dùng và nạp Migration CSDL</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-background p-2.5 shadow-2xs">
+                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-[10px]">✓</div>
+                      <span className="text-xs font-semibold text-foreground">2. Viết REST API Controller xử lý Đăng ký, Đăng nhập và Refresh Token</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-background p-2.5 shadow-2xs">
+                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-[10px]">✓</div>
+                      <span className="text-xs font-semibold text-foreground">3. Thiết kế giao diện Form Đăng nhập với React Hook Form & Zod Validation</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-background p-2.5 shadow-2xs">
+                      <div className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-600 font-bold text-[10px]">4</div>
+                      <span className="text-xs font-semibold text-foreground">4. Tích hợp luồng gửi Email khôi phục mật khẩu qua SMTP Nodemailer</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 🌟 CORE FEATURE #3: REALTIME TASK STOPWATCH & TIME TRACKING (Demo Left, Text Right) */}
+      <section id="time-tracking" className="py-20 bg-background border-t border-border/40">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Interactive Live Stopwatch Panel */}
+            <div className="lg:col-span-7 order-2 lg:order-1">
               <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-xl text-left space-y-6 relative overflow-hidden">
                 <div className="flex items-center justify-between border-b pb-4">
                   <div className="flex items-center gap-3">
@@ -505,16 +509,70 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Right Description */}
+            <div className="lg:col-span-5 space-y-6 text-left order-1 lg:order-2">
+              <Badge variant="outline" className="border-indigo-500/30 text-indigo-600 bg-indigo-500/10 font-bold">
+                CORE #3 · BẤM GIỜ & QUẢN LÝ THỜI GIAN
+              </Badge>
+              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
+                Đồng Hồ Bấm Giờ Realtime 0ms Optimistic UI
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Đo lường thời gian làm việc thực tế (<strong className="font-semibold text-foreground">Logged Hours</strong>) so với số giờ ước tính (<strong className="font-semibold text-foreground">Estimate Hours</strong>) với độ chính xác đến từng giây.
+              </p>
+              <ul className="space-y-3 text-xs sm:text-sm">
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Bấm giờ trực tiếp trên Card với phản hồi 0ms.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Cập nhật tiến độ % hoàn thành tự động.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Đồng bộ trạng thái đang chạy giữa các thành viên.</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 🌟 BRAND PILLAR 3: CHAT-TO-CARD & #CARD MENTIONS ENGINE (LARGE DEMO PANEL) */}
-      <section id="chat-to-card" className="py-20 bg-background border-t">
+      {/* 🌟 CORE FEATURE #4: CHAT-TO-CARD & #CARD MENTIONS ENGINE (Text Left, Demo Right) */}
+      <section id="chat-to-card" className="py-20 bg-muted/30 border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Interactive Chat Showcase */}
-            <div className="lg:col-span-7 order-2 lg:order-1">
+            {/* Left Description */}
+            <div className="lg:col-span-5 space-y-6 text-left">
+              <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-500/10 font-bold">
+                CORE #4 · CHAT & MENTION ENGINE
+              </Badge>
+              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
+                Kết Nối Thông Suốt Giữa Chat & Kanban
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Biến bất kỳ tin nhắn thảo luận nào thành Card công việc mới chỉ với 1 click. Gõ <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono text-indigo-600 font-bold">#</code> để tự động gợi ý và tạo Chip tương tác mở thẳng Card.
+              </p>
+              <ul className="space-y-3 text-xs sm:text-sm">
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Menu ngữ cảnh 1-click "Tạo Card từ tin nhắn".</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Autocomplete gợi ý danh sách Card khi gõ `#`.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Chip #Card tương tác mở trực tiếp Modal Card Detail.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Right Interactive Chat Showcase */}
+            <div className="lg:col-span-7">
               <div className="rounded-2xl border bg-card p-6 shadow-xl space-y-4 text-left">
                 <div className="flex items-center justify-between border-b pb-3 text-xs">
                   <div className="flex items-center gap-2 font-bold">
@@ -558,70 +616,16 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Right Description */}
-            <div className="lg:col-span-5 space-y-6 text-left order-1 lg:order-2">
-              <Badge variant="outline" className="border-blue-500/30 text-blue-600 bg-blue-500/10">
-                TRỤ CỘT #3 · CHAT & MENTION ENGINE
-              </Badge>
-              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
-                Kết Nối Thông Suốt Giữa Chat & Kanban
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Biến bất kỳ tin nhắn thảo luận nào thành Card công việc mới chỉ với 1 click. Gõ `#` để tự động gợi ý và tạo Chip tương tác mở thẳng Card.
-              </p>
-              <ul className="space-y-3 text-xs sm:text-sm">
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Menu ngữ cảnh 1-click "Tạo Card từ tin nhắn".</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Autocomplete gợi ý danh sách Card khi gõ `#`.</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Chip #Card tương tác mở trực tiếp Modal Card Detail.</span>
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* 🌟 BRAND PILLAR 4: BOARD JSON BACKUP & RESTORE (LARGE DEMO PANEL) */}
-      <section id="json-backup" className="py-20 bg-muted/30 border-t">
+      {/* 🌟 CORE FEATURE #5: BOARD JSON BACKUP & RESTORE (Demo Left, Text Right) */}
+      <section id="json-backup" className="py-20 bg-background border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Description */}
-            <div className="lg:col-span-5 space-y-6 text-left">
-              <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 bg-emerald-500/10">
-                TRỤ CỘT #4 · AN TOÀN & SAO LƯU DỮ LIỆU
-              </Badge>
-              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
-                Sao Lưu & Phục Hồi Dữ Liệu Board 1-Click
-              </h2>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Xuất toàn bộ cấu hình Bảng, Cột, Thẻ, Checklist và Nhãn thành file JSON chuẩn hóa. Khôi phục dự án bất kỳ lúc nào với độ an toàn 100%.
-              </p>
-              <ul className="space-y-3 text-xs sm:text-sm">
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Xuất file JSON cấu trúc đầy đủ 1-click.</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Nhập JSON tái tạo lại toàn bộ Board mới lập tức.</span>
-                </li>
-                <li className="flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <span>Bảo toàn 100% Checklist, Thẻ, và Nhãn phân loại.</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Right Interactive Demo Panel */}
-            <div className="lg:col-span-7">
+            {/* Left Interactive Demo Panel */}
+            <div className="lg:col-span-7 order-2 lg:order-1">
               <div className="rounded-2xl border bg-card p-6 sm:p-8 shadow-xl text-left space-y-6">
                 <div className="flex items-center justify-between border-b pb-4">
                   <div className="flex items-center gap-3">
@@ -686,16 +690,43 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Right Description */}
+            <div className="lg:col-span-5 space-y-6 text-left order-1 lg:order-2">
+              <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 bg-emerald-500/10 font-bold">
+                CORE #5 · AN TOÀN & SAO LƯU DỮ LIỆU
+              </Badge>
+              <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
+                Sao Lưu & Phục Hồi Dữ Liệu Board 1-Click
+              </h2>
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Xuất toàn bộ cấu hình Bảng, Cột, Thẻ, Checklist và Nhãn thành file JSON chuẩn hóa. Khôi phục dự án bất kỳ lúc nào với độ an toàn 100%.
+              </p>
+              <ul className="space-y-3 text-xs sm:text-sm">
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Xuất file JSON cấu trúc đầy đủ 1-click.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Nhập JSON tái tạo lại toàn bộ Board mới lập tức.</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Bảo toàn 100% Checklist, Thẻ, và Nhãn phân loại.</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Grid Features */}
-      <section id="features-grid" className="py-20 bg-muted/20 border-t">
+      <section id="features-grid" className="py-20 bg-muted/20 border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight">
-              Bảo Mật, Sao Lưu & Đồng Bộ Realtime
+              Bộ Công Cụ Quản Trị, Thống Kê & Bảo Mật Nâng Cao
             </h2>
             <p className="mt-4 text-sm sm:text-base text-muted-foreground">
               Đảm bảo an toàn dữ liệu 100% và tốc độ phản hồi tức thì cho toàn bộ team.
@@ -714,12 +745,12 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="rounded-2xl border bg-card p-6 shadow-xs hover:shadow-md transition-shadow">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 mb-5">
-                <Download className="h-6 w-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 mb-5">
+                <BarChart3 className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold">Sao lưu & Khôi phục dữ liệu (JSON)</h3>
+              <h3 className="text-lg font-bold">Báo Cáo & Thống Kê Hiệu Suất (Executive Analytics)</h3>
               <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Xuất toàn bộ dữ liệu Board thành file JSON an toàn. Dễ dàng khôi phục dự án bất kỳ lúc nào mà không lo mất dữ liệu.
+                Thống kê trực quan tiến độ dự án, tỷ lệ thẻ hoàn thành đúng hạn/quá hạn, biểu đồ khối lượng công việc và hiệu suất thời gian thực.
               </p>
             </div>
 
@@ -758,13 +789,19 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8 bg-muted/20 text-xs text-muted-foreground">
+      <footer className="border-t border-slate-800/80 bg-slate-950 py-10 text-xs text-slate-400">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 font-bold text-foreground">
-            <Zap className="h-4 w-4 text-indigo-600" />
-            <span>TeamHub Enterprise © 2026</span>
+          <div className="flex items-center gap-2.5 font-bold text-white">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm">
+              <Zap className="h-3.5 w-3.5 fill-white" />
+            </div>
+            <span className="text-sm font-extrabold bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+              TeamHub Enterprise © 2026
+            </span>
           </div>
-          <div>Built with React 19, TypeScript, Express, Prisma, Redis & Socket.IO.</div>
+          <div className="text-slate-400 font-medium">
+            Built with React 19, TypeScript, Express, Prisma, Redis & Socket.IO.
+          </div>
         </div>
       </footer>
     </div>

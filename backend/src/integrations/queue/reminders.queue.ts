@@ -1,7 +1,6 @@
 import { Queue } from 'bullmq';
-import IORedis from 'ioredis';
 
-import env from '../../config/env';
+import { getQueueConnection } from './connection';
 
 export const REMINDERS_QUEUE_NAME = 'reminders';
 export const REMINDERS_JOB_NAME = 'send';
@@ -11,13 +10,8 @@ let _queue: Queue | null = null;
 function getRemindersQueue(): Queue {
   if (_queue) return _queue;
 
-  const connection = new IORedis(env.REDIS_URL, {
-    // Recommended for BullMQ usage.
-    maxRetriesPerRequest: null,
-  });
-
   _queue = new Queue(REMINDERS_QUEUE_NAME, {
-    connection,
+    connection: getQueueConnection(),
     defaultJobOptions: {
       removeOnComplete: true,
       removeOnFail: 1000,

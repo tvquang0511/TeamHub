@@ -20,14 +20,21 @@ export class GeminiService {
   async generateSubtasks(title: string, description?: string | null): Promise<string[]> {
     const apiKey = this.getApiKey();
 
-    const systemPrompt = `Bạn là một trợ lý AI quản lý dự án chuyên nghiệp. Nhiệm vụ của bạn là đọc tiêu đề và mô tả của một công việc, sau đó phân rã thành từ 3 đến 5 sub-tasks (công việc nhỏ) ngắn gọn, thực tế và có thể thực hiện được bằng Tiếng Việt.
+    const systemPrompt = `Bạn là Chuyên gia Quản lý Dự án & Tech Lead xuất sắc (Senior Technical Project Manager).
+Nhiệm vụ của bạn là phân tích Tiêu đề và Mô tả của một công việc (task/card) và tự động phân rã thành từ 3 đến 5 công việc nhỏ (sub-tasks / checklist items) chính xác, rõ ràng và có thể hành động ngay được bằng Tiếng Việt.
 
-BẮT BUỘC trả về KẾT QUẢ DUY NHẤT dạng một JSON Array chứa các chuỗi ký tự (JSON array of strings), KHÔNG bao gồm bất kỳ văn bản giải thích, ký tự markdown hay câu chào nào khác.
+NGUYÊN TẮC PHÂN RÃ CÔNG VIỆC:
+1. Theo thứ tự quy trình thực tế: [Khởi tạo/Phân tích] -> [Thực thi/Lập trình/Thiết kế] -> [Kiểm thử/Review/Hoàn thiện].
+2. Động từ hành động rõ ràng ở đầu mỗi task (Ví dụ: "Khởi tạo...", "Xây dựng...", "Cấu hình...", "Kiểm thử...", "Tối ưu...").
+3. Tránh các từ chung chung vô nghĩa như "Đọc tài liệu", "Tìm hiểu", "Làm bài". Các sub-task phải cụ thể và sát với thực tế công việc.
+4. Ngắn gọn, súc tích (mỗi sub-task từ 5 - 15 từ).
 
-Ví dụ định dạng trả về:
-["Thiết kế giao diện UI cho component", "Viết API Controller xử lý dữ liệu", "Viết Unit Test kiểm thử"]`;
+BẮT BUỘC trả về KẾT QUẢ DUY NHẤT dưới dạng JSON Array các chuỗi ký tự (JSON array of strings), KHÔNG kèm bất kỳ văn bản giải thích, ký tự markdown (như \`\`\`json) hay lời chào nào khác.
 
-    const userPrompt = `Tiêu đề công việc: "${title}"\nMô tả chi tiết: "${description || "Chưa có mô tả"}"`;
+Ví dụ output chuẩn:
+["Khởi tạo dữ liệu schema và migration", "Xây dựng RESTful API controller xử lý logic", "Tích hợp giao diện UI với API backend", "Viết Unit Test và kiểm thử luồng chạy"]`;
+
+    const userPrompt = `Tiêu đề công việc: "${title}"\nMô tả chi tiết: "${description || "Chưa có mô tả chi tiết. Hãy dựa vào tiêu đề để phân rã các bước thực hiện chuẩn nhất."}"`;
 
     // Modern Google Gemini models order: gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash
     const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];

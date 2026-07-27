@@ -124,38 +124,36 @@ export const LandingPage: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 bg-gradient-to-b from-background via-muted/30 to-background">
-        <div className="container mx-auto max-w-7xl px-4 sm:px-8 text-center relative z-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 mb-8">
+      <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 bg-gradient-to-b from-indigo-950/20 via-background/95 to-background border-b border-border/40">
+        {/* Glow orbs in hero section background */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none overflow-hidden">
+          <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-indigo-500/15 blur-3xl" />
+          <div className="absolute top-10 right-1/4 h-96 w-96 rounded-full bg-purple-500/15 blur-3xl" />
+        </div>
+
+        <div className="container mx-auto max-w-6xl px-4 sm:px-8 text-center relative z-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 mb-8 backdrop-blur-md">
             <Sparkles className="h-3.5 w-3.5" />
             <span>Nền tảng Quản lý Dự án & Cộng tác Nhóm Chuyên nghiệp</span>
           </div>
 
-          {/* Large Grand Hero Banner Container */}
-          <div className="mx-auto max-w-5xl rounded-3xl border border-indigo-500/30 bg-gradient-to-b from-indigo-500/10 via-purple-500/10 to-background/90 p-8 sm:p-12 md:p-16 shadow-2xl backdrop-blur-2xl mb-10 relative overflow-hidden">
-            <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl leading-tight max-w-5xl mx-auto">
+            Giải Pháp Quản Lý Công Việc Tất-Cả-Trong-Một. <br />
+            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+              Nâng Tầm Hiệu Suất Cộng Tác Nhóm.
+            </span>
+          </h1>
 
-            <div className="relative z-10 space-y-6">
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl leading-tight">
-                Giải Pháp Quản Lý Công Việc Tất-Cả-Trong-Một. <br />
-                <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                  Nâng Tầm Hiệu Suất Cộng Tác Nhóm.
-                </span>
-              </h1>
+          <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            TeamHub cung cấp bộ công cụ quản trị công việc toàn diện: Chuyển đổi mượt mà giữa{" "}
+            <strong className="font-semibold text-foreground">Bảng Kanban</strong>,{" "}
+            <strong className="font-semibold text-foreground">Gantt Chart Timeline</strong>, và{" "}
+            <strong className="font-semibold text-foreground">Bảng Notion-style</strong>, kết hợp cùng{" "}
+            <strong className="font-semibold text-foreground">Bấm giờ Realtime</strong> và{" "}
+            <strong className="font-semibold text-foreground">Chat-to-Card</strong> linh hoạt.
+          </p>
 
-              <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                TeamHub cung cấp bộ công cụ quản trị công việc toàn diện: Chuyển đổi mượt mà giữa{" "}
-                <strong className="font-semibold text-foreground">Bảng Kanban</strong>,{" "}
-                <strong className="font-semibold text-foreground">Gantt Chart Timeline</strong>, và{" "}
-                <strong className="font-semibold text-foreground">Bảng Notion-style</strong>, kết hợp cùng{" "}
-                <strong className="font-semibold text-foreground">Bấm giờ Realtime</strong> và{" "}
-                <strong className="font-semibold text-foreground">Chat-to-Card</strong> linh hoạt.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
               onClick={() => navigate(user ? "/workspaces" : "/register")}
@@ -791,13 +789,19 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-8 bg-muted/20 text-xs text-muted-foreground">
+      <footer className="border-t border-slate-800/80 bg-slate-950 py-10 text-xs text-slate-400">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 font-bold text-foreground">
-            <Zap className="h-4 w-4 text-indigo-600" />
-            <span>TeamHub Enterprise © 2026</span>
+          <div className="flex items-center gap-2.5 font-bold text-white">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm">
+              <Zap className="h-3.5 w-3.5 fill-white" />
+            </div>
+            <span className="text-sm font-extrabold bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+              TeamHub Enterprise © 2026
+            </span>
           </div>
-          <div>Built with React 19, TypeScript, Express, Prisma, Redis & Socket.IO.</div>
+          <div className="text-slate-400 font-medium">
+            Built with React 19, TypeScript, Express, Prisma, Redis & Socket.IO.
+          </div>
         </div>
       </footer>
     </div>

@@ -12,6 +12,7 @@ import { CardTimerSection } from "./card-item/CardTimerSection";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog";
@@ -506,6 +507,7 @@ export const CardItem: React.FC<CardItemProps> = ({
           <div className="flex max-h-[85vh] flex-col">
             <DialogHeader className="shrink-0">
               <DialogTitle>Chi tiết</DialogTitle>
+              <DialogDescription className="sr-only">Chi tiết thẻ công việc</DialogDescription>
             </DialogHeader>
 
             <div className="min-h-0 flex-1 overflow-hidden">

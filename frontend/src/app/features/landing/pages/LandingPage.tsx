@@ -69,19 +69,22 @@ export const LandingPage: React.FC = () => {
             </span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-muted-foreground">
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-xs font-semibold text-muted-foreground">
             <a href="#multi-view" className="hover:text-foreground transition-colors">
               Chế độ xem Đa chiều
             </a>
             <a href="#ai-breakdown" className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-bold hover:opacity-80 transition-opacity">
               <Sparkles className="h-3.5 w-3.5 fill-indigo-500/20" />
-              Gemini AI Breakdown
+              AI Breakdown
             </a>
             <a href="#time-tracking" className="hover:text-foreground transition-colors">
               Bấm giờ Realtime
             </a>
             <a href="#chat-to-card" className="hover:text-foreground transition-colors">
               Chat & Card Engine
+            </a>
+            <a href="#json-backup" className="hover:text-foreground transition-colors">
+              Sao lưu JSON
             </a>
             <a href="#features-grid" className="hover:text-foreground transition-colors">
               Tính năng khác
@@ -122,29 +125,34 @@ export const LandingPage: React.FC = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 bg-gradient-to-b from-background via-muted/30 to-background">
-        <div className="container mx-auto max-w-6xl px-4 sm:px-8 text-center relative z-10">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-8 text-center relative z-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 mb-8">
             <Sparkles className="h-3.5 w-3.5" />
             <span>Nền tảng Quản lý Dự án & Cộng tác Nhóm Chuyên nghiệp</span>
           </div>
 
-          {/* Hero Banner Title Container with Gradient & Glassmorphism */}
-          <div className="mx-auto max-w-5xl rounded-3xl border border-indigo-500/20 bg-gradient-to-b from-indigo-500/5 via-purple-500/5 to-background p-6 sm:p-10 shadow-2xl backdrop-blur-xl mb-8">
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl md:text-6xl leading-tight">
-              Giải Pháp Quản Lý Công Việc Tất-Cả-Trong-Một. <br />
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                Nâng Tầm Hiệu Suất Cộng Tác Nhóm.
-              </span>
-            </h1>
+          {/* Large Grand Hero Banner Container */}
+          <div className="mx-auto max-w-5xl rounded-3xl border border-indigo-500/30 bg-gradient-to-b from-indigo-500/10 via-purple-500/10 to-background/90 p-8 sm:p-12 md:p-16 shadow-2xl backdrop-blur-2xl mb-10 relative overflow-hidden">
+            <div className="absolute -top-32 -right-32 h-80 w-80 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
 
-            <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              TeamHub cung cấp bộ công cụ quản trị công việc toàn diện: Chuyển đổi mượt mà giữa{" "}
-              <strong className="font-semibold text-foreground">Bảng Kanban</strong>,{" "}
-              <strong className="font-semibold text-foreground">Gantt Chart Timeline</strong>, và{" "}
-              <strong className="font-semibold text-foreground">Bảng Notion-style</strong>, kết hợp cùng{" "}
-              <strong className="font-semibold text-foreground">Bấm giờ Realtime</strong> và{" "}
-              <strong className="font-semibold text-foreground">Chat-to-Card</strong> linh hoạt.
-            </p>
+            <div className="relative z-10 space-y-6">
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl leading-tight">
+                Giải Pháp Quản Lý Công Việc Tất-Cả-Trong-Một. <br />
+                <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                  Nâng Tầm Hiệu Suất Cộng Tác Nhóm.
+                </span>
+              </h1>
+
+              <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                TeamHub cung cấp bộ công cụ quản trị công việc toàn diện: Chuyển đổi mượt mà giữa{" "}
+                <strong className="font-semibold text-foreground">Bảng Kanban</strong>,{" "}
+                <strong className="font-semibold text-foreground">Gantt Chart Timeline</strong>, và{" "}
+                <strong className="font-semibold text-foreground">Bảng Notion-style</strong>, kết hợp cùng{" "}
+                <strong className="font-semibold text-foreground">Bấm giờ Realtime</strong> và{" "}
+                <strong className="font-semibold text-foreground">Chat-to-Card</strong> linh hoạt.
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -257,7 +265,7 @@ export const LandingPage: React.FC = () => {
                         <span className="text-[10px] text-amber-600 font-bold">⏱️ 1h 42m (Running)</span>
                       </div>
                       <h4 className="font-semibold text-xs">Bấm giờ Task Stopwatch Realtime</h4>
-                      <p className="text-[11px] text-muted-foreground">Đồng hồ bấm giờ 0ms đồng bộ 100% qua Socket.IO...</p>
+                      <p className="text-[11px] text-muted-foreground">Đồng đồng bấm giờ 0ms đồng bộ 100% qua Socket.IO...</p>
                     </div>
                   </div>
 
@@ -346,17 +354,17 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🤖 CORE FEATURE #2: GOOGLE GEMINI AI BREAKDOWN SHOWCASE SECTION (Text Left, Demo Right) */}
+      {/* 🤖 CORE FEATURE #2: SMART AI BREAKDOWN SHOWCASE SECTION (Text Left, Demo Right) */}
       <section id="ai-breakdown" className="py-20 bg-muted/30 border-t border-border/40">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Description */}
             <div className="lg:col-span-5 space-y-6 text-left">
               <Badge variant="outline" className="border-indigo-500/30 text-indigo-600 bg-indigo-500/10 font-bold">
-                CORE #2 · GOOGLE GEMINI 2.5 FLASH AI
+                CORE #2 · SMART AI SUB-TASK ENGINE
               </Badge>
               <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight leading-tight">
-                Tự Động Phân Rã Công Việc Với Gemini AI
+                Tự Động Phân Rã Công Việc Với AI
               </h2>
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                 Biến các ý tưởng công việc phức tạp thành danh sách{" "}
@@ -407,7 +415,7 @@ export const LandingPage: React.FC = () => {
                   <div className="flex items-center justify-between text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-1">
                     <span className="flex items-center gap-1.5">
                       <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-                      Danh sách Sub-tasks do Gemini AI phân tích:
+                      Danh sách Sub-tasks do AI phân tích:
                     </span>
                     <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 bg-emerald-500/10 text-[10px]">100% Accuracy</Badge>
                   </div>
@@ -720,7 +728,7 @@ export const LandingPage: React.FC = () => {
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className="text-3xl font-extrabold sm:text-4xl tracking-tight">
-              Bảo Mật, Thống Kê & Đồng Bộ Realtime
+              Bộ Công Cụ Quản Trị, Thống Kê & Bảo Mật Nâng Cao
             </h2>
             <p className="mt-4 text-sm sm:text-base text-muted-foreground">
               Đảm bảo an toàn dữ liệu 100% và tốc độ phản hồi tức thì cho toàn bộ team.

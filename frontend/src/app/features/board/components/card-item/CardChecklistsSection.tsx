@@ -1,6 +1,9 @@
 import { useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Sparkles, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
+import { cardsApi } from "../../../../api/cards.api";
 import { checklistsApi, type Checklist, type ChecklistItem } from "../../../../api/checklists.api";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
@@ -25,6 +28,19 @@ export function CardChecklistsSection(props: {
   });
 
   const checklists = checklistsResp?.checklists ?? [];
+
+  const aiBreakdownMutation = useMutation({
+    mutationFn: () => cardsApi.aiBreakdown(cardId),
+    onSuccess: async () => {
+      toast.success("✨ AI đã phân rã sub-tasks thành công!");
+      await refetchChecklists();
+      queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
+    },
+    onError: (err: any) => {
+      const msg = err.response?.data?.error?.message || "Không thể tạo sub-tasks bằng AI";
+      toast.error(msg);
+    },
+  });
 
   const createChecklistMutation = useMutation({
     mutationFn: (title: string) => checklistsApi.createChecklist(cardId, { title }),
@@ -71,6 +87,26 @@ export function CardChecklistsSection(props: {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label>Checklist</Label>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 border-indigo-500/30 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20 dark:text-indigo-300 font-semibold"
+          onClick={() => aiBreakdownMutation.mutate()}
+          disabled={disabled || aiBreakdownMutation.isPending}
+        >
+          {aiBreakdownMutation.isPending ? (
+            <>
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              AI đang phân tích...
+            </>
+          ) : (
+            <>
+              <Sparkles className="mr-1.5 h-3.5 w-3.5 text-indigo-500" />
+              ✨ AI Breakdown
+            </>
+          )}
+        </Button>
       </div>
 
       <div className="flex items-center gap-2">

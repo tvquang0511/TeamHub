@@ -153,4 +153,9 @@ export const cardsApi = {
     const response = await httpClient.post<any>(`/cards/from-message`, payload);
     return mapCard(response.data.card || response.data);
   },
+
+  aiBreakdown: async (cardId: string): Promise<{ checklist: any }> => {
+    const response = await httpClient.post<{ checklist: any }>(`/cards/${cardId}/ai-breakdown`);
+    return response.data;
+  },
 };

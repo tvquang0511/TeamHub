@@ -165,6 +165,13 @@ export class CardsController {
     const result = await cardsService.setEstimate(userId, cardId, estimatedHours);
     res.status(200).json(result);
   };
+
+  aiBreakdown = async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const cardId = String(req.params.id);
+    const result = await cardsService.generateAiBreakdown(userId, cardId);
+    res.status(200).json(result);
+  };
 }
 
 export const cardsController = new CardsController();

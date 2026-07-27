@@ -42,3 +42,6 @@ cardsRoutes.delete("/:id/labels/:labelId", cardsController.detachLabel);
 
 // Move/reorder using prev/next anchors
 cardsRoutes.post("/:id/move", cardsController.move);
+
+// AI Sub-task Breakdown
+cardsRoutes.post("/:id/ai-breakdown", cardsController.aiBreakdown);

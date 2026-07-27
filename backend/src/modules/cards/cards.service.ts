@@ -15,6 +15,8 @@ import {
 import { enqueueReminderJob, removeReminderJob } from "../../integrations/queue/reminders.queue";
 import { activitiesRepo } from "../activities/activities.repo";
 import { cardsRepo } from "./cards.repo";
+import { checklistsRepo } from "../checklists/checklists.repo";
+import { geminiService } from "../../infrastructure/ai/gemini.service";
 
 export const createCardInputSchema = z.object({
   listId: z.string().uuid(),
@@ -606,6 +608,71 @@ export class CardsService {
     await bumpBoardCacheVersion(list.board.id);
 
     return { card };
+  }
+
+  private async assertCanWriteCard(userId: string, cardId: string) {
+    const card = await cardsRepo.findById(cardId);
+    if (!card) throw new ApiError(404, "CARD_NOT_FOUND", "Card not found");
+
+    const workspaceId = card.list.board.workspaceId;
+    const membership = await cardsRepo.isWorkspaceMember(workspaceId, userId);
+    if (!membership) throw new ApiError(403, "WORKSPACE_FORBIDDEN", "You are not a member of this workspace");
+
+    const boardMember = await cardsRepo.isBoardMember(card.list.board.id, userId);
+    if (!boardMember) {
+      throw new ApiError(403, "BOARD_FORBIDDEN", "Board is read-only for non-members");
+    }
+
+    return card;
+  }
+
+  async generateAiBreakdown(userId: string, cardId: string) {
+    const card = await this.assertCanWriteCard(userId, cardId);
+
+    // Call Gemini AI
+    const subtaskTitles = await geminiService.generateSubtasks(card.title, card.description);
+
+    // Create a new checklist for AI Sub-tasks
+    const existingChecklists = await checklistsRepo.listByCard(cardId);
+    const lastChecklist = existingChecklists[existingChecklists.length - 1];
+    const nextPos = lastChecklist ? (lastChecklist.position as any) : new Prisma.Decimal(0);
+    const checklistPosition = lastChecklist ? new Prisma.Decimal(nextPos).add(1) : new Prisma.Decimal(0);
+
+    const checklist = await checklistsRepo.createChecklist({
+      cardId,
+      title: "✨ AI Sub-tasks",
+      position: checklistPosition,
+    });
+
+    // Create items
+    const items = [];
+    for (let i = 0; i < subtaskTitles.length; i++) {
+      const item = await checklistsRepo.createItem({
+        checklistId: checklist.id,
+        title: subtaskTitles[i],
+        position: new Prisma.Decimal(i),
+      });
+      items.push(item);
+    }
+
+    // Record activity
+    await activitiesRepo.createSafe({
+      actorId: userId,
+      workspaceId: card.list.board.workspaceId,
+      boardId: card.list.board.id,
+      cardId: card.id,
+      type: activity_type.CARD_UPDATED,
+      payload: { action: "CHECKLIST_CREATED", checklistId: checklist.id, title: "✨ AI Sub-tasks", aiGenerated: true },
+    });
+
+    await bumpBoardCacheVersion(card.list.board.id);
+
+    return {
+      checklist: {
+        ...checklist,
+        items,
+      },
+    };
   }
 }
 

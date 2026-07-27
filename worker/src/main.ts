@@ -41,6 +41,11 @@ connection.on('error', (err) => {
 	console.error(`[redis] Redis Connection Error:`, err);
 });
 
+const defaultWorkerOpts = {
+	stalledInterval: 0, // Disable background stalled check loop to prevent idle Redis command spam
+	drainDelay: 30,     // Increase delay when queues are drained
+};
+
 const RemindersWorker = new Worker(
 	REMINDERS_QUEUE_NAME,
 	async (job) => {
@@ -54,6 +59,7 @@ const RemindersWorker = new Worker(
 	{
 		connection,
 		concurrency: 10,
+		...defaultWorkerOpts,
 	},
 );
 
@@ -66,6 +72,7 @@ const emailsWorker = new Worker(
 	{
 		connection,
 		concurrency: 5,
+		...defaultWorkerOpts,
 	},
 );
 
@@ -82,6 +89,7 @@ const analyticsWorker = new Worker(
 	{
 		connection,
 		concurrency: 2,
+		...defaultWorkerOpts,
 	},
 );
 
@@ -93,6 +101,7 @@ const blobsWorker = new Worker(
 	{
 		connection,
 		concurrency: 5,
+		...defaultWorkerOpts,
 	},
 );
 

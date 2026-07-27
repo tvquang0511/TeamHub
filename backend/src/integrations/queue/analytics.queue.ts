@@ -1,7 +1,6 @@
 import { Queue } from "bullmq";
-import IORedis from "ioredis";
 
-import env from "../../config/env";
+import { getQueueConnection } from "./connection";
 
 export const ANALYTICS_QUEUE_NAME = "analytics";
 export const ANALYTICS_JOB_DAILY = "board_metrics_daily";
@@ -11,12 +10,8 @@ let _queue: Queue | null = null;
 function getAnalyticsQueue(): Queue {
   if (_queue) return _queue;
 
-  const connection = new IORedis(env.REDIS_URL, {
-    maxRetriesPerRequest: null,
-  });
-
   _queue = new Queue(ANALYTICS_QUEUE_NAME, {
-    connection,
+    connection: getQueueConnection(),
     defaultJobOptions: {
       removeOnComplete: true,
       removeOnFail: 1000,

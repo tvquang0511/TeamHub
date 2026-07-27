@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
-import IORedis from "ioredis";
 
+import { getQueueConnection } from "./connection";
 import env from "../../config/env";
 
 export const BLOBS_QUEUE_NAME = "blobs";
@@ -23,12 +23,8 @@ let _queue: Queue | null = null;
 function getBlobsQueue(): Queue {
   if (_queue) return _queue;
 
-  const connection = new IORedis(env.REDIS_URL, {
-    maxRetriesPerRequest: null,
-  });
-
   _queue = new Queue(BLOBS_QUEUE_NAME, {
-    connection,
+    connection: getQueueConnection(),
     defaultJobOptions: {
       removeOnComplete: true,
       removeOnFail: 1000,

@@ -3,11 +3,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { usersApi } from "../../../api/users.api";
 import { workspacesApi } from "../../../api/workspaces.api";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
-import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
-import { Search, UserPlus } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
+import { Search, UserPlus, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import type { User, WorkspaceMember } from "../../../types/api";
 import { ConfirmWithRoleDialog, type Role3 } from "../../../components/shared/ConfirmWithRoleDialog";
@@ -42,7 +42,7 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
       workspacesApi.addMemberByEmail(workspaceId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "members"] });
-      toast.success("Đã thêm thành viên vào workspace");
+      toast.success("Đã thêm thành viên mới vào workspace thành công!");
       setConfirmOpen(false);
       setSelected(null);
       setSearchQuery("");
@@ -76,11 +76,12 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
 
   const getInitials = (name: string) =>
     name
-      .split(" ")
+      .trim()
+      .split(/\s+/)
       .map((n) => n[0])
       .join("")
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2) || "?";
 
   const openConfirm = (u: User) => {
     if (!canManage) {
@@ -95,7 +96,6 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
     if (!selected) return;
 
     if (role === "OWNER") {
-      // Workspace add shouldn't allow OWNER from UI.
       return;
     }
 
@@ -104,33 +104,51 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Thêm thành viên</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Label>Tìm kiếm người dùng</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Tìm theo tên hoặc email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+      <Card className="overflow-hidden border border-border/60 bg-gradient-to-b from-card to-card/60 shadow-md">
+        <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <UserPlus className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-base font-semibold">Thêm thành viên mới</CardTitle>
+              <CardDescription className="text-xs">
+                Tìm kiếm người dùng theo tên hoặc email để mời tham gia làm việc chung
+              </CardDescription>
+            </div>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-4">
           {!canManage ? (
-            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-              Chỉ OWNER/ADMIN của workspace mới có thể thêm thành viên.
+            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-medium text-amber-800 dark:text-amber-300">
+              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600" />
+              Chỉ Owner hoặc Admin của Workspace mới có quyền thêm thành viên mới.
             </div>
           ) : null}
 
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold text-muted-foreground">Tìm kiếm thành viên</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Nhập tên hoặc địa chỉ email để tìm nhanh..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-background/50 border-border/80 focus:ring-2 focus:ring-blue-500/20"
+                disabled={!canManage}
+              />
+            </div>
+          </div>
+
           {searchQuery ? (
-            <div className="mt-2 rounded-md border">
+            <div className="overflow-hidden rounded-xl border border-border/60 bg-background shadow-inner">
               {isSearching ? (
-                <div className="p-4 text-center text-sm text-gray-500">Đang tìm kiếm...</div>
+                <div className="flex items-center justify-center p-6 text-xs text-muted-foreground gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                  Đang tìm kiếm người dùng...
+                </div>
               ) : results.length > 0 ? (
-                <div className="max-h-64 overflow-y-auto">
+                <div className="max-h-64 divide-y divide-border/40 overflow-y-auto">
                   {results.map((u) => {
                     const already = existingUserIds.has(u.id);
                     return (
@@ -139,22 +157,29 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
                         onClick={() => openConfirm(u)}
                         disabled={already || addMemberMutation.isPending}
                         className={
-                          "flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 " +
+                          "flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-blue-500/5 disabled:cursor-not-allowed disabled:opacity-60 " +
                           (!canManage ? "opacity-60" : "")
                         }
                       >
-                        <Avatar>
-                          <AvatarFallback>{getInitials(u.displayName)}</AvatarFallback>
+                        <Avatar className="h-9 w-9">
+                          {u.avatarUrl ? <AvatarImage src={u.avatarUrl} alt={u.displayName} /> : null}
+                          <AvatarFallback className="bg-gradient-to-tr from-blue-500 to-indigo-600 text-xs font-bold text-white">
+                            {getInitials(u.displayName)}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium">{u.displayName}</div>
-                          <div className="truncate text-sm text-gray-500">{u.email}</div>
+                          <div className="truncate text-sm font-semibold text-foreground">{u.displayName}</div>
+                          <div className="truncate text-xs text-muted-foreground">{u.email}</div>
                         </div>
                         <div className="flex items-center gap-2">
                           {already ? (
-                            <span className="text-xs text-gray-500">Đã là thành viên</span>
+                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              <CheckCircle2 className="h-3 w-3" /> Đã tham gia
+                            </span>
                           ) : (
-                            <UserPlus className="h-4 w-4 text-gray-400" />
+                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors">
+                              <UserPlus className="h-3.5 w-3.5" /> Mời
+                            </span>
                           )}
                         </div>
                       </button>
@@ -162,14 +187,17 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
                   })}
                 </div>
               ) : (
-                <div className="p-4 text-center text-sm text-gray-500">Không tìm thấy người dùng</div>
+                <div className="p-6 text-center text-xs text-muted-foreground">
+                  Không tìm thấy người dùng nào phù hợp với từ khóa <span className="font-semibold text-foreground">"{searchQuery}"</span>
+                </div>
               )}
             </div>
-          ) : null}
-
-          <div className="text-xs text-gray-500">
-            Tip: bạn có thể gõ email để tìm nhanh.
-          </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+              Mẹo: Mọi người dùng đã đăng ký tài khoản trên hệ thống đều có thể được tìm thấy bằng email.
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -178,7 +206,7 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
         onOpenChange={setConfirmOpen}
         title={selected ? `Thêm ${selected.displayName} vào workspace?` : "Thêm thành viên"}
         description={selected ? selected.email : undefined}
-        confirmText="Thêm"
+        confirmText="Thêm ngay"
         roleLabel="Chọn vai trò"
         allowOwner={false}
         defaultRole="MEMBER"

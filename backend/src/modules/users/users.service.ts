@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { usersRepo } from './users.repo';
 import { ApiError } from '../../common/errors/ApiError';
-import { presignPutObject } from '../../common/minio/minio.presign.put';
+import { presignPutObject, buildPublicStorageUrl } from '../../infrastructure/storage';
 import env from '../../config/env';
 import { enqueueDeleteObject } from '../../integrations/queue/blobs.queue';
 
@@ -96,10 +96,7 @@ export const usersService = {
       throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid avatar objectKey');
     }
 
-    // Build a public path-style URL pointing directly to the avatar in the public bucket.
-    const cleanEndpoint = endpoint.replace(/\/+$/, '');
-    const encodedObjectKey = objectKey.split('/').map(encodeURIComponent).join('/');
-    const avatarUrlBase = `${cleanEndpoint}/${encodeURIComponent(bucket)}/${encodedObjectKey}`;
+    const avatarUrlBase = buildPublicStorageUrl(bucket, objectKey);
     const avatarUrl = `${avatarUrlBase}?v=${Date.now()}`;
 
     const existing = await usersRepo.getById(userId);

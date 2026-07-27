@@ -67,6 +67,10 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-muted-foreground">
+            <a href="#ai-breakdown" className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-bold hover:opacity-80 transition-opacity">
+              <Sparkles className="h-3.5 w-3.5 fill-indigo-500/20" />
+              Gemini AI Breakdown
+            </a>
             <a href="#multi-view" className="hover:text-foreground transition-colors">
               Chế độ xem Đa chiều
             </a>
@@ -148,8 +152,88 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* 🤖 GOOGLE GEMINI AI BREAKDOWN SHOWCASE SECTION */}
+      <section id="ai-breakdown" className="py-20 bg-gradient-to-b from-indigo-950/20 via-background to-background border-y border-indigo-500/20 relative overflow-hidden">
+        <div className="container mx-auto max-w-7xl px-4 sm:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/40 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 px-4 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-4 shadow-sm">
+              <Sparkles className="h-4 w-4 text-indigo-500 animate-pulse" />
+              <span>TÍNH NĂNG ĐỘT PHÁ MỚI · GOOGLE GEMINI 2.5 FLASH AI</span>
+            </div>
+            <h2 className="text-3xl font-extrabold sm:text-4xl md:text-5xl tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Tự Động Phân Rã Công Việc Với Trí Tuệ Nhân Tạo
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground leading-relaxed">
+              Biến các ý tưởng công việc phức tạp thành danh sách **3-5 sub-tasks chi tiết, thực tế và sẵn sàng hành động** bằng Tiếng Việt chỉ trong **1-Click**.
+            </p>
+          </div>
+
+          {/* Interactive AI Demo Card Showcase */}
+          <div className="max-w-4xl mx-auto rounded-2xl border border-indigo-500/30 bg-card/90 p-6 md:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+            <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 space-y-6">
+              {/* Task Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Badge className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 font-semibold text-xs">
+                      ⚡ Card Detail Demo
+                    </Badge>
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">Xây dựng trang Đăng nhập & Đăng ký cho TeamHub</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Yêu cầu: Hỗ trợ mã hóa mật khẩu bcrypt, phát hành JWT token & tích hợp Google OAuth 2.0.
+                  </p>
+                </div>
+
+                <Button
+                  size="sm"
+                  onClick={() => navigate(user ? "/workspaces" : "/register")}
+                  className="h-10 px-5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-bold shadow-lg shadow-indigo-500/25 hover:scale-105 transition-all self-start sm:self-auto shrink-0"
+                >
+                  <Sparkles className="mr-2 h-4 w-4 fill-white" />
+                  ✨ AI Breakdown
+                </Button>
+              </div>
+
+              {/* AI Sub-tasks Result Output */}
+              <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4 space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-indigo-500" />
+                    Danh sách Sub-tasks do Gemini AI tự động phân tích:
+                  </span>
+                  <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 bg-emerald-500/10 font-bold">100% Accuracy</Badge>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 shadow-2xs">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-xs">✓</div>
+                    <span className="text-xs font-semibold text-foreground">1. Khởi tạo Prisma Schema cho dữ liệu Người dùng và nạp Migration CSDL</span>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 shadow-2xs">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-xs">✓</div>
+                    <span className="text-xs font-semibold text-foreground">2. Viết REST API Controller xử lý Đăng ký, Đăng nhập và Refresh Token</span>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 shadow-2xs">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 font-bold text-xs">✓</div>
+                    <span className="text-xs font-semibold text-foreground">3. Thiết kế giao diện Form Đăng nhập với React Hook Form & Zod Validation</span>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-3 shadow-2xs">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/20 text-indigo-600 font-bold text-xs">4</div>
+                    <span className="text-xs font-semibold text-foreground">4. Tích hợp luồng gửi Email khôi phục mật khẩu qua SMTP Nodemailer</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 🌟 BRAND PILLAR 1: MULTI-VIEW WORKSPACE ENGINE (LARGE DEMO PANEL) */}
-      <section id="multi-view" className="py-20 bg-background border-t">
+      <section id="multi-view" className="py-20 bg-background">
         <div className="container mx-auto max-w-7xl px-4 sm:px-8">
           <div className="text-center max-w-3xl mx-auto mb-12">
             <Badge variant="outline" className="mb-3 border-blue-500/30 text-blue-600 bg-blue-500/10">

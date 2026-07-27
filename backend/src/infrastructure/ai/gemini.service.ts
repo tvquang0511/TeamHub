@@ -4,14 +4,14 @@ import { ApiError } from "../../common/errors/ApiError";
 export class GeminiService {
   private getApiKey(): string {
     const key = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-    if (!key) {
+    if (!key || key.trim() === "" || key.includes("YOUR_GEMINI_API_KEY")) {
       throw new ApiError(
-        500,
+        400,
         "AI_CONFIG_ERROR",
-        "GEMINI_API_KEY chưa được cấu hình trong backend/.env. Vui lòng tạo key miễn phí tại https://aistudio.google.com"
+        "GEMINI_API_KEY chưa được cấu hình hoặc không hợp lệ. Vui lòng thêm GEMINI_API_KEY trên Render Environment Variables."
       );
     }
-    return key;
+    return key.trim();
   }
 
   /**
@@ -29,54 +29,84 @@ Ví dụ định dạng trả về:
 
     const userPrompt = `Tiêu đề công việc: "${title}"\nMô tả chi tiết: "${description || "Chưa có mô tả"}"`;
 
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
+    const models = ["gemini-1.5-flash", "gemini-2.0-flash"];
+    let lastErrorMsg = "";
+
+    for (const model of models) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 1000,
             },
-          ],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1000,
-          },
-        }),
-      });
+          }),
+        });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        // eslint-disable-next-line no-console
-        console.error("[gemini-ai] API call failed:", response.status, errText);
-        throw new ApiError(502, "AI_SERVICE_ERROR", `Lỗi gọi Gemini AI API (${response.status})`);
+        if (!response.ok) {
+          const errText = await response.text();
+          // eslint-disable-next-line no-console
+          console.error(`[gemini-ai] Model ${model} failed:`, response.status, errText);
+
+          let detail = errText;
+          try {
+            const parsed = JSON.parse(errText);
+            detail = parsed.error?.message || errText;
+          } catch {
+            // Keep raw text
+          }
+
+          lastErrorMsg = detail;
+
+          // If model not found (404), try next model in array
+          if (response.status === 404) {
+            continue;
+          }
+
+          // If 400 API key invalid or quota error, throw immediate readable ApiError
+          throw new ApiError(
+            400,
+            "AI_SERVICE_ERROR",
+            `Lỗi Google Gemini AI: ${detail}`
+          );
+        }
+
+        const data = (await response.json()) as any;
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text) {
+          throw new ApiError(500, "AI_RESPONSE_INVALID", "Không nhận được phản hồi từ Gemini AI");
+        }
+
+        // Cleanup potential markdown formatting like ```json ... ```
+        const cleaned = text.replace(/```json\s*|```\s*/gi, "").trim();
+        const parsed = JSON.parse(cleaned);
+
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new ApiError(500, "AI_RESPONSE_INVALID", "Kết quả trả về từ AI không đúng định dạng danh sách");
+        }
+
+        return parsed.map((item: any) => String(item).trim()).filter(Boolean);
+      } catch (err: any) {
+        if (err instanceof ApiError) throw err;
+        lastErrorMsg = err?.message || "Lỗi gọi API Gemini";
       }
-
-      const data = (await response.json()) as any;
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!text) {
-        throw new ApiError(500, "AI_RESPONSE_INVALID", "Không nhận được phản hồi từ Gemini AI");
-      }
-
-      // Cleanup potential markdown formatting like ```json ... ```
-      const cleaned = text.replace(/```json\s*|```\s*/gi, "").trim();
-      const parsed = JSON.parse(cleaned);
-
-      if (!Array.isArray(parsed) || parsed.length === 0) {
-        throw new ApiError(500, "AI_RESPONSE_INVALID", "Kết quả trả về từ AI không đúng định dạng danh sách");
-      }
-
-      return parsed.map((item: any) => String(item).trim()).filter(Boolean);
-    } catch (err: any) {
-      if (err instanceof ApiError) throw err;
-      // eslint-disable-next-line no-console
-      console.error("[gemini-ai] Failed to generate subtasks:", err);
-      throw new ApiError(500, "AI_GENERATION_FAILED", err?.message || "Không thể tự động phân rã công việc bằng AI");
     }
+
+    throw new ApiError(
+      400,
+      "AI_GENERATION_FAILED",
+      `Không thể tự động phân rã công việc bằng Gemini AI: ${lastErrorMsg}`
+    );
   }
 }
 

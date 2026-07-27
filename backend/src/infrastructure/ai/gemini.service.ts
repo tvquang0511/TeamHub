@@ -29,7 +29,8 @@ Ví dụ định dạng trả về:
 
     const userPrompt = `Tiêu đề công việc: "${title}"\nMô tả chi tiết: "${description || "Chưa có mô tả"}"`;
 
-    const models = ["gemini-1.5-flash", "gemini-2.0-flash"];
+    // Modern Google Gemini models order: gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash
+    const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
     let lastErrorMsg = "";
 
     for (const model of models) {

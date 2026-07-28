@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../providers/AuthProvider";
 import { TopBar } from "../components/layout/TopBar";
+import { FeedbackWidget } from "../components/feedback/FeedbackWidget";
 
 export const AppLayout: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -34,6 +35,7 @@ export const AppLayout: React.FC = () => {
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
+      <FeedbackWidget />
     </div>
   );
 };

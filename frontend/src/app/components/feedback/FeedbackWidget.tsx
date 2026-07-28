@@ -98,8 +98,8 @@ export const FeedbackWidget: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Widget Trigger Button (Góc phải bên dưới) */}
-      <div className="fixed bottom-5 right-5 z-40 flex items-center gap-2">
+      {/* Floating Widget Trigger Button (Góc trái bên dưới) */}
+      <div className="fixed bottom-5 left-5 z-40 flex items-center gap-2">
         {/* Pulsing Hint Badge */}
         {!isOpen && (
           <div className="hidden sm:flex items-center gap-1.5 bg-background/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-pink-500/30 shadow-lg text-xs font-semibold text-foreground animate-bounce">

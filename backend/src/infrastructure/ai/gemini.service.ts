@@ -36,8 +36,8 @@ Ví dụ output chuẩn:
 
     const userPrompt = `Tiêu đề công việc: "${title}"\nMô tả chi tiết: "${description || "Chưa có mô tả chi tiết. Hãy dựa vào tiêu đề để phân rã các bước thực hiện chuẩn nhất."}"`;
 
-    // Modern Google Gemini models order: gemini-2.0-flash, gemini-1.5-flash, gemini-1.5-pro
-    const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+    // Gemini models order (gemini-1.5-flash has the most stable Free Tier quota)
+    const models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
     let lastErrorMsg = "";
 
     for (const model of models) {
@@ -75,12 +75,19 @@ Ví dụ output chuẩn:
 
           lastErrorMsg = detail;
 
-          // If model not found (404), try next model in array
-          if (response.status === 404) {
+          const isQuotaOrNotFound =
+            response.status === 404 ||
+            response.status === 429 ||
+            detail.includes("Quota exceeded") ||
+            detail.includes("RESOURCE_EXHAUSTED") ||
+            detail.includes("rate-limits");
+
+          // If model not found or quota exceeded on this model, try next model in array
+          if (isQuotaOrNotFound) {
             continue;
           }
 
-          // If 400 API key invalid or quota error, throw immediate readable ApiError
+          // If 400 API key invalid, throw immediate readable ApiError
           throw new ApiError(
             400,
             "AI_SERVICE_ERROR",

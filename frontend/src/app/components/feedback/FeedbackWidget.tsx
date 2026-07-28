@@ -1,14 +1,26 @@
-import React, { useState } from "react";
-import { MessageSquareHeart, Send, Sparkles, X, Heart, ExternalLink, ThumbsUp } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { MessageSquareHeart, Send, Sparkles, X, Heart, ExternalLink, ThumbsUp, User, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "../../providers/AuthProvider";
 
 // High-visibility, super cute Feedback Widget linked to Google Form / Google Sheet
 export const FeedbackWidget: React.FC = () => {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>("🤩");
+  const [senderName, setSenderName] = useState("");
+  const [senderContact, setSenderContact] = useState("");
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // Tự động điền thông tin người dùng nếu đã đăng nhập
+  useEffect(() => {
+    if (user) {
+      if (user.displayName) setSenderName(user.displayName);
+      if (user.email) setSenderContact(user.email);
+    }
+  }, [user]);
 
   // Google Form / Sheet link (configurable via env variable or default fallback)
   const googleFormUrl =
@@ -30,11 +42,20 @@ export const FeedbackWidget: React.FC = () => {
     setShowConfetti(true);
     setTimeout(() => setShowConfetti(false), 3000);
 
+    const userInfoString = [
+      senderName.trim() ? `Người gửi: ${senderName.trim()}` : "",
+      senderContact.trim() ? `Liên hệ: ${senderContact.trim()}` : "",
+    ]
+      .filter(Boolean)
+      .join(" - ");
+
+    const fullFeedbackText = userInfoString
+      ? `[${selectedEmoji}] ${feedbackText.trim()}\n\n📌 Thông tin: ${userInfoString}`
+      : `[${selectedEmoji}] ${feedbackText.trim()}`;
+
     // If Google Form URL is provided, open with prefilled / direct link
     if (googleFormUrl) {
-      const encodedText = encodeURIComponent(
-        `[${selectedEmoji}] ${feedbackText.trim()}`
-      );
+      const encodedText = encodeURIComponent(fullFeedbackText);
       // Open Google Form in new tab
       window.open(
         googleFormUrl.includes("?")
@@ -133,10 +154,40 @@ export const FeedbackWidget: React.FC = () => {
             </div>
 
             {/* Form Body */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* User Name & Contact Input Fields */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <User className="w-3 h-3 text-pink-500" />
+                    <span>Tên của bạn</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    placeholder="VD: Tuấn Anh..."
+                    className="w-full rounded-xl border border-input bg-muted/30 px-3 py-1.5 text-xs ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-1 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <Mail className="w-3 h-3 text-pink-500" />
+                    <span>Email / SĐT</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={senderContact}
+                    onChange={(e) => setSenderContact(e.target.value)}
+                    placeholder="VD: email@gmail.com"
+                    className="w-full rounded-xl border border-input bg-muted/30 px-3 py-1.5 text-xs ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-1 transition-all"
+                  />
+                </div>
+              </div>
+
               {/* Emoji Selector */}
               <div>
-                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
                   Bạn cảm thấy thế nào về ứng dụng?
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -145,14 +196,14 @@ export const FeedbackWidget: React.FC = () => {
                       key={item.label}
                       type="button"
                       onClick={() => setSelectedEmoji(item.emoji)}
-                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${
+                      className={`flex flex-col items-center justify-center p-2.5 rounded-2xl border transition-all ${
                         selectedEmoji === item.emoji
                           ? "border-pink-500 bg-pink-500/10 shadow-sm scale-105"
                           : "border-border/60 hover:border-pink-300 hover:bg-muted/50"
                       }`}
                     >
-                      <span className="text-2xl">{item.emoji}</span>
-                      <span className="text-[11px] font-medium text-foreground mt-1">
+                      <span className="text-xl">{item.emoji}</span>
+                      <span className="text-[10px] font-medium text-foreground mt-1">
                         {item.label}
                       </span>
                     </button>
@@ -162,7 +213,7 @@ export const FeedbackWidget: React.FC = () => {
 
               {/* Textarea feedback */}
               <div>
-                <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                <label className="block text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
                   Nội dung đóng góp / Ý kiến của bạn:
                 </label>
                 <textarea
@@ -171,7 +222,7 @@ export const FeedbackWidget: React.FC = () => {
                   value={feedbackText}
                   onChange={(e) => setFeedbackText(e.target.value)}
                   placeholder="Nhập cảm nhận, lời nhắn hoặc ý tưởng mới của bạn tại đây nha..."
-                  className="w-full rounded-2xl border border-input bg-muted/30 px-3.5 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-2 transition-all resize-none"
+                  className="w-full rounded-2xl border border-input bg-muted/30 px-3.5 py-2 text-xs ring-offset-background placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 focus-visible:ring-offset-1 transition-all resize-none"
                 />
               </div>
 
@@ -180,7 +231,7 @@ export const FeedbackWidget: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting || !feedbackText.trim()}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-2xl shadow-lg hover:shadow-pink-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-98 text-sm"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white font-bold py-2.5 px-4 rounded-2xl shadow-lg hover:shadow-pink-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-98 text-sm"
                 >
                   <Send className="w-4 h-4" />
                   <span>Gửi Đóng Góp Ngay ✨</span>
@@ -191,7 +242,7 @@ export const FeedbackWidget: React.FC = () => {
                   href={googleFormUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground py-1.5 transition-colors font-medium"
+                  className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground py-1 transition-colors font-medium"
                 >
                   <span>Mở Google Form / Form đóng góp chi tiết</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -200,7 +251,7 @@ export const FeedbackWidget: React.FC = () => {
             </form>
 
             {/* Cute Footer */}
-            <div className="bg-muted/40 px-6 py-3 border-t border-border/40 text-center">
+            <div className="bg-muted/40 px-6 py-2.5 border-t border-border/40 text-center">
               <span className="text-[11px] text-muted-foreground flex items-center justify-center gap-1">
                 <ThumbsUp className="w-3 h-3 text-pink-500" />
                 Cảm ơn bạn đã trải nghiệm và hỗ trợ dự án TeamHub!

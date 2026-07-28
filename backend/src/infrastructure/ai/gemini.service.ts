@@ -36,8 +36,8 @@ Ví dụ output chuẩn:
 
     const userPrompt = `Tiêu đề công việc: "${title}"\nMô tả chi tiết: "${description || "Chưa có mô tả chi tiết. Hãy dựa vào tiêu đề để phân rã các bước thực hiện chuẩn nhất."}"`;
 
-    // Modern Google Gemini models order: gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash
-    const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+    // Modern Google Gemini models order: gemini-2.0-flash, gemini-1.5-flash, gemini-1.5-pro
+    const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
     let lastErrorMsg = "";
 
     for (const model of models) {

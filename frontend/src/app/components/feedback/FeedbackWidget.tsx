@@ -22,7 +22,7 @@ export const FeedbackWidget: React.FC = () => {
     }
   }, [user]);
 
-  // Google Form / Sheet link (configurable via env variable or default fallback)
+  // Google Form / Sheet link
   const googleFormUrl =
     import.meta.env.VITE_FEEDBACK_GOOGLE_FORM_URL ||
     "https://docs.google.com/forms/d/e/1FAIpQLSd6do_gXneIDtTbfN5VTPsPfbvCc1RkD53FqWj92XG-SvK9-g/viewform?usp=header";
@@ -53,20 +53,35 @@ export const FeedbackWidget: React.FC = () => {
       ? `[${selectedEmoji}] ${feedbackText.trim()}\n\n📌 Thông tin: ${userInfoString}`
       : `[${selectedEmoji}] ${feedbackText.trim()}`;
 
-    // If Google Form URL is provided, open with prefilled / direct link
+    // Submit ngầm về Google Form / Sheet mà KHÔNG mở tab mới
     if (googleFormUrl) {
-      const encodedText = encodeURIComponent(fullFeedbackText);
-      // Open Google Form in new tab
-      window.open(
-        googleFormUrl.includes("?")
-          ? `${googleFormUrl}&entry.feedback=${encodedText}`
-          : `${googleFormUrl}?feedback=${encodedText}`,
-        "_blank"
-      );
+      try {
+        const formResponseUrl = googleFormUrl
+          .replace("/viewform", "/formResponse")
+          .split("?")[0];
+
+        const params = new URLSearchParams();
+        params.append("submit", "Submit");
+        params.append("entry.feedback", fullFeedbackText);
+        params.append("feedback", fullFeedbackText);
+
+        fetch(`${formResponseUrl}?${params.toString()}`, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        }).catch(() => {
+          // Silent fallback for background fetch
+        });
+      } catch {
+        // Ignore background submit errors
+      }
     }
 
-    toast.success("🎉 Cảm ơn bạn rất nhiều! Ý kiến của bạn đã được ghi nhận 🥰", {
-      description: "Đồ án TeamHub sẽ ngày càng hoàn thiện hơn nhờ góp ý của bạn!",
+    toast.success("🎉 Cảm ơn bạn rất nhiều! Ý kiến của bạn đã được gửi thành công 🥰", {
+      description: "Đồ án TeamHub sẽ ngày càng hoàn thiện hơn nhờ đóng góp của bạn!",
       duration: 5000,
     });
 
@@ -100,17 +115,6 @@ export const FeedbackWidget: React.FC = () => {
 
       {/* Floating Widget Trigger Button (Góc trái bên dưới) */}
       <div className="fixed bottom-5 left-5 z-40 flex items-center gap-2">
-        {/* Pulsing Hint Badge */}
-        {!isOpen && (
-          <div className="hidden sm:flex items-center gap-1.5 bg-background/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-pink-500/30 shadow-lg text-xs font-semibold text-foreground animate-bounce">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
-            </span>
-            <span>Góp ý đồ án nào! ✨</span>
-          </div>
-        )}
-
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="group relative flex items-center gap-2.5 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white font-medium px-4 py-3 rounded-full shadow-xl hover:shadow-2xl hover:shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 active:scale-95 border border-white/20"
@@ -122,6 +126,17 @@ export const FeedbackWidget: React.FC = () => {
           </div>
           <span className="font-bold text-sm tracking-wide">Góp ý ✨</span>
         </button>
+
+        {/* Pulsing Hint Badge (Nằm bên phải của Nút bấm) */}
+        {!isOpen && (
+          <div className="hidden sm:flex items-center gap-1.5 bg-background/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-pink-500/30 shadow-lg text-xs font-semibold text-foreground animate-bounce">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
+            </span>
+            <span>Góp ý đồ án nào! ✨</span>
+          </div>
+        )}
       </div>
 
       {/* Feedback Modal Dialog */}

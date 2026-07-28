@@ -10,10 +10,10 @@ export const FeedbackWidget: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Google Form / Sheet link (configurable via env variable or fallback)
+  // Google Form / Sheet link (configurable via env variable or default fallback)
   const googleFormUrl =
     import.meta.env.VITE_FEEDBACK_GOOGLE_FORM_URL ||
-    "https://forms.gle/teamhub-feedback-sample";
+    "https://docs.google.com/forms/d/e/1FAIpQLSd6do_gXneIDtTbfN5VTPsPfbvCc1RkD53FqWj92XG-SvK9-g/viewform?usp=header";
 
   const emojis = [
     { emoji: "🤩", label: "Thích mê" },

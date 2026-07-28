@@ -16,7 +16,7 @@ import { enqueueReminderJob, removeReminderJob } from "../../integrations/queue/
 import { activitiesRepo } from "../activities/activities.repo";
 import { cardsRepo } from "./cards.repo";
 import { checklistsRepo } from "../checklists/checklists.repo";
-import { geminiService } from "../../infrastructure/ai/gemini.service";
+import { aiService } from "../../infrastructure/ai";
 
 export const createCardInputSchema = z.object({
   listId: z.string().uuid(),
@@ -629,8 +629,8 @@ export class CardsService {
   async generateAiBreakdown(userId: string, cardId: string) {
     const card = await this.assertCanWriteCard(userId, cardId);
 
-    // Call Gemini AI
-    const subtaskTitles = await geminiService.generateSubtasks(card.title, card.description);
+    // Call AI Service (Modular Provider Architecture)
+    const subtaskTitles = await aiService.generateSubtasks(card.title, card.description);
 
     // Create a new checklist for AI Sub-tasks
     const existingChecklists = await checklistsRepo.listByCard(cardId);

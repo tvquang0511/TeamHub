@@ -153,9 +153,13 @@ const envSchema = z.object({
 
   BCRYPT_ROUNDS: z.coerce.number().int().min(8).max(15).default(10),
 
-  // AI Services
+  // AI Services & Flexible Providers
+  AI_PROVIDER: z.enum(['auto', 'gemini', 'groq', 'openai', 'openrouter']).default('auto'),
+  AI_MODEL: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GROQ_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
 
   // Provider-agnostic S3 Object Storage
   STORAGE_PROVIDER: z.enum(['s3', 'minio', 'cloudflare_r2', 'supabase']).default('minio'),

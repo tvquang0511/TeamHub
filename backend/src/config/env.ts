@@ -153,8 +153,9 @@ const envSchema = z.object({
 
   BCRYPT_ROUNDS: z.coerce.number().int().min(8).max(15).default(10),
 
-  // Google Gemini AI
+  // AI Services
   GEMINI_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
 
   // Provider-agnostic S3 Object Storage
   STORAGE_PROVIDER: z.enum(['s3', 'minio', 'cloudflare_r2', 'supabase']).default('minio'),

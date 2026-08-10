@@ -42,7 +42,7 @@ connection.on('error', (err) => {
 });
 
 const defaultWorkerOpts = {
-	stalledInterval: 0, // Disable background stalled check loop to prevent idle Redis command spam
+	stalledInterval: 300000, // 5 minutes, to prevent aggressive idle Redis command spam without throwing error
 	drainDelay: 30,     // Increase delay when queues are drained
 };
 

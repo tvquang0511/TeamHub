@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 
 import { getQueueConnection } from './connection';
 
-export const EMAILS_QUEUE_NAME = 'emails';
+export const EMAILS_QUEUE_NAME = 'notifications';
 export const EMAILS_JOB_PASSWORD_RESET = 'password_reset';
 
 export type PasswordResetEmailJobData = {

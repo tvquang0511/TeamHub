@@ -3,7 +3,7 @@ import { Queue } from "bullmq";
 import { getQueueConnection } from "./connection";
 import env from "../../config/env";
 
-export const BLOBS_QUEUE_NAME = "blobs";
+export const BLOBS_QUEUE_NAME = "background_tasks";
 
 export const BLOBS_JOB_DELETE_OBJECT = "delete_object";
 export const BLOBS_JOB_SWEEP_ORPHANS = "sweep_orphans";

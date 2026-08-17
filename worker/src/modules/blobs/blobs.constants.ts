@@ -1,4 +1,4 @@
-export const BLOBS_QUEUE_NAME = 'blobs' as const;
+export const BLOBS_QUEUE_NAME = 'background_tasks' as const;
 
 export const BLOBS_JOB_DELETE_OBJECT = 'delete_object' as const;
 export const BLOBS_JOB_SWEEP_ORPHANS = 'sweep_orphans' as const;

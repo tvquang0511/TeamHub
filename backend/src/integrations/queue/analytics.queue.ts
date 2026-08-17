@@ -2,7 +2,7 @@ import { Queue } from "bullmq";
 
 import { getQueueConnection } from "./connection";
 
-export const ANALYTICS_QUEUE_NAME = "analytics";
+export const ANALYTICS_QUEUE_NAME = "background_tasks";
 export const ANALYTICS_JOB_DAILY = "board_metrics_daily";
 
 let _queue: Queue | null = null;

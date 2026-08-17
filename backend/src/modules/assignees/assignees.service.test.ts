@@ -79,7 +79,7 @@ describe('Assignees Service', () => {
         type: 'ASSIGNEE_ADDED',
         payload: { userId: 'u1' }
       }));
-      expect(result.assignee.id).toBe('u1');
+      expect(result.assignee?.id).toBe('u1');
     });
   });
 
@@ -122,7 +122,7 @@ describe('Assignees Service', () => {
         actorId: 'admin1',
         type: 'CARD_ASSIGNED'
       }));
-      expect(result.assignee.id).toBe('u2');
+      expect(result.assignee?.id).toBe('u2');
     });
   });
 });

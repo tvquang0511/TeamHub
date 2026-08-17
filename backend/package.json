@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "dev": "nodemon src/server.ts",
     "build": "prisma generate && tsc",
     "start": "node dist/src/server.js",
@@ -52,6 +53,8 @@
     "zod-to-json-schema": "^3.25.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "vitest": "^4.1.10",
+    "vitest-mock-extended": "^5.1.1"
   }
 }

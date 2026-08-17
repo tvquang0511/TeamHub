@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 
 import { getQueueConnection } from './connection';
 
-export const REMINDERS_QUEUE_NAME = 'reminders';
+export const REMINDERS_QUEUE_NAME = 'notifications';
 export const REMINDERS_JOB_NAME = 'send';
 
 let _queue: Queue | null = null;

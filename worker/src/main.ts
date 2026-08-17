@@ -21,12 +21,12 @@ httpServer.listen(port, () => {
   console.log(`[worker-http] Health check listening on port ${port}`);
 });
 
-const REMINDERS_QUEUE_NAME = 'reminders';
-const REMINDERS_JOB_NAME = 'send';
+const NOTIFICATIONS_QUEUE_NAME = 'notifications';
+const BACKGROUND_TASKS_QUEUE_NAME = 'background_tasks';
 
-const EMAILS_QUEUE_NAME = 'emails';
-const ANALYTICS_QUEUE_NAME = 'analytics';
-const ANALYTICS_JOB_NAME = 'board_metrics_daily';
+const REMINDERS_JOB_NAME = 'send';
+const ANALYTICS_JOB_DAILY = 'board_metrics_daily';
+// Note: EMAILS_JOB_PASSWORD_RESET is usually 'password_reset' (passed dynamically in job.name or job.data.type)
 
 const connection = new IORedis(env.REDIS_URL, {
 	// Recommended for BullMQ usage.
@@ -42,19 +42,22 @@ connection.on('error', (err) => {
 });
 
 const defaultWorkerOpts = {
-	stalledInterval: 300000, // 5 minutes, to prevent aggressive idle Redis command spam without throwing error
-	drainDelay: 30,     // Increase delay when queues are drained
+	stalledInterval: 300000, // 5 minutes, to prevent aggressive idle Redis command spam
+	drainDelay: 15,     // Wait 15 seconds after queue drains to save Upstash command limit
 };
 
-const RemindersWorker = new Worker(
-	REMINDERS_QUEUE_NAME,
+const notificationsWorker = new Worker(
+	NOTIFICATIONS_QUEUE_NAME,
 	async (job) => {
-		if (job.name !== REMINDERS_JOB_NAME) return;
-
-		const reminderJobId = (job.data as any)?.reminderJobId as string | undefined;
-		if (!reminderJobId) throw new Error('Missing reminderJobId');
-
-		await withClient(async (client) => processReminderJob(client, reminderJobId));
+		if (job.name === REMINDERS_JOB_NAME) {
+			const reminderJobId = (job.data as any)?.reminderJobId as string | undefined;
+			if (!reminderJobId) throw new Error('Missing reminderJobId');
+			await withClient(async (client) => processReminderJob(client, reminderJobId));
+		} else {
+			// Assume it's an email job
+			console.log(`[emails] Worker starting to process job id=${job.id}, name=${job.name}`);
+			await processEmailJob(job.data);
+		}
 	},
 	{
 		connection,
@@ -63,11 +66,17 @@ const RemindersWorker = new Worker(
 	},
 );
 
-const emailsWorker = new Worker(
-	EMAILS_QUEUE_NAME,
+const backgroundTasksWorker = new Worker(
+	BACKGROUND_TASKS_QUEUE_NAME,
 	async (job) => {
-		console.log(`[emails] Worker starting to process job id=${job.id}, name=${job.name}, data=`, JSON.stringify(job.data));
-		await processEmailJob(job.data);
+		if (job.name === ANALYTICS_JOB_DAILY) {
+			const dateArg = (job.data as any)?.date as string | undefined;
+			const retentionDays = env.ACTIVITY_RETENTION_DAYS ?? 90;
+			await withClient(async (client) => processBoardMetricsDailyJob(client, dateArg, retentionDays));
+		} else {
+			// Assume it's a blob job (delete_object or sweep_orphans)
+			return await processBlobsJob(job);
+		}
 	},
 	{
 		connection,
@@ -76,84 +85,31 @@ const emailsWorker = new Worker(
 	},
 );
 
-const analyticsWorker = new Worker(
-	ANALYTICS_QUEUE_NAME,
-	async (job) => {
-		if (job.name !== ANALYTICS_JOB_NAME) return;
-
-		const dateArg = (job.data as any)?.date as string | undefined;
-		const retentionDays = env.ACTIVITY_RETENTION_DAYS ?? 90;
-
-		await withClient(async (client) => processBoardMetricsDailyJob(client, dateArg, retentionDays));
-	},
-	{
-		connection,
-		concurrency: 2,
-		...defaultWorkerOpts,
-	},
-);
-
-const blobsWorker = new Worker(
-	BLOBS_QUEUE_NAME,
-	async (job) => {
-		return await processBlobsJob(job);
-	},
-	{
-		connection,
-		concurrency: 5,
-		...defaultWorkerOpts,
-	},
-);
-
-RemindersWorker.on('completed', (job) => {
-	// eslint-disable-next-line no-console
-	console.log(`[reminders] completed job ${job.id}`);
+notificationsWorker.on('completed', (job) => {
+	console.log(`[notifications] completed job ${job.id} (${job.name})`);
 });
 
-RemindersWorker.on('failed', (job, err) => {
-	// eslint-disable-next-line no-console
-	console.error(`[reminders] failed job ${job?.id}:`, err);
+notificationsWorker.on('failed', (job, err) => {
+	console.error(`[notifications] failed job ${job?.id} (${job?.name}):`, err);
 });
 
-emailsWorker.on('active', (job) => {
-	console.log(`[emails] ACTIVE job ${job.id} picked up by worker`);
+notificationsWorker.on('error', (err) => {
+	console.error(`[notifications] Worker Error:`, err);
 });
 
-emailsWorker.on('completed', (job) => {
-	// eslint-disable-next-line no-console
-	console.log(`[emails] COMPLETED job ${job.id}`);
+backgroundTasksWorker.on('completed', (job) => {
+	console.log(`[background_tasks] completed job ${job.id} (${job.name})`);
 });
 
-emailsWorker.on('failed', (job, err) => {
-	// eslint-disable-next-line no-console
-	console.error(`[emails] FAILED job ${job?.id}:`, err);
+backgroundTasksWorker.on('failed', (job, err) => {
+	console.error(`[background_tasks] failed job ${job?.id} (${job?.name}):`, err);
 });
 
-emailsWorker.on('error', (err) => {
-	console.error(`[emailsWorker] Worker Error:`, err);
-});
-
-analyticsWorker.on('completed', (job) => {
-	// eslint-disable-next-line no-console
-	console.log(`[analytics] completed job ${job.id}`);
-});
-
-analyticsWorker.on('failed', (job, err) => {
-	// eslint-disable-next-line no-console
-	console.error(`[analytics] failed job ${job?.id}:`, err);
-});
-
-blobsWorker.on('completed', (job) => {
-	// eslint-disable-next-line no-console
-	console.log(`[blobs] completed job ${job.id}`);
-});
-
-blobsWorker.on('failed', (job, err) => {
-	// eslint-disable-next-line no-console
-	console.error(`[blobs] failed job ${job?.id}:`, err);
+backgroundTasksWorker.on('error', (err) => {
+	console.error(`[background_tasks] Worker Error:`, err);
 });
 
 // eslint-disable-next-line no-console
 console.log(
-	`[worker] listening queues=${REMINDERS_QUEUE_NAME},${EMAILS_QUEUE_NAME},${ANALYTICS_QUEUE_NAME},${BLOBS_QUEUE_NAME} redis=${env.REDIS_URL}`,
+	`[worker] listening queues=${NOTIFICATIONS_QUEUE_NAME},${BACKGROUND_TASKS_QUEUE_NAME} redis=${env.REDIS_URL}`,
 );

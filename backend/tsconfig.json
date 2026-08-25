@@ -17,5 +17,6 @@
     "verbatimModuleSyntax": false,
     "noUncheckedSideEffectImports": false
   },
-  "include": ["src", "prisma.config.ts", "prisma/**/*.ts"]
+  "include": ["src", "prisma.config.ts", "prisma/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/**/*.spec.ts"]
 }

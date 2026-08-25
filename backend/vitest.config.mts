@@ -5,5 +5,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     clearMocks: true,
+    include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
+    exclude: ['dist/**', 'node_modules/**'],
   },
 });

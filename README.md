@@ -31,7 +31,7 @@ Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển d�
 ### 🌐 Mode 0: Trải Nghiệm Sản Xuất Trực Tiếp Trên Cloud (Instant Live Demo - Zero Setup)
 > **Phù hợp nhất cho**: Kiểm thử ứng dụng nhanh ngay lập tức trên trình duyệt mà không cần cài đặt code.
 
-- **Frontend App (Vercel)**: 🔗 **[https://teamhub-frontend.vercel.app](https://teamhub-frontend.vercel.app)**
+- **Frontend App (Vercel)**: 🔗 **[https://team-hub-blond.vercel.app/](https://team-hub-blond.vercel.app/)**
 - **Backend API (Render)**: ⚡ **[https://teamhub-backend-api.onrender.com](https://teamhub-backend-api.onrender.com)**
 
 #### 🔑 4 Tài Khoản Mẫu Nạp Sẵn Dữ Liệu Sản Xuất (Mật khẩu chung: `123456`)

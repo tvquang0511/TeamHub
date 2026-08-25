@@ -105,7 +105,7 @@ describe('Assignees Service', () => {
       } as any);
       vi.mocked(boardsRepo.isWorkspaceMember).mockResolvedValue({} as any);
       // Actor is ADMIN
-      vi.mocked(boardsRepo.isBoardMember).mockImplementation(async (boardId, userId) => {
+      vi.mocked(boardsRepo.isBoardMember).mockImplementation(async (boardId: string, userId: string) => {
         if (userId === 'admin1') return { role: 'ADMIN' } as any;
         if (userId === 'u2') return { role: 'MEMBER' } as any; // Target is board member
         return null;

@@ -111,41 +111,45 @@ Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển d�
 ```mermaid
 flowchart TD
     subgraph ClientLayer ["Frontend Layer (Vercel)"]
-        FE["ReactJS + Vite App\n(TailwindCSS, Sonner, Lucide Icons)"]
+        FE["ReactJS + Vite App (TailwindCSS, Sonner, Lucide Icons)"]
     end
 
     subgraph APILayer ["API & Realtime Layer (Render)"]
-        API["Node.js + Express REST API\n(TypeScript, Prisma ORM, Zod)"]
-        SOCKET["Socket.IO Server\n(Realtime Kanban Sync & Board Chat)"]
-        AI["Smart AI Engine\n(Multi-Provider Fallback: DeepSeek ➔ Gemini ➔ Groq ➔ ...)"]
+        API["Node.js + Express REST API (TypeScript, Prisma ORM, Zod)"]
+        SOCKET["Socket.IO Server (Realtime Kanban Sync & Board Chat)"]
+        AI["Smart AI Engine (Multi-Provider Fallback: DeepSeek, Gemini, Groq)"]
     end
 
     subgraph DataLayer ["Data & Cache Layer (Cloud Managed)"]
-        DB[(Supabase PostgreSQL\nManaged DB)]
-        REDIS[(Valkey / Upstash Redis\nTLS Socket & BullMQ State)]
+        DB[("Supabase PostgreSQL Managed DB")]
+        REDIS[("Valkey / Upstash Redis TLS Socket & BullMQ State")]
     end
 
     subgraph WorkerLayer ["Async Worker Layer (Local / Self-hosted)"]
-        WORKER["Standalone BullMQ Worker\n(Nodemailer SMTP, Blob Sweeper)"]
+        WORKER["Standalone BullMQ Worker (Nodemailer SMTP, Blob Sweeper)"]
     end
 
     subgraph StorageLayer ["Object Storage Layer"]
-        S3[(Supabase Storage S3 / MinIO\nPresigned URL Uploads)]
+        S3[("Supabase Storage S3 / MinIO Presigned URL Uploads")]
     end
 
-    FE <-->|REST API / HTTP| API
-    FE <-->|WebSocket 2-Way| SOCKET
-    API <-->|AI Service API| AI
-    API <-->|Prisma Client| DB
-    API <-->|ioredis / Cache| REDIS
-    API -->|SigV4 Presigned Put| S3
-    FE -->|Direct Upload PUT| S3
-    API -->|Instant Emails (Resend HTTP API)| RESEND[Resend API]
+    subgraph EmailLayer ["Email Delivery Service"]
+        RESEND["Resend Email API"]
+    end
+
+    FE <-->|"REST API / HTTP"| API
+    FE <-->|"WebSocket 2-Way"| SOCKET
+    API <-->|"AI Service API"| AI
+    API <-->|"Prisma Client"| DB
+    API <-->|"ioredis / Cache"| REDIS
+    API -->|"SigV4 Presigned Put"| S3
+    FE -->|"Direct Upload PUT"| S3
+    API -->|"Instant Emails (Resend HTTP API)"| RESEND
     
-    REDIS <-->|Pull Jobs / Push Queue| WORKER
-    WORKER <-->|Direct SQL Pool| DB
-    WORKER -->|Delete Orphan Blobs| S3
-    WORKER -->|Send Email Reminders (Queue)| RESEND
+    REDIS <-->|"Pull Jobs / Push Queue"| WORKER
+    WORKER <-->|"Direct SQL Pool"| DB
+    WORKER -->|"Delete Orphan Blobs"| S3
+    WORKER -->|"Send Email Reminders (Queue)"| RESEND
 ```
 
 ---

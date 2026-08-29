@@ -93,17 +93,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (errorCode === 'AUTH_EMAIL_NOT_VERIFIED') {
         toast.error("Tài khoản chưa được xác thực", {
           description: "Vui lòng xác thực email của bạn trước khi đăng nhập.",
-          action: {
-            label: "Gửi lại email",
-            onClick: () => {
-              authApi.resendVerificationEmail({ email: data.email }).then(() => {
-                notify.success("Đã gửi lại email xác thực", "Vui lòng kiểm tra hộp thư của bạn.");
-              }).catch((e) => {
-                notify.error(e, "Không thể gửi lại email");
-              });
-            }
-          },
-          duration: 10000,
         });
       } else {
         notify.error(error, "Đăng nhập thất bại");

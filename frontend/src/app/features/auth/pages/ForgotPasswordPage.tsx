@@ -78,7 +78,7 @@ export const ForgotPasswordPage: React.FC = () => {
           className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 active:scale-[0.99] transition-all"
           disabled={mutation.isPending || done}
         >
-          {mutation.isPending ? "Đang gửi qua Worker..." : "Gửi email khôi phục"}
+          {mutation.isPending ? "Đang gửi email..." : "Gửi email khôi phục"}
         </Button>
 
         <div className="text-center pt-2 text-sm text-muted-foreground">

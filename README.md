@@ -117,12 +117,12 @@ flowchart TD
     subgraph APILayer ["API & Realtime Layer (Render)"]
         API["Node.js + Express REST API (TypeScript, Prisma ORM, Zod)"]
         SOCKET["Socket.IO Server (Realtime Kanban Sync & Board Chat)"]
-        AI["Smart AI Engine (Multi-Provider Fallback: DeepSeek, Gemini, Groq)"]
+        AI["Smart AI Engine (Multi-Provider: DeepSeek ➔ Gemini ➔ Groq ➔ OpenAI ➔ ...)"]
     end
 
     subgraph DataLayer ["Data & Cache Layer (Cloud Managed)"]
         DB[("Supabase PostgreSQL Managed DB")]
-        REDIS[("Valkey / Upstash Redis TLS Socket & BullMQ State")]
+        REDIS[("Upstash Redis TLS Socket & BullMQ State")]
     end
 
     subgraph WorkerLayer ["Async Worker Layer (Local / Self-hosted)"]

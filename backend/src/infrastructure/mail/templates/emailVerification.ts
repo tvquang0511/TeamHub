@@ -1,27 +1,36 @@
-import fs from 'fs';
-import path from 'path';
+import env from '../../../config/env';
 import { renderHtmlTemplate } from './render';
 
-export function buildEmailVerificationEmail(params: { email: string; verificationUrl: string; expiresAt: Date }) {
-	const subject = 'TeamHub - Xác thực địa chỉ Email của bạn';
+export function buildEmailVerificationEmail(params: {
+	email: string;
+	verificationUrl: string;
+	expiresAt: Date;
+}) {
+	const expiresAtText = params.expiresAt.toLocaleString('vi-VN', {
+		timeZone: env.APP_TIMEZONE,
+		hour12: false,
+	});
 
-	const text = `
-    Xin chào ${params.email},
+	const subject = '[TeamHub] Xác thực địa chỉ Email của bạn';
 
-    Vui lòng click vào đường link sau để xác thực địa chỉ email của bạn cho tài khoản TeamHub:
-    ${params.verificationUrl}
+	const text = [
+		`Chào mừng bạn đến với TeamHub!`,
+		`Vui lòng click vào link sau để xác thực email cho tài khoản ${params.email}:`,
+		params.verificationUrl,
+		'',
+		`Link xác thực có hiệu lực đến: ${expiresAtText} (${env.APP_TIMEZONE})`,
+		'Nếu bạn không thực hiện đăng ký tài khoản, vui lòng bỏ qua email này.',
+		'',
+		'---',
+		'TeamHub',
+	].join('\n');
 
-    Link này sẽ hết hạn vào lúc ${params.expiresAt.toLocaleString()}.
-    Nếu bạn không tạo tài khoản, xin vui lòng bỏ qua email này.
-  `;
+	const html = renderHtmlTemplate('email-verification', {
+		email: params.email,
+		verificationUrl: params.verificationUrl,
+		expiresAtText,
+		year: String(new Date().getFullYear()),
+	});
 
-	const htmlFallback = `
-    <h2>Xác thực địa chỉ Email</h2>
-    <p>Xin chào ${params.email},</p>
-    <p>Vui lòng click vào nút bên dưới để xác thực địa chỉ email của bạn cho tài khoản TeamHub:</p>
-    <a href="${params.verificationUrl}" style="padding: 10px 20px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px;">Xác thực Email</a>
-    <p>Link này sẽ hết hạn vào lúc ${params.expiresAt.toLocaleString()}.</p>
-  `;
-
-	return { subject, text, html: htmlFallback };
+	return { subject, text, html };
 }

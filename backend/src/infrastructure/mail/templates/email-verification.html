@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="x-apple-disable-message-reformatting" />
-    <title>Đặt lại mật khẩu - TeamHub</title>
+    <title>Xác thực địa chỉ Email - TeamHub</title>
   </head>
   <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; color: #1e293b;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; min-height: 100vh;">
@@ -37,7 +37,7 @@
                   
                   <!-- Top accent bar -->
                   <tr>
-                    <td style="height: 4px; background: linear-gradient(90deg, #f59e0b 0%, #3b82f6 50%, #2563eb 100%);"></td>
+                    <td style="height: 4px; background: linear-gradient(90deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);"></td>
                   </tr>
 
                   <!-- Card Body -->
@@ -46,48 +46,48 @@
                       
                       <!-- Icon Badge -->
                       <div style="text-align: center; margin-bottom: 24px;">
-                        <div style="display: inline-block; width: 64px; height: 64px; background-color: #fffbeb; border-radius: 50%; text-align: center; line-height: 64px; border: 1px solid #fef3c7;">
-                          <span style="font-size: 28px;">🔐</span>
+                        <div style="display: inline-block; width: 64px; height: 64px; background-color: #eff6ff; border-radius: 50%; text-align: center; line-height: 64px; border: 1px solid #dbeafe;">
+                          <span style="font-size: 28px;">✉️</span>
                         </div>
                       </div>
 
                       <!-- Heading -->
                       <h1 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 700; color: #0f172a; text-align: center; letter-spacing: -0.3px;">
-                        Đặt lại mật khẩu
+                        Xác thực địa chỉ Email
                       </h1>
                       
                       <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 24px; color: #475569; text-align: center;">
-                        Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>{{email}}</strong>. Bấm nút bên dưới để tạo mật khẩu mới.
+                        Chào mừng bạn gia nhập <strong>TeamHub</strong>! Vui lòng bấm nút bên dưới để xác thực địa chỉ email <strong>{{email}}</strong> và bắt đầu làm việc cùng đội nhóm.
                       </p>
 
                       <!-- Action Button -->
                       <div style="text-align: center; margin: 32px 0;">
-                        <a href="{{resetUrl}}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); text-align: center;">
-                          Đặt lại mật khẩu &rarr;
+                        <a href="{{verificationUrl}}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); text-align: center;">
+                          Xác thực Email ngay &rarr;
                         </a>
                       </div>
 
                       <!-- Expiration Alert Callout -->
-                      <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 16px; margin: 28px 0 20px 0;">
-                        <p style="margin: 0; font-size: 13px; line-height: 20px; color: #92400e;">
-                          ⏱️ <strong>Thời hạn:</strong> Liên kết có hiệu lực đến <strong>{{expiresAtText}}</strong> (30 phút).
+                      <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 14px 16px; margin: 28px 0 20px 0;">
+                        <p style="margin: 0; font-size: 13px; line-height: 20px; color: #334155;">
+                          ⏱️ <strong>Lưu ý:</strong> Liên kết xác thực này sẽ hết hạn vào lúc <strong>{{expiresAtText}}</strong>.
                         </p>
                       </div>
 
                       <!-- Direct Link Fallback -->
                       <div style="border-top: 1px solid #f1f5f9; padding-top: 20px; margin-top: 24px;">
                         <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; line-height: 18px;">
-                          Nếu nút bấm không phản hồi, sao chép đường link bên dưới dán vào trình duyệt:
+                          Nếu nút bấm phía trên không hoạt động, bạn hãy sao chép và dán liên kết bên dưới vào trình duyệt:
                         </p>
                         <p style="margin: 0; font-size: 12px; line-height: 18px; word-break: break-all;">
-                          <a href="{{resetUrl}}" style="color: #2563eb; text-decoration: underline;">{{resetUrl}}</a>
+                          <a href="{{verificationUrl}}" style="color: #2563eb; text-decoration: underline;">{{verificationUrl}}</a>
                         </p>
                       </div>
 
                       <!-- Security notice -->
                       <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #e2e8f0; text-align: center;">
                         <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 18px;">
-                          Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email. Mật khẩu của bạn vẫn được bảo mật an toàn.
+                          Nếu bạn không đăng ký tài khoản trên TeamHub, xin vui lòng bỏ qua email này.
                         </p>
                       </div>
 

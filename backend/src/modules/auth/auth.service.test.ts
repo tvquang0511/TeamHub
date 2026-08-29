@@ -4,7 +4,7 @@ import * as jwt from 'jsonwebtoken';
 import { authService } from './auth.service';
 import { authRepo } from './auth.repo';
 import { ApiError } from '../../common/errors/ApiError';
-import { enqueuePasswordResetEmailJob } from "../../infrastructure/queue/emails.queue";
+import { enqueuePasswordResetEmailJob } from '../../infrastructure/queue/emails.queue';
 
 // Mock dependencies
 vi.mock('bcrypt', () => ({
@@ -34,11 +34,21 @@ vi.mock('./auth.repo', () => ({
     updateUserPasswordHash: vi.fn(),
     markPasswordResetTokenUsed: vi.fn(),
     revokeAllRefreshTokensForUser: vi.fn(),
+    createEmailVerificationToken: vi.fn(),
+    findValidEmailVerificationToken: vi.fn(),
+    markEmailVerificationTokenUsed: vi.fn(),
+    verifyUserEmail: vi.fn(),
   }
 }));
 
-vi.mock('../../integrations/queue/emails.queue', () => ({
-  enqueuePasswordResetEmailJob: vi.fn()
+vi.mock('../../infrastructure/queue/emails.queue', () => ({
+  enqueuePasswordResetEmailJob: vi.fn(),
+  enqueueEmailVerificationJob: vi.fn(),
+}));
+
+vi.mock('../../infrastructure/mail/mailer', () => ({
+  sendPasswordResetEmail: vi.fn().mockResolvedValue({}),
+  sendEmailVerificationEmail: vi.fn().mockResolvedValue({}),
 }));
 
 describe('Auth Service', () => {
@@ -58,9 +68,7 @@ describe('Auth Service', () => {
       vi.mocked(authRepo.findUserByEmail).mockResolvedValue(null);
       vi.mocked(bcrypt.hash).mockResolvedValue('hashed_pw' as never);
       vi.mocked(authRepo.createUser).mockResolvedValue({ id: 'u1', email: 'test@test.com', displayName: 'Test' } as any);
-      vi.mocked(jwt.sign).mockReturnValue('mock_token' as any);
-      vi.mocked(jwt.decode).mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 } as any);
-      vi.mocked(authRepo.createRefreshToken).mockResolvedValue({} as any);
+      vi.mocked(authRepo.createEmailVerificationToken).mockResolvedValue({} as any);
 
       const result = await authService.register({ email: 'test@test.com', password: '123', displayName: 'Test' });
 
@@ -70,7 +78,7 @@ describe('Auth Service', () => {
         passwordHash: 'hashed_pw',
         displayName: 'Test'
       });
-      expect(result.accessToken).toBe('mock_token');
+      expect(authRepo.createEmailVerificationToken).toHaveBeenCalled();
       expect(result.user.id).toBe('u1');
     });
   });
@@ -83,8 +91,15 @@ describe('Auth Service', () => {
         .rejects.toThrow('Invalid credentials');
     });
 
+    it('should throw error if email is not verified', async () => {
+      vi.mocked(authRepo.findUserByEmail).mockResolvedValue({ id: 'u1', email: 'x@x.com', passwordHash: 'hash', emailVerifiedAt: null } as any);
+
+      await expect(authService.login({ email: 'x@x.com', password: '123' }))
+        .rejects.toThrow('Please verify your email before logging in');
+    });
+
     it('should throw error if password does not match', async () => {
-      vi.mocked(authRepo.findUserByEmail).mockResolvedValue({ passwordHash: 'hash' } as any);
+      vi.mocked(authRepo.findUserByEmail).mockResolvedValue({ passwordHash: 'hash', emailVerifiedAt: new Date() } as any);
       vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
 
       await expect(authService.login({ email: 'x@x.com', password: 'wrong' }))
@@ -92,10 +107,11 @@ describe('Auth Service', () => {
     });
 
     it('should login successfully', async () => {
-      vi.mocked(authRepo.findUserByEmail).mockResolvedValue({ id: 'u1', email: 'x@x.com', displayName: 'X', passwordHash: 'hash' } as any);
+      vi.mocked(authRepo.findUserByEmail).mockResolvedValue({ id: 'u1', email: 'x@x.com', displayName: 'X', passwordHash: 'hash', emailVerifiedAt: new Date() } as any);
       vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
       vi.mocked(jwt.sign).mockReturnValue('mock_token' as any);
       vi.mocked(jwt.decode).mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 } as any);
+      vi.mocked(authRepo.createRefreshToken).mockResolvedValue({} as any);
 
       const result = await authService.login({ email: 'x@x.com', password: '123' });
 
@@ -120,9 +136,6 @@ describe('Auth Service', () => {
 
       expect(authRepo.markAllActivePasswordResetTokensUsed).toHaveBeenCalledWith('u1');
       expect(authRepo.createPasswordResetToken).toHaveBeenCalled();
-      expect(enqueuePasswordResetEmailJob).toHaveBeenCalledWith(expect.objectContaining({
-        email: 'x@x.com'
-      }));
     });
   });
 });

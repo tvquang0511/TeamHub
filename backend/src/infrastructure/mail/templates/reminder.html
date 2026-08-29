@@ -1,79 +1,127 @@
 <!doctype html>
 <html lang="vi">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="x-apple-disable-message-reformatting" />
-		<title>TeamHub Reminder</title>
-	</head>
-	<body style="margin:0; padding:0; background:#f6f7fb;">
-		<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f6f7fb;">
-			<tr>
-				<td align="center" style="padding: 24px 12px;">
-					<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px; max-width:100%; background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e7e9f0;">
-						<tr>
-							<td style="padding: 18px 20px; background:#111827;">
-								<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#e5e7eb;">
-									<strong style="color:#ffffff; font-size: 16px;">TeamHub</strong>
-									<span style="opacity:0.9;"> — Nhắc nhở công việc</span>
-								</div>
-							</td>
-						</tr>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Nhắc nhở công việc - TeamHub</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; color: #1e293b;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; min-height: 100vh;">
+      <tr>
+        <td align="center" style="padding: 40px 16px;">
+          <table role="presentation" width="560" cellspacing="0" cellpadding="0" border="0" style="width: 560px; max-width: 100%; margin: 0 auto;">
+            
+            <!-- Brand Header -->
+            <tr>
+              <td align="center" style="padding-bottom: 24px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td align="center" style="vertical-align: middle;">
+                      <div style="display: inline-block; width: 40px; height: 40px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border-radius: 12px; text-align: center; line-height: 40px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); color: #ffffff; font-size: 20px; font-weight: bold;">
+                        ⚡
+                      </div>
+                    </td>
+                    <td style="padding-left: 12px; vertical-align: middle;">
+                      <span style="font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">TeamHub</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
 
-						<tr>
-							<td style="padding: 20px;">
-								<div style="font-family: Arial, sans-serif; font-size: 16px; line-height: 24px; color:#111827;">
-									<div style="font-size:18px; font-weight:700; margin: 0 0 12px;">Nhắc nhở</div>
+            <!-- Main Card Container -->
+            <tr>
+              <td>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03); overflow: hidden;">
+                  
+                  <!-- Top accent bar -->
+                  <tr>
+                    <td style="height: 4px; background: linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);"></td>
+                  </tr>
 
-									<div style="margin: 0 0 16px; color:#374151;">
-										Bạn có một công việc sắp tới hạn.
-									</div>
+                  <!-- Card Body -->
+                  <tr>
+                    <td style="padding: 36px 32px 32px 32px;">
+                      
+                      <!-- Icon Badge -->
+                      <div style="text-align: center; margin-bottom: 24px;">
+                        <div style="display: inline-block; width: 64px; height: 64px; background-color: #eef2ff; border-radius: 50%; text-align: center; line-height: 64px; border: 1px solid #e0e7ff;">
+                          <span style="font-size: 28px;">⏰</span>
+                        </div>
+                      </div>
 
-									<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
-										<tr>
-											<td style="padding: 10px 12px; border:1px solid #e7e9f0; border-bottom: none; border-radius: 10px 10px 0 0; background:#f9fafb;">
-												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280;">Workspace</div>
-												<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#111827; font-weight:600;">{{workspaceName}}</div>
-											</td>
-										</tr>
-										<tr>
-											<td style="padding: 10px 12px; border:1px solid #e7e9f0; border-bottom: none; background:#ffffff;">
-												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280;">Board</div>
-												<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#111827; font-weight:600;">{{boardName}}</div>
-											</td>
-										</tr>
-										<tr>
-											<td style="padding: 10px 12px; border:1px solid #e7e9f0; border-bottom: none; background:#ffffff;">
-												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280;">Card</div>
-												<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#111827; font-weight:600;">{{cardTitle}}</div>
-											</td>
-										</tr>
-										<tr>
-											<td style="padding: 10px 12px; border:1px solid #e7e9f0; border-radius: 0 0 10px 10px; background:#ffffff;">
-												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280;">Tới hạn (dueAt)</div>
-												<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#111827; font-weight:600;">{{dueAtText}}</div>
-												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280; margin-top: 4px;">Timezone: {{timezone}}</div>
-											</td>
-										</tr>
-									</table>
+                      <!-- Heading -->
+                      <h1 style="margin: 0 0 8px 0; font-size: 22px; font-weight: 700; color: #0f172a; text-align: center; letter-spacing: -0.3px;">
+                        Công việc sắp đến hạn
+                      </h1>
+                      
+                      <p style="margin: 0 0 28px 0; font-size: 15px; line-height: 24px; color: #475569; text-align: center;">
+                        Bạn có một nhiệm vụ trong dự án cần được theo dõi và hoàn thành.
+                      </p>
 
-									<div style="margin-top: 18px; font-family: Arial, sans-serif; font-size: 12px; line-height: 18px; color:#6b7280;">
-										Email này được gửi tự động từ TeamHub.
-									</div>
-								</div>
-							</td>
-						</tr>
+                      <!-- Card Information Box -->
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-bottom: 24px;">
+                        <tr>
+                          <td style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0;">
+                            <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Công việc (Card)</div>
+                            <div style="font-size: 16px; font-weight: 700; color: #0f172a; line-height: 22px;">{{cardTitle}}</div>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 14px 20px; border-bottom: 1px solid #e2e8f0; background-color: #ffffff;">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                              <tr>
+                                <td width="50%" style="vertical-align: top; padding-right: 10px;">
+                                  <div style="font-size: 11px; text-transform: uppercase; font-weight: 600; color: #64748b; margin-bottom: 3px;">Workspace</div>
+                                  <div style="font-size: 14px; font-weight: 600; color: #1e293b;">{{workspaceName}}</div>
+                                </td>
+                                <td width="50%" style="vertical-align: top; padding-left: 10px;">
+                                  <div style="font-size: 11px; text-transform: uppercase; font-weight: 600; color: #64748b; margin-bottom: 3px;">Bảng (Board)</div>
+                                  <div style="font-size: 14px; font-weight: 600; color: #1e293b;">{{boardName}}</div>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 14px 20px; background-color: #f8fafc;">
+                            <div style="font-size: 11px; text-transform: uppercase; font-weight: 600; color: #64748b; margin-bottom: 3px;">Thời hạn hoàn thành</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #dc2626;">
+                              📅 {{dueAtText}} <span style="font-size: 11px; font-weight: normal; color: #64748b; margin-left: 4px;">({{timezone}})</span>
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
 
-						<tr>
-							<td style="padding: 14px 20px; background:#f9fafb; border-top:1px solid #e7e9f0;">
-								<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 18px; color:#6b7280;">
-									© {{year}} TeamHub
-								</div>
-							</td>
-						</tr>
-					</table>
-				</td>
-			</tr>
-		</table>
-	</body>
+                      <!-- Automation notice -->
+                      <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed #e2e8f0; text-align: center;">
+                        <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 18px;">
+                          Email này được gửi tự động theo cấu hình nhắc nhở nhiệm vụ của TeamHub.
+                        </p>
+                      </div>
+
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding: 24px 12px; text-align: center;">
+                <p style="margin: 0 0 6px 0; font-size: 12px; color: #64748b; font-weight: 500;">
+                  TeamHub — Nền tảng quản lý dự án & làm việc nhóm hiện đại
+                </p>
+                <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+                  © {{year}} TeamHub. All rights reserved.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>

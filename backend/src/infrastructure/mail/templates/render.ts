@@ -11,12 +11,11 @@ export function escapeHtml(input: string) {
 }
 
 function templatePath(name: string) {
-	// `__dirname` points to worker/src/mail/templates at runtime (ts-node).
 	return path.join(__dirname, `${name}.html`);
 }
 
 export function renderHtmlTemplate(
-	name: 'reminder' | 'password-reset',
+	name: 'reminder' | 'password-reset' | 'email-verification',
 	variables: Record<string, string>,
 ) {
 	const raw = readFileSync(templatePath(name), 'utf8');

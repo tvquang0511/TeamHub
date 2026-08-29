@@ -1,22 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Zap, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useAuth } from "../../../providers/AuthProvider";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../../../components/ui/card";
+import { AuthLayout } from "../components/AuthLayout";
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -42,84 +36,86 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background via-muted/30 to-background p-4 relative">
-      <Link
-        to="/landing"
-        className="absolute top-6 left-6 inline-flex items-center text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="mr-1.5 h-4 w-4" />
-        Quay lại trang chủ
-      </Link>
-
-      <Card className="w-full max-w-md border-border/80 bg-card/90 shadow-2xl backdrop-blur-md rounded-2xl p-2">
-        <CardHeader className="space-y-1">
-          <div className="mb-2 flex justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/20">
-              <Zap className="h-6 w-6 fill-white" />
-            </div>
+    <AuthLayout
+      title="Đăng nhập tài khoản"
+      subtitle="Nhập email và mật khẩu của bạn để truy cập không gian làm việc TeamHub"
+      bannerTitle="Không gian làm việc trực tuyến của TeamHub"
+      bannerSubtitle="Theo dõi dự án Kanban thời gian thực, trò chuyện tức thì theo Board, phân rã công việc tự động với AI và quản lý tiến độ mọi lúc, ngay trên trình duyệt."
+      bannerCtaText="Đăng ký tài khoản mới"
+      bannerCtaLink="/register"
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium text-foreground">
+            Email
+          </Label>
+          <div className="relative">
+            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="ban@vidu.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="pl-10 h-11 bg-background/50 border-input hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary rounded-xl transition-all"
+            />
           </div>
-          <CardTitle className="text-center text-2xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-            Đăng nhập TeamHub
-          </CardTitle>
-          <CardDescription className="text-center text-xs">
-            Nhập email và mật khẩu để vào Workspace của bạn
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Mật khẩu</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
-              <div className="text-right text-sm">
-                <Link
-                  to="/forgot-password"
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  Quên mật khẩu?
-                </Link>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-500/20 hover:opacity-95"
-              disabled={isSubmitting}
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-sm font-medium text-foreground">
+              Mật khẩu
+            </Label>
+            <Link
+              to="/forgot-password"
+              className="text-xs font-semibold text-blue-600 hover:text-blue-500 hover:underline transition-colors"
             >
-              {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập ngay"}
-            </Button>
-            <div className="text-center text-sm text-gray-600">
-              Chưa có tài khoản?{" "}
-              <Link
-                to="/register"
-                className="font-medium text-blue-600 hover:underline"
-              >
-                Đăng ký ngay
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+              Quên mật khẩu?
+            </Link>
+          </div>
+          <div className="relative">
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              className="pl-10 pr-10 h-11 bg-background/50 border-input hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary rounded-xl transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+            </button>
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 active:scale-[0.99] transition-all"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+        </Button>
+
+        <div className="text-center pt-2 text-sm text-muted-foreground">
+          Chưa có tài khoản?{" "}
+          <Link
+            to="/register"
+            className="font-semibold text-blue-600 hover:text-blue-500 hover:underline transition-colors"
+          >
+            Đăng ký
+          </Link>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };

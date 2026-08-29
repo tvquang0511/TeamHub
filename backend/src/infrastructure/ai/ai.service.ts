@@ -78,6 +78,7 @@ export class AiService {
     }
 
     let lastErrorMsg = "";
+    const fallbackErrors: Record<string, string> = {};
 
     for (const provider of configuredProviders) {
       try {
@@ -86,6 +87,7 @@ export class AiService {
         // eslint-disable-next-line no-console
         console.warn(`[AiService] Fallback trigger: Provider '${provider.name}' failed:`, err?.message || err);
         lastErrorMsg = err?.message || `Provider '${provider.name}' bị lỗi`;
+        fallbackErrors[provider.name] = lastErrorMsg;
       }
     }
 
@@ -98,14 +100,16 @@ export class AiService {
       throw new ApiError(
         400,
         "AI_QUOTA_EXCEEDED",
-        "Tất cả các AI Provider khả dụng đều bị vượt hạn ngạch (Quota limit). Vui lòng thêm GROQ_API_KEY (từ https://console.groq.com) hoặc tạo API Key Gemini mới."
+        "Tất cả các AI Provider khả dụng đều bị vượt hạn ngạch (Quota limit). Vui lòng thêm GROQ_API_KEY (từ https://console.groq.com) hoặc tạo API Key Gemini mới.",
+        { fallbackErrors }
       );
     }
 
     throw new ApiError(
       400,
       "AI_GENERATION_FAILED",
-      `Không thể phân rã công việc bằng AI: ${lastErrorMsg}`
+      `Không thể phân rã công việc bằng AI. Tất cả provider đều thất bại.`,
+      { fallbackErrors }
     );
   }
 }

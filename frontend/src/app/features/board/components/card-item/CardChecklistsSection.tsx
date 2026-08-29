@@ -37,8 +37,18 @@ export function CardChecklistsSection(props: {
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.error?.message || "Không thể tạo sub-tasks bằng AI";
-      toast.error(msg);
+      const errorData = err.response?.data?.error;
+      const msg = errorData?.message || "Không thể tạo sub-tasks bằng AI";
+      const fallbackErrors = errorData?.details?.fallbackErrors;
+
+      if (fallbackErrors && typeof fallbackErrors === 'object') {
+        toast.error("Tất cả AI provider đều thất bại. Chi tiết lỗi:");
+        Object.entries(fallbackErrors).forEach(([provider, errorMsg]) => {
+          toast.error(`[${provider.toUpperCase()}]: ${errorMsg}`);
+        });
+      } else {
+        toast.error(msg);
+      }
     },
   });
 

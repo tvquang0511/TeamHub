@@ -7,7 +7,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "dev": "nodemon src/server.ts",
-    "build": "prisma generate && tsc && copyfiles -u 1 \"src/infrastructure/mail/templates/*.html\" dist/src",
+    "build": "prisma generate && tsc && node -e \"const fs=require('fs');fs.cpSync('src/infrastructure/mail/templates', 'dist/src/infrastructure/mail/templates', { recursive: true })\"",
     "start": "node dist/src/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",

@@ -2,6 +2,7 @@ import env from '../../config/env';
 import { Resend } from 'resend';
 import { buildReminderEmail } from './templates/reminder';
 import { buildPasswordResetEmail } from './templates/passwordReset';
+import { buildEmailVerificationEmail } from './templates/emailVerification';
 
 type AnyTransporter = {
 	sendMail: (options: any) => Promise<any>;
@@ -168,6 +169,31 @@ export async function sendPasswordResetEmail(params: {
 		});
 	} catch (err) {
 		console.error(`[mailer] Failed to send password reset email to ${params.to}:`, err);
+		throw err;
+	}
+}
+
+export async function sendEmailVerificationEmail(params: {
+	to: string;
+	email: string;
+	verificationUrl: string;
+	expiresAt: Date;
+}) {
+	const { subject, text, html } = buildEmailVerificationEmail({
+		email: params.email,
+		verificationUrl: params.verificationUrl,
+		expiresAt: params.expiresAt,
+	});
+
+	try {
+		return await sendMailWithFallback({
+			to: params.to,
+			subject,
+			text,
+			html,
+		});
+	} catch (err) {
+		console.error(`[mailer] Failed to send email verification to ${params.to}:`, err);
 		throw err;
 	}
 }

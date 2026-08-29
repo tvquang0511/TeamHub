@@ -28,7 +28,7 @@ export const RegisterPage: React.FC = () => {
 
     try {
       await register({ email, password, displayName });
-      navigate("/workspaces");
+      navigate("/login");
     } catch (error) {
       // Error is handled in AuthProvider
     } finally {

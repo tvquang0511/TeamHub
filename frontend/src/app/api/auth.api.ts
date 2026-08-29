@@ -3,13 +3,14 @@ import type {
   AuthResponse,
   LoginRequest,
   RegisterRequest,
+  RegisterResponse,
   User,
 } from "../types/api";
 
 export const authApi = {
   // Register new user
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const response = await httpClient.post<AuthResponse>("/auth/register", data);
+  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
+    const response = await httpClient.post<RegisterResponse>("/auth/register", data);
     return response.data;
   },
 
@@ -46,6 +47,16 @@ export const authApi = {
 
   resetPassword: async (data: { token: string; newPassword: string }): Promise<{ ok: boolean }> => {
     const response = await httpClient.post<{ ok: boolean }>("/auth/reset-password", data);
+    return response.data;
+  },
+
+  verifyEmail: async (data: { token: string }): Promise<{ ok: boolean }> => {
+    const response = await httpClient.post<{ ok: boolean }>("/auth/verify-email", data);
+    return response.data;
+  },
+
+  resendVerificationEmail: async (data: { email: string }): Promise<{ ok: boolean }> => {
+    const response = await httpClient.post<{ ok: boolean }>("/auth/resend-verification", data);
     return response.data;
   },
 };

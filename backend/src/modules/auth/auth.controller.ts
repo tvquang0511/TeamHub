@@ -77,8 +77,7 @@ export const register = async (req: Request, res: Response) => {
   const input = registerBodySchema.parse(req.body);
   const result = await authService.register(input);
 
-  setRefreshCookie(res, result.refreshToken);
-  return res.status(201).json({ accessToken: result.accessToken, user: result.user });
+  return res.status(201).json(result);
 };
 
 export const login = async (req: Request, res: Response) => {
@@ -161,5 +160,25 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
   const input = resetPasswordBodySchema.parse(req.body);
   const result = await authService.resetPassword(input);
+  return res.json(result);
+};
+
+const verifyEmailSchema = z.object({
+  token: z.string().min(1),
+});
+
+export const verifyEmail = async (req: Request, res: Response) => {
+  const input = verifyEmailSchema.parse(req.body);
+  const result = await authService.verifyEmail(input);
+  return res.json(result);
+};
+
+const resendVerificationSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resendVerificationEmail = async (req: Request, res: Response) => {
+  const input = resendVerificationSchema.parse(req.body);
+  const result = await authService.resendVerificationEmail(input);
   return res.json(result);
 };

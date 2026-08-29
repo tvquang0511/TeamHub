@@ -104,4 +104,42 @@ export const authRepo = {
       data: { passwordHash },
     });
   },
+
+  createEmailVerificationToken(data: {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+  }) {
+    return prisma.email_verification_tokens.create({
+      data: {
+        userId: data.userId,
+        tokenHash: data.tokenHash,
+        expiresAt: data.expiresAt,
+      },
+    });
+  },
+
+  findValidEmailVerificationToken(tokenHash: string) {
+    return prisma.email_verification_tokens.findFirst({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  },
+
+  markEmailVerificationTokenUsed(id: string) {
+    return prisma.email_verification_tokens.update({
+      where: { id },
+      data: { usedAt: new Date() },
+    });
+  },
+
+  verifyUserEmail(userId: string) {
+    return prisma.users.update({
+      where: { id: userId },
+      data: { emailVerifiedAt: new Date() },
+    });
+  },
 };

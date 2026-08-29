@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { forgotPassword, login, logout, refresh, register, resetPassword, me } from './auth.controller';
+import { forgotPassword, login, logout, refresh, register, resetPassword, me, verifyEmail, resendVerificationEmail } from './auth.controller';
 import { authJwt } from '../../common/middlewares/authJwt';
 import { authRateLimit, passwordRateLimit } from "../../common/middlewares/rateLimit";
 
@@ -16,5 +16,8 @@ router.post('/logout', logout);
 
 router.post('/forgot-password', passwordRateLimit, forgotPassword);
 router.post('/reset-password', passwordRateLimit, resetPassword);
+
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationEmail);
 
 export default router;

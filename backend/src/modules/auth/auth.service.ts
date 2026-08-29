@@ -5,7 +5,7 @@ import { env } from '../../config/env';
 import { ApiError } from '../../common/errors/ApiError';
 import { authRepo } from './auth.repo';
 import { enqueuePasswordResetEmailJob } from '../../integrations/queue/emails.queue';
-import { sendPasswordResetEmail } from '../../infrastructure/mail/mailer';
+import { sendPasswordResetEmail, sendEmailVerificationEmail } from '../../infrastructure/mail/mailer';
 
 type JwtAccessPayload = {
   sub: string;
@@ -74,18 +74,30 @@ export const authService = {
       displayName: input.displayName,
     });
 
-    // Match login(): issue tokens immediately so newly registered users are logged in.
-    const accessToken = signAccessToken(user);
-    const refreshToken = signRefreshToken(user);
-    const tokenHash = hashToken(refreshToken);
-    const expiresAt = parseJwtExpiresAt(refreshToken);
+    const verificationToken = makeResetToken();
+    const tokenHash = hashToken(verificationToken);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await authRepo.createRefreshToken({ userId: user.id, tokenHash, expiresAt });
+    await authRepo.createEmailVerificationToken({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    });
 
+    const verificationUrl = `${env.APP_WEB_URL.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+    
+    // Fire and forget sending verification email
+    sendEmailVerificationEmail({
+      to: user.email,
+      email: user.email,
+      verificationUrl,
+      expiresAt,
+    }).catch(console.error);
+
+    // Return user without tokens because they must verify email first
     return {
-      accessToken,
-      refreshToken,
       user: publicUser(user),
+      message: 'Please verify your email',
     };
   },
 
@@ -94,6 +106,10 @@ export const authService = {
     const user = await authRepo.findUserByEmail(email);
     if (!user) {
       throw new ApiError(401, 'AUTH_INVALID_CREDENTIALS', 'Invalid credentials');
+    }
+
+    if (!user.emailVerifiedAt) {
+      throw new ApiError(403, 'AUTH_EMAIL_NOT_VERIFIED', 'Please verify your email before logging in');
     }
 
     const ok = await bcrypt.compare(input.password, user.passwordHash);
@@ -208,9 +224,7 @@ export const authService = {
         email: user.email,
         resetUrl,
         expiresAt,
-      }).catch((err) => {
-        console.error('[mailer] Backend direct send failed:', err);
-      });
+      }).catch(console.error);
     } else {
       await enqueuePasswordResetEmailJob({
         to: user.email,
@@ -219,6 +233,48 @@ export const authService = {
         expiresAtIso: expiresAt.toISOString(),
       });
     }
+  },
+
+  async verifyEmail(input: { token: string }) {
+    const tokenHash = hashToken(input.token);
+    const existing = await authRepo.findValidEmailVerificationToken(tokenHash);
+
+    if (!existing) {
+      throw new ApiError(400, 'AUTH_TOKEN_INVALID', 'Invalid or expired verification token');
+    }
+
+    await authRepo.markEmailVerificationTokenUsed(existing.id);
+    await authRepo.verifyUserEmail(existing.userId);
+
+    return { ok: true };
+  },
+
+  async resendVerificationEmail(input: { email: string }) {
+    const email = input.email.toLowerCase();
+    const user = await authRepo.findUserByEmail(email);
+
+    if (!user || user.emailVerifiedAt) {
+      return { ok: true }; // Don't leak user existence
+    }
+
+    const verificationToken = makeResetToken();
+    const tokenHash = hashToken(verificationToken);
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await authRepo.createEmailVerificationToken({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+    });
+
+    const verificationUrl = `${env.APP_WEB_URL.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+    
+    sendEmailVerificationEmail({
+      to: user.email,
+      email: user.email,
+      verificationUrl,
+      expiresAt,
+    }).catch(console.error);
 
     return { ok: true };
   },

@@ -96,10 +96,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = useCallback(async (data: RegisterRequest) => {
     try {
       queryClient.clear();
-      const response = await authApi.register(data);
-      setAccessToken(response.accessToken);
-      setUser(response.user);
-      notify.success("Đăng ký tài khoản thành công", `Chào mừng ${response.user.displayName}!`);
+      await authApi.register(data);
+      notify.success(
+        "Đăng ký thành công",
+        "Vui lòng kiểm tra hộp thư email của bạn để xác thực tài khoản."
+      );
     } catch (error: any) {
       notify.error(error, "Đăng ký thất bại");
       throw error;

@@ -1,4 +1,5 @@
 import env from '../../config/env';
+import { Resend } from 'resend';
 import { buildReminderEmail } from './templates/reminder';
 import { buildPasswordResetEmail } from './templates/passwordReset';
 
@@ -88,6 +89,24 @@ async function sendMailWithFallback(options: {
 	text: string;
 	html: string;
 }) {
+	if (env.RESEND_API_KEY) {
+		console.log(`[mailer] Sending email to ${options.to} via Resend HTTP API...`);
+		const resend = new Resend(env.RESEND_API_KEY);
+		const { data, error } = await resend.emails.send({
+			from: env.SMTP_FROM || 'TeamHub <noreply@teamhub.tvquang.id.vn>',
+			to: [options.to],
+			subject: options.subject,
+			html: options.html,
+			text: options.text,
+		});
+
+		if (error) {
+			throw new Error(`Resend API Error: ${error.message}`);
+		}
+		console.log(`[mailer] Email sent successfully via Resend API! messageId=${data?.id}`);
+		return data;
+	}
+
 	const cfg = requireSmtpConfig();
 	console.log(`[mailer] Sending email to ${options.to} via SMTP ${cfg.host}:${cfg.port}...`);
 	const info = await getTransporter().sendMail({

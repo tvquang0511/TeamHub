@@ -41,7 +41,34 @@ Ví dụ output chuẩn:
 
     const userPrompt = `Tiêu đề công việc: "${title}"\nMô tả chi tiết: "${description || "Chưa có mô tả chi tiết. Hãy dựa vào tiêu đề để phân rã các bước thực hiện chuẩn nhất."}"`;
 
-    const models = customModel ? [customModel] : ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+    let models = customModel ? [customModel] : [];
+    if (models.length === 0) {
+      try {
+        const resModels = await fetch("https://api.groq.com/openai/v1/models", {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (resModels.ok) {
+          const dataModels = await resModels.json() as any;
+          const availableModels = dataModels?.data?.map((m: any) => m.id).filter((id: string) => id.includes("llama") || id.includes("mixtral"));
+          if (availableModels && availableModels.length > 0) {
+            // Prioritize lightweight '8b' models over '70b' to save usage
+            availableModels.sort((a: string, b: string) => {
+              const getPriority = (name: string) => {
+                if (name.includes("8b")) return 1;
+                if (name.includes("70b")) return 2;
+                return 3;
+              };
+              return getPriority(a) - getPriority(b);
+            });
+            models = availableModels;
+          }
+        }
+      } catch (e) {}
+      if (models.length === 0) {
+        models = ["llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile"];
+      }
+    }
+
     let lastErrorMsg = "";
 
     for (const model of models) {

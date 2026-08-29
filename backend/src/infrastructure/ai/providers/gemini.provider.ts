@@ -41,7 +41,32 @@ Ví dụ output chuẩn:
 
     const userPrompt = `Tiêu đề công việc: "${title}"\nMô tả chi tiết: "${description || "Chưa có mô tả chi tiết. Hãy dựa vào tiêu đề để phân rã các bước thực hiện chuẩn nhất."}"`;
 
-    const models = customModel ? [customModel] : ["gemini-1.5-flash", "gemini-2.0-flash"];
+    let models = customModel ? [customModel] : [];
+    if (models.length === 0) {
+      try {
+        const resModels = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        if (resModels.ok) {
+          const dataModels = await resModels.json() as any;
+          const availableModels = dataModels?.models
+            ?.map((m: any) => m.name.replace("models/", ""))
+            .filter((name: string) => name.includes("gemini") && !name.includes("vision"));
+            
+          if (availableModels && availableModels.length > 0) {
+            // Prioritize lightweight 'flash' models over 'pro' to save usage
+            availableModels.sort((a: string, b: string) => {
+              if (a.includes("flash") && !b.includes("flash")) return -1;
+              if (!a.includes("flash") && b.includes("flash")) return 1;
+              return 0;
+            });
+            models = availableModels;
+          }
+        }
+      } catch (e) {}
+      if (models.length === 0) {
+        models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-pro"];
+      }
+    }
+
     let lastErrorMsg = "";
 
     for (const model of models) {

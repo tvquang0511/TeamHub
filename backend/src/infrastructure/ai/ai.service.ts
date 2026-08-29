@@ -31,7 +31,7 @@ export class AiService {
   /**
    * Phân rã tiêu đề & mô tả của Card thành sub-tasks nhỏ với cơ chế linh hoạt & tự động chuyển Provider
    */
-  async generateSubtasks(title: string, description?: string | null): Promise<string[]> {
+  async generateSubtasks(title: string, description?: string | null): Promise<{ subtasks: string[]; provider: string; fallbackErrors: Record<string, string> }> {
     const selectedProviderName = (
       env.AI_PROVIDER ||
       process.env.AI_PROVIDER ||
@@ -59,7 +59,8 @@ export class AiService {
         );
       }
 
-      return provider.generateSubtasks(title, description, customModel);
+      const subtasks = await provider.generateSubtasks(title, description, customModel);
+      return { subtasks, provider: provider.name, fallbackErrors: {} };
     }
 
     // Mode 'auto': Tự động thử các Provider đã cấu hình theo thứ tự ưu tiên (DeepSeek -> Gemini -> Groq -> Together -> OpenAI -> OpenRouter)
@@ -86,7 +87,8 @@ export class AiService {
 
     for (const provider of configuredProviders) {
       try {
-        return await provider.generateSubtasks(title, description, customModel);
+        const subtasks = await provider.generateSubtasks(title, description, customModel);
+        return { subtasks, provider: provider.name, fallbackErrors };
       } catch (err: any) {
         // eslint-disable-next-line no-console
         console.warn(`[AiService] Fallback trigger: Provider '${provider.name}' failed:`, err?.message || err);

@@ -31,8 +31,15 @@ export function CardChecklistsSection(props: {
 
   const aiBreakdownMutation = useMutation({
     mutationFn: () => cardsApi.aiBreakdown(cardId),
-    onSuccess: async () => {
-      toast.success("✨ AI đã phân rã sub-tasks thành công!");
+    onSuccess: async (data) => {
+      if (data.fallbackErrors && Object.keys(data.fallbackErrors).length > 0) {
+        toast.success(`✨ Phân rã thành công bằng [${data.provider?.toUpperCase()}] sau khi các AI khác gặp sự cố!`);
+        Object.keys(data.fallbackErrors).forEach((p) => {
+          toast.error(`[${p.toUpperCase()}] thất bại (Tự động bỏ qua)`);
+        });
+      } else {
+        toast.success(`✨ AI [${data.provider?.toUpperCase() || 'HỆ THỐNG'}] đã phân rã thành công!`);
+      }
       await refetchChecklists();
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
     },

@@ -154,8 +154,8 @@ export const cardsApi = {
     return mapCard(response.data.card || response.data);
   },
 
-  aiBreakdown: async (cardId: string): Promise<{ checklist: any }> => {
-    const response = await httpClient.post<{ checklist: any }>(`/cards/${cardId}/ai-breakdown`);
+  aiBreakdown: async (cardId: string): Promise<{ checklist: any; provider?: string; fallbackErrors?: Record<string, string> }> => {
+    const response = await httpClient.post<{ checklist: any; provider?: string; fallbackErrors?: Record<string, string> }>(`/cards/${cardId}/ai-breakdown`);
     return response.data;
   },
 };

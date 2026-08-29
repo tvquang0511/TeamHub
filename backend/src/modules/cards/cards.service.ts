@@ -630,7 +630,7 @@ export class CardsService {
     const card = await this.assertCanWriteCard(userId, cardId);
 
     // Call AI Service (Modular Provider Architecture)
-    const subtaskTitles = await aiService.generateSubtasks(card.title, card.description);
+    const { subtasks: subtaskTitles, provider, fallbackErrors } = await aiService.generateSubtasks(card.title, card.description);
 
     // Create a new checklist for AI Sub-tasks
     const existingChecklists = await checklistsRepo.listByCard(cardId);
@@ -672,6 +672,8 @@ export class CardsService {
         ...checklist,
         items,
       },
+      provider,
+      fallbackErrors,
     };
   }
 }

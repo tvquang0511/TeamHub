@@ -31,16 +31,16 @@ Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển d�
 ### 🌐 Mode 0: Trải Nghiệm Sản Xuất Trực Tiếp Trên Cloud (Instant Live Demo - Zero Setup)
 > **Phù hợp nhất cho**: Kiểm thử ứng dụng nhanh ngay lập tức trên trình duyệt mà không cần cài đặt code.
 
-- **Frontend App (Vercel)**: 🔗 **[https://team-hub-blond.vercel.app/](https://team-hub-blond.vercel.app/)**
-- **Backend API (Render)**: ⚡ **[https://teamhub-backend-api.onrender.com](https://teamhub-backend-api.onrender.com)**
+- **Frontend App (Vercel)**: **[https://team-hub-blond.vercel.app/](https://team-hub-blond.vercel.app/)**
+- **Backend API (Render)**: **[https://teamhub-backend-api.onrender.com](https://teamhub-backend-api.onrender.com)**
 
 #### 🔑 4 Tài Khoản Mẫu Nạp Sẵn Dữ Liệu Sản Xuất (Mật khẩu chung: `123456`)
 | Role | Email | Mật khẩu | Tính năng chính trải nghiệm |
 | :--- | :--- | :--- | :--- |
-| 👑 **Executive Owner** | `owner@teamhub.local` | `123456` | Executive Analytics Dashboard, Quản lý Members, **Backup & Restore Board JSON**. |
-| 🛡️ **Project Manager (Admin)** | `admin@teamhub.local` | `123456` | Quản lý Kanban Lists & Cards, Multi-assignee, Custom Labels, Time Tracking. |
-| 💻 **Tech Lead (Developer)** | `dev@teamhub.local` | `123456` | **✨ AI Sub-task Breakdown**, Drag & Drop Realtime, Checklists, Up file S3 URL. |
-| 🎨 **UI/UX Lead (Designer)** | `designer@teamhub.local` | `123456` | Dark/Light Mode, Custom Board Backgrounds, Activity Feed & Tagging. |
+| **Executive Owner** | `owner@teamhub.local` | `123456` | Executive Analytics Dashboard, Quản lý Members, **Backup & Restore Board JSON**. |
+| **Project Manager (Admin)** | `admin@teamhub.local` | `123456` | Quản lý Kanban Lists & Cards, Multi-assignee, Custom Labels, Time Tracking. |
+| **Tech Lead (Developer)** | `dev@teamhub.local` | `123456` | **✨ AI Sub-task Breakdown**, Drag & Drop Realtime, Checklists, Up file S3 URL. |
+| **UI/UX Lead (Designer)** | `designer@teamhub.local` | `123456` | Dark/Light Mode, Custom Board Backgrounds, Activity Feed & Tagging. |
 
 ---
 
@@ -97,8 +97,8 @@ Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển d�
    ```
 
 2. **Truy cập Ứng dụng**:
-   - **Frontend App qua Nginx Proxy**: 🔗 `http://localhost` (Port 80)
-   - **MinIO S3 Console**: 📦 `http://localhost:9001` (User: `teamhub`, Password: `teamhub-secret`)
+   - **Frontend App qua Nginx Proxy**: `http://localhost` (Port 80)
+   - **MinIO S3 Console**: `http://localhost:9001` (User: `teamhub`, Password: `teamhub-secret`)
 
 ---
 
@@ -106,26 +106,26 @@ Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển d�
 
 ```mermaid
 flowchart TD
-    subgraph ClientLayer ["🎨 Frontend Layer (Vercel)"]
+    subgraph ClientLayer ["Frontend Layer (Vercel)"]
         FE["ReactJS + Vite App\n(TailwindCSS, Sonner, Lucide Icons)"]
     end
 
-    subgraph APILayer ["⚡ API & Realtime Layer (Render)"]
+    subgraph APILayer ["API & Realtime Layer (Render)"]
         API["Node.js + Express REST API\n(TypeScript, Prisma ORM, Zod)"]
         SOCKET["Socket.IO Server\n(Realtime Kanban Sync & Board Chat)"]
-        AI["Smart AI Engine\n(Automated Sub-task Breakdown)"]
+        AI["Smart AI Engine\n(Multi-Provider Fallback: DeepSeek ➔ Gemini ➔ Groq ➔ ...)"]
     end
 
-    subgraph DataLayer ["🐘 Data & Cache Layer (Cloud Managed)"]
+    subgraph DataLayer ["Data & Cache Layer (Cloud Managed)"]
         DB[(Supabase PostgreSQL\nManaged DB)]
         REDIS[(Valkey / Upstash Redis\nTLS Socket & BullMQ State)]
     end
 
-    subgraph WorkerLayer ["⚙️ Async Worker Layer (Local / Self-hosted)"]
+    subgraph WorkerLayer ["Async Worker Layer (Local / Self-hosted)"]
         WORKER["Standalone BullMQ Worker\n(Nodemailer SMTP, Blob Sweeper)"]
     end
 
-    subgraph StorageLayer ["📦 Object Storage Layer"]
+    subgraph StorageLayer ["Object Storage Layer"]
         S3[(Supabase Storage S3 / MinIO\nPresigned URL Uploads)]
     end
 
@@ -149,6 +149,7 @@ flowchart TD
 
 ### 1️⃣ ✨ Smart AI Sub-task Breakdown Engine
 - **Phân rã Công việc Thông minh**: Tự động đọc Tiêu đề và Mô tả của Card để phân rã thành **3-5 sub-tasks chi tiết, thực tế và sẵn sàng hành động** bằng Tiếng Việt chỉ trong 1-Click.
+- **Cơ chế Fallback Bất Tử (Fault Tolerance)**: Hệ thống tự động chuyển đổi thông minh qua chuỗi các AI Provider (DeepSeek ➔ Gemini ➔ Groq ➔ Together ➔ OpenAI ➔ OpenRouter). Nếu một AI quá tải hoặc hết tiền, AI khác sẽ ngay lập tức thay thế (Vì lý do ngân sách có hạn)
 - **Tạo Checklist Tự động**: Tự động tạo và lưu danh sách checklist vào CSDL PostgreSQL.
 
 ### 2️⃣ Realtime Kanban & Board Chat (Socket.IO + Redis)

@@ -37,8 +37,10 @@ export function CardChecklistsSection(props: {
         const failedProviders = Object.keys(data.fallbackErrors).map(p => p.toUpperCase()).join(", ");
         toast.error(`Các AI thất bại (đã bỏ qua): ${failedProviders}`, { duration: 5000 });
         
-        // Hiện 1 thông báo xanh cho AI thành công
-        toast.success(`✨ Phân rã thành công nhờ AI [${data.provider?.toUpperCase()}]!`, { duration: 5000 });
+        // Hiện 1 thông báo xanh cho AI thành công với một chút delay để không đè nhau
+        setTimeout(() => {
+          toast.success(`✨ Phân rã thành công nhờ AI [${data.provider?.toUpperCase()}]!`, { duration: 5000 });
+        }, 300);
       } else {
         toast.success(`✨ AI [${data.provider?.toUpperCase() || 'HỆ THỐNG'}] đã phân rã thành công!`, { duration: 4000 });
       }

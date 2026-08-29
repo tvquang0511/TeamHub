@@ -13,10 +13,14 @@
 ## 📞 Hỗ Trợ Kiểm Thử & Thông Tin Liên Hệ (For Recruiters / Reviewers)
 
 > [!IMPORTANT]
-> ⚠️ **LƯU Ý VỀ TIẾN TRÌNH WORKER (BullMQ Email & AI Daily Standup)**:
-> Vì lý do giới hạn ngân sách & tài chính, tiến trình Standalone Worker (BullMQ Worker) được cài đặt mặc định chạy ở môi trường **Local/Self-hosted** (`cd worker && npm start`).
+> ⚠️ **LƯU Ý VỀ TIẾN TRÌNH WORKER (Gửi Email Hàng Đợi, Đếm Ngược Lịch Hẹn & AI Daily Standup)**:
+> Vì lý do giới hạn ngân sách & tài chính trên nền tảng Cloud, tiến trình Standalone Worker (BullMQ Worker) được thiết lập mặc định chạy ở môi trường **Local/Self-hosted** (`cd worker && npm start`).
+> Worker đảm nhiệm các tính năng chuyên sâu và chạy nền tốn tài nguyên như:
+> - **Gửi Email Hàng Đợi (Queue):** Các email đếm ngược lịch hẹn (Reminder) hoặc các luồng gửi thư hàng loạt chậm. (Lưu ý: Các luồng email tức thì như Quên mật khẩu, Xác thực email đã được chuyển sang xử lý trực tiếp bởi Backend thông qua Resend API để đảm bảo luôn hoạt động).
+> - **AI Daily Standup / Report:** Tự động tổng hợp dữ liệu báo cáo hằng ngày vào các khung giờ cố định.
+> - **Dọn rác (Blob Sweeper):** Dọn dẹp tệp tin mồ côi (orphan files) trên S3.
 > 
-> **Nếu Nhà tuyển dụng / Reviewer muốn kiểm thử trực tiếp full luồng tính năng gửi Email tự động và AI Daily Standup Worker trên môi trường Cloud Staging**, xin vui lòng liên hệ trực tiếp với tác giả để bật worker instance ngay lập tức:
+> **Nếu Nhà tuyển dụng / Reviewer muốn kiểm thử trực tiếp full luồng tính năng Worker trên môi trường Cloud Staging**, xin vui lòng liên hệ trực tiếp với tôi để tôi bật server Worker riêng biệt lên ngay lập tức:
 > - 📞 **Số điện thoại / Zalo**: `0357131476`
 > - ✉️ **Email**: `tvquang.working@gmail.com`
 
@@ -136,11 +140,12 @@ flowchart TD
     API <-->|ioredis / Cache| REDIS
     API -->|SigV4 Presigned Put| S3
     FE -->|Direct Upload PUT| S3
+    API -->|Instant Emails (Resend HTTP API)| RESEND[Resend API]
     
     REDIS <-->|Pull Jobs / Push Queue| WORKER
     WORKER <-->|Direct SQL Pool| DB
     WORKER -->|Delete Orphan Blobs| S3
-    WORKER -->|Send Email Reminders| SMTP[Gmail / SMTP Provider]
+    WORKER -->|Send Email Reminders (Queue)| RESEND
 ```
 
 ---
@@ -156,8 +161,12 @@ flowchart TD
 - **Đồng bộ Kéo Thả 2 Chiều**: Kéo thả thẻ (Card) hoặc cột (List) ở màn hình này sẽ ngay lập tức di chuyển ở màn hình của các thành viên khác trong Board không cần F5.
 - **Dedicated Board Chat Box**: Mỗi Board sở hữu một phòng Chat riêng biệt với tin nhắn lưu trữ bất biến và đính kèm tệp tin.
 
-### 3️⃣ Standalone Async Worker Queue (BullMQ + SMTP)
-- **Tách biệt hoàn toàn**: Tiến trình Worker chạy độc lập với API Server, rút các công việc nặng từ Redis để gửi Email Nhắc Nhở (`Email Reminder`) và tổng hợp dữ liệu Thống Kê hàng ngày (`Analytics Daily Rollup`).
+### 3️⃣ Standalone Async Worker Queue (BullMQ)
+- **Tách biệt hoàn toàn**: Tiến trình Worker chạy độc lập với API Server, rút các công việc nặng và lập lịch định kỳ từ Redis. Nếu muốn trải nghiệm các tính năng này trên Cloud, xin hãy liên hệ tác giả.
+- **Tính năng của Worker**: 
+  - Đếm ngược và tự động gửi Email Nhắc Nhở (`Email Reminder`) khi sắp đến hạn chót (Deadline).
+  - Tự động quét và xóa tệp tin rác mồ côi (Orphan Blobs) trên S3.
+  - Tổng hợp dữ liệu Thống Kê hàng ngày (`Analytics Daily Rollup`) và AI Daily Standup báo cáo dự án.
 
 ### 4️⃣ S3 Direct Presigned Upload & Blob Sweeper Clean
 - **Bảo mật & Tốc độ**: Client xin Presigned PUT URL từ Backend và tải tệp tin thẳng lên Supabase S3 mà không đi qua server API (tiết kiệm băng thông server).

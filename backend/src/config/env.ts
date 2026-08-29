@@ -115,7 +115,7 @@ const envSchema = z.object({
     .default('false')
     .transform((v) => v === 'true'),
 
-  APP_WEB_URL: z.string().min(1).default('http://localhost:5173'),
+  APP_WEB_URL: z.string().min(1).default('https://team-hub-blond.vercel.app'),
   APP_TIMEZONE: z.string().min(1).default('UTC'),
   ACTIVITY_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
 

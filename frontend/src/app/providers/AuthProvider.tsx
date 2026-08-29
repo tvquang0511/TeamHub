@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { authApi } from "../api/auth.api";
 import { setAccessToken, getAccessToken } from "../api/http";
 import { notify } from "../lib/toastHelper";
+import { toast } from "sonner";
 import type { User, LoginRequest, RegisterRequest } from "../types/api";
 
 interface AuthContextType {
@@ -88,7 +89,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
       notify.success("Đăng nhập thành công", `Chào mừng ${response.user.displayName}!`);
     } catch (error: any) {
-      notify.error(error, "Đăng nhập thất bại");
+      if (error.response?.data?.code === 'AUTH_EMAIL_NOT_VERIFIED') {
+        toast.error("Tài khoản chưa được xác thực", {
+          description: "Vui lòng xác thực email của bạn trước khi đăng nhập.",
+          action: {
+            label: "Gửi lại email",
+            onClick: () => {
+              authApi.resendVerificationEmail({ email: data.email }).then(() => {
+                notify.success("Đã gửi lại email xác thực", "Vui lòng kiểm tra hộp thư của bạn.");
+              }).catch((e) => {
+                notify.error(e, "Không thể gửi lại email");
+              });
+            }
+          },
+          duration: 10000,
+        });
+      } else {
+        notify.error(error, "Đăng nhập thất bại");
+      }
       throw error;
     }
   }, [queryClient]);

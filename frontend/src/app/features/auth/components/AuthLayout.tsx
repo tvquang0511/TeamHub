@@ -82,8 +82,8 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
         </div>
       </div>
 
-      {/* CỘT PHẢI: Form Area (Chìm hoàn toàn vào nền, phẳng không dùng box nổi) */}
-      <div className="flex flex-1 flex-col justify-between p-6 sm:p-12 lg:p-16 min-h-screen">
+      {/* CỘT PHẢI: Form Area */}
+      <div className="flex flex-1 flex-col justify-between p-6 sm:p-10 lg:p-14 min-h-screen">
         {/* Top navigation */}
         <div className="flex items-center justify-between">
           <Link
@@ -103,9 +103,9 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
           </div>
         </div>
 
-        {/* Center: Main Form Content */}
-        <div className="mx-auto w-full max-w-md py-8">
-          <div className="mb-8 space-y-2">
+        {/* Center: Main Form Content (Đẩy lên cao hơn trên desktop cho cân đối) */}
+        <div className="mx-auto w-full max-w-md pt-4 sm:pt-6 lg:pt-2 lg:-mt-8 pb-8">
+          <div className="mb-6 lg:mb-8 space-y-2">
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {title}
             </h2>

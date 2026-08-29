@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Send, CheckCircle2, Loader2 } from "lucide-react";
 import { useAuth } from "../../../providers/AuthProvider";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { AuthLayout } from "../components/AuthLayout";
+import { authApi } from "../../../api/auth.api";
+import { notify } from "../../../lib/toastHelper";
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -24,14 +30,33 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setUnverifiedEmail(null);
+    setResendSuccess(false);
 
     try {
       await login({ email, password });
       navigate("/workspaces");
-    } catch {
-      // Error is handled in AuthProvider
+    } catch (error: any) {
+      const errorCode = error.response?.data?.error?.code || error.response?.data?.code;
+      if (errorCode === "AUTH_EMAIL_NOT_VERIFIED") {
+        setUnverifiedEmail(email);
+      }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail) return;
+    setIsResending(true);
+    try {
+      await authApi.resendVerificationEmail({ email: unverifiedEmail });
+      setResendSuccess(true);
+      notify.success("Đã gửi lại link xác thực", "Vui lòng kiểm tra hộp thư email của bạn.");
+    } catch (err: any) {
+      notify.error(err, "Gửi lại link xác thực thất bại");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -45,6 +70,50 @@ export const LoginPage: React.FC = () => {
       bannerCtaLink="/register"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Banner thông báo tài khoản chưa xác thực + Nút gửi lại email */}
+        {unverifiedEmail && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200 animate-in fade-in-50 duration-300">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <div className="space-y-2 flex-1">
+                <p className="font-semibold text-amber-900 dark:text-amber-100 text-sm">
+                  Tài khoản chưa được kích hoạt
+                </p>
+                <p className="text-xs text-amber-800 dark:text-amber-300/90 leading-relaxed">
+                  Email <span className="font-medium underline">{unverifiedEmail}</span> chưa được xác thực. Bạn cần xác thực trước khi có thể đăng nhập.
+                </p>
+                {resendSuccess ? (
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 pt-1">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Đã gửi lại email xác thực thành công! Vui lòng kiểm tra hộp thư.
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isResending}
+                    onClick={handleResendVerification}
+                    className="mt-1 h-8 rounded-lg border-amber-500/40 bg-amber-500/20 text-amber-900 dark:text-amber-100 hover:bg-amber-500/30 text-xs font-semibold shadow-none transition-all active:scale-95"
+                  >
+                    {isResending ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        Đang gửi link...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-1.5 h-3.5 w-3.5" />
+                        Gửi lại link xác thực
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-foreground">
             Email

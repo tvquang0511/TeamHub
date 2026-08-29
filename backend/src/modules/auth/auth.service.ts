@@ -5,6 +5,7 @@ import { env } from '../../config/env';
 import { ApiError } from '../../common/errors/ApiError';
 import { authRepo } from './auth.repo';
 import { enqueuePasswordResetEmailJob } from '../../integrations/queue/emails.queue';
+import { sendPasswordResetEmail } from '../../infrastructure/mail/mailer';
 
 type JwtAccessPayload = {
   sub: string;
@@ -201,12 +202,23 @@ export const authService = {
 
     const resetUrl = `${env.APP_WEB_URL.replace(/\/$/, '')}/reset-password#token=${encodeURIComponent(token)}`;
 
-    await enqueuePasswordResetEmailJob({
-      to: user.email,
-      email: user.email,
-      resetUrl,
-      expiresAtIso: expiresAt.toISOString(),
-    });
+    if (env.EMAIL_DELIVERY_MODE === 'backend') {
+      sendPasswordResetEmail({
+        to: user.email,
+        email: user.email,
+        resetUrl,
+        expiresAt,
+      }).catch((err) => {
+        console.error('[mailer] Backend direct send failed:', err);
+      });
+    } else {
+      await enqueuePasswordResetEmailJob({
+        to: user.email,
+        email: user.email,
+        resetUrl,
+        expiresAtIso: expiresAt.toISOString(),
+      });
+    }
 
     return { ok: true };
   },

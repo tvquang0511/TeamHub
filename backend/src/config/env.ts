@@ -116,6 +116,7 @@ const envSchema = z.object({
     .transform((v) => v === 'true'),
 
   APP_WEB_URL: z.string().min(1).default('http://localhost:5173'),
+  APP_TIMEZONE: z.string().min(1).default('UTC'),
   ACTIVITY_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
 
   ANALYTICS_SEED_DAYS: z.coerce.number().int().positive().default(30),
@@ -171,6 +172,15 @@ const envSchema = z.object({
   STORAGE_REGION: z.string().min(1).default('us-east-1'),
   STORAGE_BUCKET: z.string().min(1).default('teamhub'),
   STORAGE_BUCKET_PUBLIC: z.string().min(1).default('teamhub-public'),
+
+  // Email Delivery Configuration
+  EMAIL_DELIVERY_MODE: z.enum(['backend', 'worker']).default('worker'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  SMTP_SECURE: z.enum(['true', 'false']).transform((v) => v === 'true').optional(),
 });
 
 export const env = envSchema.parse(process.env);

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="x-apple-disable-message-reformatting" />
+		<title>TeamHub Reminder</title>
+	</head>
+	<body style="margin:0; padding:0; background:#f6f7fb;">
+		<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f6f7fb;">
+			<tr>
+				<td align="center" style="padding: 24px 12px;">
+					<table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px; max-width:100%; background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e7e9f0;">
+						<tr>
+							<td style="padding: 18px 20px; background:#111827;">
+								<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#e5e7eb;">
+									<strong style="color:#ffffff; font-size: 16px;">TeamHub</strong>
+									<span style="opacity:0.9;"> — Nhắc nhở công việc</span>
+								</div>
+							</td>
+						</tr>
+
+						<tr>
+							<td style="padding: 20px;">
+								<div style="font-family: Arial, sans-serif; font-size: 16px; line-height: 24px; color:#111827;">
+									<div style="font-size:18px; font-weight:700; margin: 0 0 12px;">Nhắc nhở</div>
+
+									<div style="margin: 0 0 16px; color:#374151;">
+										Bạn có một công việc sắp tới hạn.
+									</div>
+
+									<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
+										<tr>
+											<td style="padding: 10px 12px; border:1px solid #e7e9f0; border-bottom: none; border-radius: 10px 10px 0 0; background:#f9fafb;">
+												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280;">Workspace</div>
+												<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#111827; font-weight:600;">{{workspaceName}}</div>
+											</td>
+										</tr>
+										<tr>
+											<td style="padding: 10px 12px; border:1px solid #e7e9f0; border-bottom: none; background:#ffffff;">
+												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280;">Board</div>
+												<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#111827; font-weight:600;">{{boardName}}</div>
+											</td>
+										</tr>
+										<tr>
+											<td style="padding: 10px 12px; border:1px solid #e7e9f0; border-bottom: none; background:#ffffff;">
+												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280;">Card</div>
+												<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#111827; font-weight:600;">{{cardTitle}}</div>
+											</td>
+										</tr>
+										<tr>
+											<td style="padding: 10px 12px; border:1px solid #e7e9f0; border-radius: 0 0 10px 10px; background:#ffffff;">
+												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280;">Tới hạn (dueAt)</div>
+												<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 20px; color:#111827; font-weight:600;">{{dueAtText}}</div>
+												<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 16px; color:#6b7280; margin-top: 4px;">Timezone: {{timezone}}</div>
+											</td>
+										</tr>
+									</table>
+
+									<div style="margin-top: 18px; font-family: Arial, sans-serif; font-size: 12px; line-height: 18px; color:#6b7280;">
+										Email này được gửi tự động từ TeamHub.
+									</div>
+								</div>
+							</td>
+						</tr>
+
+						<tr>
+							<td style="padding: 14px 20px; background:#f9fafb; border-top:1px solid #e7e9f0;">
+								<div style="font-family: Arial, sans-serif; font-size: 12px; line-height: 18px; color:#6b7280;">
+									© {{year}} TeamHub
+								</div>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+</html>

@@ -79,9 +79,6 @@ export const LoginPage: React.FC = () => {
                 <p className="font-semibold text-amber-900 dark:text-amber-100 text-sm">
                   Tài khoản chưa được kích hoạt
                 </p>
-                <p className="text-xs text-amber-800 dark:text-amber-300/90 leading-relaxed">
-                  Email <span className="font-medium underline">{unverifiedEmail}</span> chưa được xác thực. Bạn cần xác thực trước khi có thể đăng nhập.
-                </p>
                 {resendSuccess ? (
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 pt-1">
                     <CheckCircle2 className="h-4 w-4" />

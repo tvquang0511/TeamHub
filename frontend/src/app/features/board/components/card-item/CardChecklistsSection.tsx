@@ -9,8 +9,6 @@ import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import { Label } from "../../../../components/ui/label";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../../../components/ui/dialog";
-
 export function CardChecklistsSection(props: {
   boardId: string;
   cardId: string;
@@ -31,15 +29,20 @@ export function CardChecklistsSection(props: {
 
   const checklists = checklistsResp?.checklists ?? [];
 
-  const [fallbackJourney, setFallbackJourney] = useState<{ provider?: string, fallbackErrors?: Record<string, string> } | null>(null);
-
   const aiBreakdownMutation = useMutation({
     mutationFn: () => cardsApi.aiBreakdown(cardId),
     onSuccess: async (data) => {
-      setFallbackJourney({
-        provider: data.provider,
-        fallbackErrors: data.fallbackErrors,
-      });
+      if (data.fallbackErrors && Object.keys(data.fallbackErrors).length > 0) {
+        // Hiện 1 thông báo đỏ gom chung các AI thất bại
+        const failedProviders = Object.keys(data.fallbackErrors).map(p => p.toUpperCase()).join(", ");
+        toast.error(`Các AI thất bại (đã bỏ qua): ${failedProviders}`, { duration: 5000 });
+        
+        // Hiện 1 thông báo xanh cho AI thành công
+        toast.success(`✨ Phân rã thành công nhờ AI [${data.provider?.toUpperCase()}]!`, { duration: 5000 });
+      } else {
+        toast.success(`✨ AI [${data.provider?.toUpperCase() || 'HỆ THỐNG'}] đã phân rã thành công!`, { duration: 4000 });
+      }
+
       await refetchChecklists();
       queryClient.invalidateQueries({ queryKey: ["board", boardId, "detail"] });
     },
@@ -49,11 +52,8 @@ export function CardChecklistsSection(props: {
       const fallbackErrors = errorData?.details?.fallbackErrors;
 
       if (fallbackErrors && typeof fallbackErrors === 'object') {
-        toast.error("Tất cả AI provider đều thất bại. Hãy thử lại sau.");
-        setFallbackJourney({
-          provider: "THẤT BẠI TOÀN TẬP",
-          fallbackErrors: fallbackErrors,
-        });
+        const failedProviders = Object.keys(fallbackErrors).map(p => p.toUpperCase()).join(", ");
+        toast.error(`Thất bại toàn tập! Các AI đã thử: ${failedProviders}`, { duration: 6000 });
       } else {
         toast.error(msg);
       }
@@ -240,43 +240,6 @@ export function CardChecklistsSection(props: {
           })}
         </div>
       )}
-
-      <Dialog open={!!fallbackJourney} onOpenChange={(open) => !open && setFallbackJourney(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>✨ Phân rã công việc bằng AI</DialogTitle>
-            <DialogDescription>
-              Quá trình xử lý qua hệ thống Fallback thông minh
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 text-sm mt-2">
-            {fallbackJourney?.fallbackErrors && Object.keys(fallbackJourney.fallbackErrors).length > 0 && (
-              <div>
-                <p className="font-semibold text-red-500 mb-2">Các AI Provider đã thử nhưng thất bại:</p>
-                <ul className="space-y-2">
-                  {Object.entries(fallbackJourney.fallbackErrors).map(([p, err]) => (
-                    <li key={p} className="p-2 border border-red-200 bg-red-50 dark:bg-red-950/20 rounded-md">
-                      <strong>[{p.toUpperCase()}]</strong>: {err}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            <div>
-              <p className="font-semibold text-green-600 mb-2">Provider xử lý thành công:</p>
-              <div className="p-3 border border-green-200 bg-green-50 dark:bg-green-950/20 rounded-md text-green-700 dark:text-green-300">
-                <strong>[{fallbackJourney?.provider?.toUpperCase() || 'HỆ THỐNG'}]</strong> đã hoàn thành phân rã công việc!
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground italic text-center mt-4">
-              Hệ thống tự động chuyển đổi mô hình AI để đảm bảo luôn phục vụ bạn!
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

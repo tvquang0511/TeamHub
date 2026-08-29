@@ -9,14 +9,14 @@ export const VerifyEmailPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(token ? "loading" : "error");
+  const [errorMessage, setErrorMessage] = useState(
+    token ? "" : "Không tìm thấy mã xác thực. Đường dẫn không hợp lệ."
+  );
   const verifiedRef = useRef(false);
 
   useEffect(() => {
     if (!token) {
-      setStatus("error");
-      setErrorMessage("Không tìm thấy mã xác thực. Đường dẫn không hợp lệ.");
       return;
     }
 

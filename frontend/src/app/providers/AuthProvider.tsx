@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch {
           // If /auth/me is not available or fails, keep user from refresh
         }
-      } catch (error) {
+      } catch {
         // No valid refresh token, user is not authenticated
         setAccessToken(null);
         setUser(null);
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
-    } catch (error) {
+    } catch {
       // Even if logout fails on server, clear local state
     } finally {
       setUser(null);

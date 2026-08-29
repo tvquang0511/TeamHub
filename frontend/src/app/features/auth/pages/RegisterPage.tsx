@@ -29,7 +29,7 @@ export const RegisterPage: React.FC = () => {
     try {
       await register({ email, password, displayName });
       navigate("/login");
-    } catch (error) {
+    } catch {
       // Error is handled in AuthProvider
     } finally {
       setIsSubmitting(false);

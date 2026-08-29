@@ -28,7 +28,7 @@ export const LoginPage: React.FC = () => {
     try {
       await login({ email, password });
       navigate("/workspaces");
-    } catch (error) {
+    } catch {
       // Error is handled in AuthProvider
     } finally {
       setIsSubmitting(false);

@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 
-import prisma from "../../db/prisma";
-import { cacheDel, cacheGetJsonNullable, cacheKey, cacheSetJson } from "../../integrations/cache/redisCache";
+import prisma from "../../infrastructure/database/prisma";
+import { cacheDel, cacheGetJsonNullable, cacheKey, cacheSetJson } from "../../infrastructure/redis/redisCache";
 import env from "../../config/env";
 
 export type CreateBoardData = {

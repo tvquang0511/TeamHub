@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
-import { bumpBoardCacheVersion } from "../../integrations/cache/redisCache";
+import { bumpBoardCacheVersion } from "../../infrastructure/redis/redisCache";
 import { labelsRepo } from "./labels.repo";
 
 export const createLabelInputSchema = z.object({

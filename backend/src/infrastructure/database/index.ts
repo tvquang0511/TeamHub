@@ -1,4 +1,4 @@
-import prisma, { disconnectPrisma } from "../../db/prisma";
+import prisma, { disconnectPrisma } from "./prisma";
 
 export { prisma, disconnectPrisma };
 export default prisma;

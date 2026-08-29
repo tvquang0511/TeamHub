@@ -1,4 +1,4 @@
-import prisma from "../../db/prisma";
+import prisma from "../../infrastructure/database/prisma";
 
 export const labelsRepo = {
   findBoardMember: async (boardId: string, userId: string) => {

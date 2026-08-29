@@ -1,4 +1,4 @@
-import prisma from '../../db/prisma';
+import prisma from "../../infrastructure/database/prisma";
 
 export const invitesRepo = {
   findActiveInviteByWorkspaceAndEmail(workspaceId: string, email: string) {

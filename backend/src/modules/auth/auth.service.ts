@@ -4,7 +4,7 @@ import { decode, sign, verify, type Secret } from 'jsonwebtoken';
 import { env } from '../../config/env';
 import { ApiError } from '../../common/errors/ApiError';
 import { authRepo } from './auth.repo';
-import { enqueuePasswordResetEmailJob } from '../../integrations/queue/emails.queue';
+import { enqueuePasswordResetEmailJob } from "../../infrastructure/queue/emails.queue";
 import { sendPasswordResetEmail, sendEmailVerificationEmail } from '../../infrastructure/mail/mailer';
 
 type JwtAccessPayload = {

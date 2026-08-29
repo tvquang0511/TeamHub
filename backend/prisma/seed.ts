@@ -1,5 +1,5 @@
 import "dotenv/config";
-import prisma, { disconnectPrisma } from "../src/db/prisma";
+import prisma, { disconnectPrisma } from "../src/infrastructure/database/prisma";
 import { seedUsers } from "./seeders/01-users.seeder";
 import { seedWorkspaces } from "./seeders/02-workspaces.seeder";
 import { seedBoards } from "./seeders/03-boards.seeder";

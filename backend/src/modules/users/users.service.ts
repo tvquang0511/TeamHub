@@ -3,7 +3,7 @@ import { usersRepo } from './users.repo';
 import { ApiError } from '../../common/errors/ApiError';
 import { presignPutObject, buildPublicStorageUrl } from '../../infrastructure/storage';
 import env from '../../config/env';
-import { enqueueDeleteObject } from '../../integrations/queue/blobs.queue';
+import { enqueueDeleteObject } from "../../infrastructure/queue/blobs.queue";
 
 export const usersSearchQuerySchema = z.object({
   q: z.string().min(1).max(200),

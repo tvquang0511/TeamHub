@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import prisma from "../../db/prisma";
+import prisma from "../../infrastructure/database/prisma";
 
 import { ApiError } from "../../common/errors/ApiError";
 import env from "../../config/env";
@@ -10,7 +10,7 @@ import {
   cacheKey,
   cacheSetJson,
   getBoardCacheVersion,
-} from "../../integrations/cache/redisCache";
+} from "../../infrastructure/redis/redisCache";
 import { boardsRepo } from "./boards.repo";
 
 export const createBoardInputSchema = z.object({

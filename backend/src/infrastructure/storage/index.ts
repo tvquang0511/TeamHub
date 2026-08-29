@@ -1,7 +1,7 @@
 import env from "../../config/env";
 
-export * from "../../common/minio/minio.presign.put";
-export * from "../../common/minio/minio.presign.get";
+export * from "./minio.presign.put";
+export * from "./minio.presign.get";
 
 export function buildPublicStorageUrl(bucket: string, objectKey: string): string {
   const provider = env.STORAGE_PROVIDER;

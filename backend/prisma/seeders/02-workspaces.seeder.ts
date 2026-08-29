@@ -1,4 +1,4 @@
-import prisma from "../../src/db/prisma";
+import prisma from "../../src/infrastructure/database/prisma";
 import type { users } from "@prisma/client";
 
 export async function seedWorkspaces(usersList: users[]) {

@@ -1,1 +1,1 @@
-export * from "../../integrations/cache/redisCache";
+export * from "./redisCache";

@@ -4,7 +4,7 @@ import * as jwt from 'jsonwebtoken';
 import { authService } from './auth.service';
 import { authRepo } from './auth.repo';
 import { ApiError } from '../../common/errors/ApiError';
-import { enqueuePasswordResetEmailJob } from '../../integrations/queue/emails.queue';
+import { enqueuePasswordResetEmailJob } from "../../infrastructure/queue/emails.queue";
 
 // Mock dependencies
 vi.mock('bcrypt', () => ({

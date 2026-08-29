@@ -1,6 +1,6 @@
 import { Prisma, activity_type } from "@prisma/client";
 
-import prisma from "../../db/prisma";
+import prisma from "../../infrastructure/database/prisma";
 
 export type CreateActivityInput = {
   actorId: string;

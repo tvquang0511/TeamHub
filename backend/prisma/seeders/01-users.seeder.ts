@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import prisma from "../../src/db/prisma";
+import prisma from "../../src/infrastructure/database/prisma";
 
 const PASSWORD = "123456";
 

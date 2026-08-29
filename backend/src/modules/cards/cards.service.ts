@@ -1,6 +1,6 @@
 import { Prisma, activity_type } from "@prisma/client";
 import { z } from "zod";
-import prisma from "../../db/prisma";
+import prisma from "../../infrastructure/database/prisma";
 
 import { ApiError } from "../../common/errors/ApiError";
 import { computeBetweenPosition } from "../../common/utils/position";
@@ -11,8 +11,8 @@ import {
   cacheGetJson,
   cacheKey,
   cacheSetJson,
-} from "../../integrations/cache/redisCache";
-import { enqueueReminderJob, removeReminderJob } from "../../integrations/queue/reminders.queue";
+} from "../../infrastructure/redis/redisCache";
+import { enqueueReminderJob, removeReminderJob } from "../../infrastructure/queue/reminders.queue";
 import { activitiesRepo } from "../activities/activities.repo";
 import { cardsRepo } from "./cards.repo";
 import { checklistsRepo } from "../checklists/checklists.repo";

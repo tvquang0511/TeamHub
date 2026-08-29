@@ -4,8 +4,8 @@ import { attachmentsRepo } from './attachments.repo';
 import { cardsRepo } from '../cards/cards.repo';
 import { activitiesRepo } from '../activities/activities.repo';
 import { ApiError } from '../../common/errors/ApiError';
-import * as minioPresignPut from '../../common/minio/minio.presign.put';
-import { enqueueDeleteObject } from '../../integrations/queue/blobs.queue';
+import * as minioPresignPut from "../../infrastructure/storage/minio.presign.put";
+import { enqueueDeleteObject } from "../../infrastructure/queue/blobs.queue";
 
 // Mock dependencies
 vi.mock('./attachments.repo', () => ({

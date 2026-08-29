@@ -1,8 +1,8 @@
 import { activity_type } from "@prisma/client";
 
-import prisma from "../db/prisma";
+import prisma from "../infrastructure/database/prisma";
 import env from "../config/env";
-import { bumpAnalyticsCacheVersion } from "../integrations/cache/redisCache";
+import { bumpAnalyticsCacheVersion } from "../infrastructure/redis/redisCache";
 
 const DEFAULT_RETENTION_DAYS = 90;
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { chatService } from './chat.service';
 import { chatRepo } from './chat.repo';
-import { enqueueDeleteObject } from '../../integrations/queue/blobs.queue';
+import { enqueueDeleteObject } from "../../infrastructure/queue/blobs.queue";
 import { ApiError } from '../../common/errors/ApiError';
 
 // Mock dependencies

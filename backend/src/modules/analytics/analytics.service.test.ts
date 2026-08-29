@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { analyticsService } from './analytics.service';
 import { boardsRepo } from '../boards/boards.repo';
 import { workspacesRepo } from '../workspaces/workspaces.repo';
-import prisma from '../../db/prisma';
-import * as redisCache from '../../integrations/cache/redisCache';
+import prisma from "../../infrastructure/database/prisma";
+import * as redisCache from "../../infrastructure/redis/redisCache";
 import { ApiError } from '../../common/errors/ApiError';
 
 // Mock dependencies

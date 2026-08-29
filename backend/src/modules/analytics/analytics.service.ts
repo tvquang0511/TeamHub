@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
-import prisma from "../../db/prisma";
+import prisma from "../../infrastructure/database/prisma";
 import env from "../../config/env";
-import { cacheGetJson, cacheKey, cacheSetJson, getAnalyticsCacheVersion } from "../../integrations/cache/redisCache";
+import { cacheGetJson, cacheKey, cacheSetJson, getAnalyticsCacheVersion } from "../../infrastructure/redis/redisCache";
 import { boardsRepo } from "../boards/boards.repo";
 import { workspacesRepo } from "../workspaces/workspaces.repo";
 

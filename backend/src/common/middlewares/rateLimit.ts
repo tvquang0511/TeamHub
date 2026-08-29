@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import env from "../../config/env";
-import { getCacheRedis } from "../../integrations/cache/redisCache";
+import { getCacheRedis } from "../../infrastructure/redis/redisCache";
 
 type RateLimitOptions = {
   name: string;

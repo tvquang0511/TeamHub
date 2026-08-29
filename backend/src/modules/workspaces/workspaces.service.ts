@@ -4,7 +4,7 @@ import { workspacesRepo } from './workspaces.repo';
 import { workspace_member_role } from '@prisma/client';
 import env from '../../config/env';
 import { presignPutObject, buildPublicStorageUrl } from '../../infrastructure/storage';
-import { enqueueDeleteObject } from '../../integrations/queue/blobs.queue';
+import { enqueueDeleteObject } from "../../infrastructure/queue/blobs.queue";
 
 export const createWorkspaceInputSchema = z.object({
   name: z.string().min(1).max(200),

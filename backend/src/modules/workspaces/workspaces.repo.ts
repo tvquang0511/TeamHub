@@ -1,4 +1,4 @@
-import prisma from '../../db/prisma';
+import prisma from "../../infrastructure/database/prisma";
 import { workspace_member_role } from '@prisma/client';
 
 export const workspacesRepo = {

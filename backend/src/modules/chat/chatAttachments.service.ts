@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
-import { presignPutObject } from "../../common/minio/minio.presign.put";
-import { presignGetObject } from "../../common/minio/minio.presign.get";
+import { presignPutObject } from "../../infrastructure/storage/minio.presign.put";
+import { presignGetObject } from "../../infrastructure/storage/minio.presign.get";
 import env from "../../config/env";
 import { chatRepo } from "./chat.repo";
 

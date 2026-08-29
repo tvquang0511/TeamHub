@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { ApiError } from "../../common/errors/ApiError";
 import { computeBetweenPosition } from "../../common/utils/position";
-import { bumpBoardCacheVersion } from "../../integrations/cache/redisCache";
+import { bumpBoardCacheVersion } from "../../infrastructure/redis/redisCache";
 import { listsRepo } from "./lists.repo";
 
 export const createListInputSchema = z.object({

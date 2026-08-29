@@ -5,10 +5,10 @@ import { ApiError } from "../../common/errors/ApiError";
 import { activitiesRepo } from "../activities/activities.repo";
 import { attachmentsRepo } from "./attachments.repo";
 import { cardsRepo } from "../cards/cards.repo";
-import { presignPutObject } from "../../common/minio/minio.presign.put";
-import { presignGetObject } from "../../common/minio/minio.presign.get";
+import { presignPutObject } from "../../infrastructure/storage/minio.presign.put";
+import { presignGetObject } from "../../infrastructure/storage/minio.presign.get";
 import env from "../../config/env";
-import { enqueueDeleteObject } from "../../integrations/queue/blobs.queue";
+import { enqueueDeleteObject } from "../../infrastructure/queue/blobs.queue";
 
 export const presignUploadInputSchema = z.object({
   fileName: z.string().min(1).max(500),

@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import prisma from "../../src/db/prisma";
+import prisma from "../../src/infrastructure/database/prisma";
 import type { users, workspaces } from "@prisma/client";
 
 export async function seedBoards(

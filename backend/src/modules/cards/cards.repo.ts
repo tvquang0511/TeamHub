@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-import prisma from "../../db/prisma";
+import prisma from "../../infrastructure/database/prisma";
 
 export type CreateCardData = {
   listId: string;

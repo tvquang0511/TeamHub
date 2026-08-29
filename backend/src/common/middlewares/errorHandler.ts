@@ -9,8 +9,14 @@ export default function errorHandler(
   res: Response,
   _next: NextFunction,
 ) {
-  // eslint-disable-next-line no-console
-  console.error('Unhandled error:', err);
+  // Only log unexpected server errors, not operational 4xx errors
+  if (!(err instanceof ApiError) && !(err instanceof ZodError) && !(err instanceof Prisma.PrismaClientKnownRequestError)) {
+    // eslint-disable-next-line no-console
+    console.error('Unhandled error:', err);
+  } else if (err instanceof ApiError && err.status >= 500) {
+    // eslint-disable-next-line no-console
+    console.error('Server error:', err);
+  }
 
   // Zod validation
   if (err instanceof ZodError) {

@@ -89,7 +89,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
       notify.success("Đăng nhập thành công", `Chào mừng ${response.user.displayName}!`);
     } catch (error: any) {
-      if (error.response?.data?.code === 'AUTH_EMAIL_NOT_VERIFIED') {
+      const errorCode = error.response?.data?.error?.code || error.response?.data?.code;
+      if (errorCode === 'AUTH_EMAIL_NOT_VERIFIED') {
         toast.error("Tài khoản chưa được xác thực", {
           description: "Vui lòng xác thực email của bạn trước khi đăng nhập.",
           action: {

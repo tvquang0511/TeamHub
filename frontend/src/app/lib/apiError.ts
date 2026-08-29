@@ -22,6 +22,10 @@ export function getApiErrorInfo(error: unknown): ApiErrorInfo {
 export function getToastErrorMessage(error: unknown, fallback: string): string {
   const info = getApiErrorInfo(error);
 
+  if (info.code === "AUTH_EMAIL_NOT_VERIFIED") {
+    return "Tài khoản chưa được xác thực. Vui lòng xác thực email trước khi đăng nhập.";
+  }
+
   if (info.status === 401) {
     return "Phiên làm việc đã hết hạn, vui lòng đăng nhập lại.";
   }

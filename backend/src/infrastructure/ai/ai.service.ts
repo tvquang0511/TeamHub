@@ -5,6 +5,8 @@ import { GeminiProvider } from "./providers/gemini.provider";
 import { GroqProvider } from "./providers/groq.provider";
 import { OpenAiProvider } from "./providers/openai.provider";
 import { OpenRouterProvider } from "./providers/openrouter.provider";
+import { DeepSeekProvider } from "./providers/deepseek.provider";
+import { TogetherProvider } from "./providers/together.provider";
 
 export class AiService {
   private providers: Map<string, IAiProvider> = new Map();
@@ -14,6 +16,8 @@ export class AiService {
     this.registerProvider(new GroqProvider());
     this.registerProvider(new OpenAiProvider());
     this.registerProvider(new OpenRouterProvider());
+    this.registerProvider(new DeepSeekProvider());
+    this.registerProvider(new TogetherProvider());
   }
 
   registerProvider(provider: IAiProvider) {
@@ -58,8 +62,8 @@ export class AiService {
       return provider.generateSubtasks(title, description, customModel);
     }
 
-    // Mode 'auto': Tự động thử các Provider đã cấu hình theo thứ tự ưu tiên (Gemini -> Groq -> OpenAI -> OpenRouter)
-    const fallbackOrder = ["gemini", "groq", "openai", "openrouter"];
+    // Mode 'auto': Tự động thử các Provider đã cấu hình theo thứ tự ưu tiên (DeepSeek -> Gemini -> Groq -> Together -> OpenAI -> OpenRouter)
+    const fallbackOrder = ["deepseek", "gemini", "groq", "together", "openai", "openrouter"];
     const configuredProviders: IAiProvider[] = [];
 
     for (const name of fallbackOrder) {

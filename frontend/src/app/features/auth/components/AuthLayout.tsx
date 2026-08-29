@@ -85,7 +85,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
       {/* CỘT PHẢI: Form Area */}
       <div className="flex flex-1 flex-col justify-between p-6 sm:p-10 lg:p-14 min-h-screen">
         {/* Top navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
           <Link
             to="/landing"
             className="inline-flex items-center text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
@@ -103,8 +103,8 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
           </div>
         </div>
 
-        {/* Center: Main Form Content (Đẩy lên cao hơn trên desktop cho cân đối) */}
-        <div className="mx-auto w-full max-w-md pt-4 sm:pt-6 lg:pt-2 lg:-mt-8 pb-8">
+        {/* Center: Main Form Content (Vertically centered with optical balance) */}
+        <div className="mx-auto w-full max-w-md my-auto py-8">
           <div className="mb-6 lg:mb-8 space-y-2">
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {title}
@@ -117,9 +117,9 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
           {children}
         </div>
 
-        {/* Bottom copyright for mobile */}
-        <div className="text-center text-xs text-muted-foreground lg:hidden">
-          © 2026 TeamHub Inc.
+        {/* Bottom copyright */}
+        <div className="text-center text-xs text-muted-foreground py-2">
+          © 2026 TeamHub Inc. All rights reserved.
         </div>
       </div>
     </div>

@@ -14,7 +14,7 @@ import {
 import { useTheme } from "../../providers/ThemeProvider";
 import { workspacesApi } from "../../api/workspaces.api";
 import type { Workspace } from "../../types/api";
-import { Dialog, DialogContent } from "../ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 
 export const CommandMenu: React.FC<{ iconOnly?: boolean }> = ({ iconOnly }) => {
   const [open, setOpen] = useState(false);
@@ -74,7 +74,8 @@ export const CommandMenu: React.FC<{ iconOnly?: boolean }> = ({ iconOnly }) => {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="p-0 overflow-hidden sm:max-w-xl border bg-popover/95 backdrop-blur-md shadow-2xl">
+        <DialogContent aria-describedby={undefined} className="p-0 overflow-hidden sm:max-w-xl border bg-popover/95 backdrop-blur-md shadow-2xl">
+          <DialogTitle className="sr-only">Command Menu</DialogTitle>
           <Command className="w-full rounded-lg bg-transparent">
             <div className="flex items-center border-b px-3">
               <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />

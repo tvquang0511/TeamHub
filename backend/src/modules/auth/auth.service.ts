@@ -4,7 +4,7 @@ import { decode, sign, verify, type Secret } from 'jsonwebtoken';
 import { env } from '../../config/env';
 import { ApiError } from '../../common/errors/ApiError';
 import { authRepo } from './auth.repo';
-import { enqueuePasswordResetEmailJob } from "../../infrastructure/queue/emails.queue";
+import { enqueuePasswordResetEmailJob, enqueueEmailVerificationJob } from "../../infrastructure/queue/emails.queue";
 import { sendPasswordResetEmail, sendEmailVerificationEmail } from '../../infrastructure/mail/mailer';
 
 type JwtAccessPayload = {
@@ -87,12 +87,21 @@ export const authService = {
     const verificationUrl = `${env.APP_WEB_URL.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(verificationToken)}`;
     
     // Fire and forget sending verification email
-    sendEmailVerificationEmail({
-      to: user.email,
-      email: user.email,
-      verificationUrl,
-      expiresAt,
-    }).catch(console.error);
+    if (env.EMAIL_DELIVERY_MODE === 'backend') {
+      sendEmailVerificationEmail({
+        to: user.email,
+        email: user.email,
+        verificationUrl,
+        expiresAt,
+      }).catch(console.error);
+    } else {
+      await enqueueEmailVerificationJob({
+        to: user.email,
+        email: user.email,
+        verificationUrl,
+        expiresAtIso: expiresAt.toISOString(),
+      });
+    }
 
     // Return user without tokens because they must verify email first
     return {
@@ -268,13 +277,21 @@ export const authService = {
     });
 
     const verificationUrl = `${env.APP_WEB_URL.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(verificationToken)}`;
-    
-    sendEmailVerificationEmail({
-      to: user.email,
-      email: user.email,
-      verificationUrl,
-      expiresAt,
-    }).catch(console.error);
+    if (env.EMAIL_DELIVERY_MODE === 'backend') {
+      sendEmailVerificationEmail({
+        to: user.email,
+        email: user.email,
+        verificationUrl,
+        expiresAt,
+      }).catch(console.error);
+    } else {
+      await enqueueEmailVerificationJob({
+        to: user.email,
+        email: user.email,
+        verificationUrl,
+        expiresAtIso: expiresAt.toISOString(),
+      });
+    }
 
     return { ok: true };
   },

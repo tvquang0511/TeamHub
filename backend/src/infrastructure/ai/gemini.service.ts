@@ -6,7 +6,8 @@ import { aiService } from "./ai.service";
  */
 export class GeminiService {
   async generateSubtasks(title: string, description?: string | null): Promise<string[]> {
-    return aiService.generateSubtasks(title, description);
+    const { subtasks } = await aiService.generateSubtasks(title, description);
+    return subtasks;
   }
 }
 

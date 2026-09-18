@@ -1,42 +1,52 @@
 # TeamHub — Enterprise Realtime Kanban + Board Chat + AI Sub-task Breakdown + Async BullMQ Worker
 
-[![Live App](https://img.shields.io/badge/Frontend-Vercel%20Live-brightgreen?style=for-the-badge&logo=vercel)](https://teamhub-frontend.vercel.app)
-[![Backend API](https://img.shields.io/badge/Backend-Render%20API-blue?style=for-the-badge&logo=render)](https://teamhub-backend-api.onrender.com)
-[![AI Engine](https://img.shields.io/badge/AI_Engine-Smart_AI_Breakdown-purple?style=for-the-badge&logo=openai)](https://github.com/tvquang0511/TeamHub)
-[![Database](https://img.shields.io/badge/Database-Supabase%20Postgres-emerald?style=for-the-badge&logo=supabase)](https://supabase.com)
-[![Redis](https://img.shields.io/badge/Redis-Valkey%20TLS-red?style=for-the-badge&logo=redis)](https://aiven.io)
+<p align="center">
+  <img src="docs/assets/teamhub-banner.png" alt="TeamHub Enterprise Realtime Kanban Banner" width="100%" />
+</p>
+
+<p align="center">
+  <a href="https://teamhub.tvquang.id.vn"><img src="https://img.shields.io/badge/Frontend-Vercel%20Live-brightgreen?style=for-the-badge&logo=vercel" alt="Frontend Live" /></a>
+  <a href="https://supabase.com"><img src="https://img.shields.io/badge/Database-Supabase%20Postgres-emerald?style=for-the-badge&logo=supabase" alt="Database" /></a>
+  <a href="https://aiven.io"><img src="https://img.shields.io/badge/Cache-Redis%20%2F%20Valkey-red?style=for-the-badge&logo=redis" alt="Redis" /></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React_19-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="TailwindCSS" />
+  <img src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Express.js-000000?style=flat-square&logo=express&logoColor=white" alt="Express" />
+  <img src="https://img.shields.io/badge/Prisma_ORM-2D3748?style=flat-square&logo=prisma&logoColor=white" alt="Prisma ORM" />
+  <img src="https://img.shields.io/badge/Socket.io-010101?style=flat-square&logo=socketdotio&logoColor=white" alt="Socket.IO" />
+  <img src="https://img.shields.io/badge/BullMQ-CC3534?style=flat-square&logo=bull&logoColor=white" alt="BullMQ" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+</p>
 
 > **TeamHub** là một nền tảng quản lý dự án & công việc Kanban doanh nghiệp chuẩn Trello được xây dựng với kiến trúc **Decoupled Microservices** hiện đại: Tích hợp **✨ AI Sub-task Breakdown**, **Realtime Socket.IO 2 chiều**, **Box Chat theo từng Board**, **Hàng đợi ngầm BullMQ + Standalone Worker**, **Lưu trữ tệp chuẩn AWS S3 / Supabase Storage**, và **Hệ thống Backup / Restore Board JSON**.
 
 ---
 
-## 📞 Hỗ Trợ Kiểm Thử & Thông Tin Liên Hệ (For Recruiters / Reviewers)
+## 📞 Hỗ Trợ Kiểm Thử & Liên Hệ (For Recruiters / Reviewers)
 
-> [!IMPORTANT]
-> ⚠️ **LƯU Ý VỀ TIẾN TRÌNH WORKER (Gửi Email Hàng Đợi, Đếm Ngược Lịch Hẹn & AI Daily Standup)**:
-> Vì lý do giới hạn ngân sách & tài chính trên nền tảng Cloud, tiến trình Standalone Worker (BullMQ Worker) được thiết lập mặc định chạy ở môi trường **Local/Self-hosted** (`cd worker && npm start`).
-> Worker đảm nhiệm các tính năng chuyên sâu và chạy nền tốn tài nguyên như:
-> - **Gửi Email Hàng Đợi (Queue):** Các email đếm ngược lịch hẹn (Reminder) hoặc các luồng gửi thư hàng loạt chậm. (Lưu ý: Các luồng email tức thì như Quên mật khẩu, Xác thực email đã được chuyển sang xử lý trực tiếp bởi Backend thông qua Resend API để đảm bảo luôn hoạt động).
-> - **AI Daily Standup / Report:** Tự động tổng hợp dữ liệu báo cáo hằng ngày vào các khung giờ cố định.
-> - **Dọn rác (Blob Sweeper):** Dọn dẹp tệp tin mồ côi (orphan files) trên S3.
+> [!NOTE]
+> ⚙️ **Lưu ý về Standalone Worker (BullMQ)**: Để tối ưu chi phí Cloud, tiến trình Worker (gửi email nhắc hẹn theo lịch, dọn rác S3, AI Daily Standup) mặc định chạy ở môi trường **Local/Self-hosted** (`cd worker && npm start`). Các luồng email tức thì (xác thực, quên mật khẩu) vẫn hoạt động 100% trên Cloud qua Resend API.
 > 
-> **Nếu Nhà tuyển dụng / Reviewer muốn kiểm thử trực tiếp full luồng tính năng Worker trên môi trường Cloud Staging**, xin vui lòng liên hệ trực tiếp với tôi để tôi bật server Worker riêng biệt lên ngay lập tức:
-> - 📞 **Số điện thoại / Zalo**: `0357131476`
-> - ✉️ **Email**: `tvquang.working@gmail.com`
+> 💬 **Để bật server Worker Cloud Staging kiểm thử toàn diện, xin vui lòng liên hệ tác giả**:
+> - 📞 **Điện thoại / Zalo**: `0357131476` &nbsp;|&nbsp; ✉️ **Email**: `tvquang.working@gmail.com`
 
 ---
 
-## 🛠️ Hướng Dẫn Kiểm Thử Dự Án Theo 4 Chế Độ (4 Execution & Deployment Modes)
+## 🛠️ Hướng Dẫn Kiểm Thử Dự Án Theo 3 Chế Độ (3 Execution & Deployment Modes)
 
-Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển dụng / Tech Lead có thể kiểm thử hệ thống theo **4 Chế Độ (Modes)** tùy theo nhu cầu và hạ tầng của bạn:
+Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển dụng / Tech Lead có thể kiểm thử hệ thống theo **3 Chế Độ (Modes)** tùy theo nhu cầu và hạ tầng của bạn:
 
 ---
 
 ### 🌐 Mode 0: Trải Nghiệm Sản Xuất Trực Tiếp Trên Cloud (Instant Live Demo - Zero Setup)
 > **Phù hợp nhất cho**: Kiểm thử ứng dụng nhanh ngay lập tức trên trình duyệt mà không cần cài đặt code.
 
-- **Frontend App (Vercel)**: **[https://teamhub.tvquang.id.vn](https://teamhub.tvquang.id.vn)**
-- **Backend API (Render)**: **[https://teamhub-backend-api.onrender.com](https://teamhub-backend-api.onrender.com)**
+- **Ứng Dụng Trực Tiếp (Live Demo)**: **[https://teamhub.tvquang.id.vn](https://teamhub.tvquang.id.vn)**
 
 #### 🔑 4 Tài Khoản Mẫu Nạp Sẵn Dữ Liệu Sản Xuất (Mật khẩu chung: `123456`)
 | Role | Email | Mật khẩu | Tính năng chính trải nghiệm |
@@ -92,20 +102,6 @@ Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển d�
 
 ---
 
-### 🐳 Mode 3: Full Stack Production Docker Compose (1-Command Full Deployment)
-> **Phù hợp nhất cho**: Đánh giá khả năng Đóng gói Docker Container & Nginx Reverse Proxy toàn bộ hệ thống bằng đúng 1 câu lệnh.
-
-1. **Khởi chạy Toàn Bộ Hệ Thống (Nginx + Frontend + Backend + Worker + Postgres + Redis + MinIO)**:
-   ```bash
-   docker-compose -f infra/docker-compose.yml up -d
-   ```
-
-2. **Truy cập Ứng dụng**:
-   - **Frontend App qua Nginx Proxy**: `http://localhost` (Port 80)
-   - **MinIO S3 Console**: `http://localhost:9001` (User: `teamhub`, Password: `teamhub-secret`)
-
----
-
 ## 🏗️ Sơ Đồ Kiến Trúc Hệ Thống (Enterprise Architecture)
 
 ```mermaid
@@ -151,6 +147,58 @@ flowchart TD
     WORKER -->|"Delete Orphan Blobs"| S3
     WORKER -->|"Send Email Reminders (Queue)"| RESEND
 ```
+
+---
+
+## 📸 Giao Diện & Trải Nghiệm Người Dùng (UI Showcase)
+
+> [!TIP]
+> **Dành cho Nhà Tuyển Dụng & Reviewer**: Dưới đây là bộ sưu tập hình ảnh chụp thực tế toàn bộ các phân hệ, tính năng và luồng làm việc chính của hệ thống TeamHub.
+
+| 🌟 Trang Giới Thiệu (Landing Page) | 🔐 Xác Thực & Đăng Nhập (Auth Dark Theme) |
+| :---: | :---: |
+| ![Landing Page](docs/assets/screenshots/landing-page.png) | ![Auth](docs/assets/screenshots/auth.png) |
+| *Giao diện Landing Page giới thiệu ứng dụng hiện đại & sinh động* | *Trang xác thực tài khoản bảo mật với giao diện tối sang trọng* |
+
+| 🏠 Danh Sách Không Gian (Workspaces) | 📂 Chi Tiết Không Gian Làm Việc (Workspace Detail) |
+| :---: | :---: |
+| ![Workspaces](docs/assets/screenshots/workspaces.png) | ![In Workspace](docs/assets/screenshots/in-workspace.png) |
+| *Quản lý danh sách các Workspace trực quan, tìm kiếm nhanh chóng* | *Không gian Workspace tổng hợp các thẻ Board với màu sắc rực rỡ* |
+
+| ⚡ Bảng Kanban Kéo Thả Trực Quan (Kanban Board) | 📋 Tổng Quan Dự Án & Bộ Lọc (Board View) |
+| :---: | :---: |
+| ![Kanban View](docs/assets/screenshots/kanban-view.png) | ![Board View](docs/assets/screenshots/board-view.png) |
+| *Tương tác kéo thả thẻ và cột tức thì, đồng bộ 2 chiều Socket.IO* | *Giao diện làm việc Board với bộ lọc linh hoạt & điều hướng tiện lợi* |
+
+| 📅 Lịch Trình Dự Án (Timeline / Gantt View) | 📊 Báo Cáo Hiệu Suất (Analytics Dashboard) |
+| :---: | :---: |
+| ![Timeline View](docs/assets/screenshots/timeline-view.png) | ![Analytics](docs/assets/screenshots/analytics.png) |
+| *Trực quan hóa thời hạn (Deadline) và tiến trình công việc dạng Timeline* | *Executive Dashboard: Thống kê KPI, tỷ lệ hoàn thành nhiệm vụ* |
+
+| ⚙️ Chi Tiết Thẻ Công Việc (Card Details) | ✨ AI Phân Rã Tác Vụ Tự Động (AI Breakdown) |
+| :---: | :---: |
+| ![Card Detail](docs/assets/screenshots/card.png) | ![AI Breakdown](docs/assets/screenshots/ai-breakdown.png) |
+| *Quản lý Checklists, Labels nhãn dán, Thời hạn và Đính kèm tệp tin* | *Tự động phân rã 3-5 sub-tasks chi tiết bằng AI chỉ trong 1-Click* |
+
+| 📝 Bình Luận & Thảo Luận Thẻ (Card Comments) | 💬 Hộp Thoại Chat Realtime (Board Chat) |
+| :---: | :---: |
+| ![Comment](docs/assets/screenshots/comment.png) | ![Chat](docs/assets/screenshots/chat.png) |
+| *Trao đổi, phản hồi và tag thành viên làm việc ngay trên từng thẻ* | *Phòng trò chuyện trực tiếp theo từng board, lưu trữ lịch sử tin nhắn* |
+
+| 🏷️ Hệ Thống Nhãn Dán Đa Sắc (Custom Labels) | 🎨 Tùy Biến Hình Nền Board (Board Backgrounds) |
+| :---: | :---: |
+| ![Labels](docs/assets/screenshots/label.png) | ![Background](docs/assets/screenshots/background.png) |
+| *Tạo và quản lý nhãn dán công việc với bảng màu sắc đa dạng* | *Cá nhân hóa giao diện làm việc với bộ sưu tập hình nền gradient sống động* |
+
+| 📜 Nhật Ký Hoạt Động Hệ Thống (Audit Log) | 👥 Quản Lý Thành Viên & Phân Quyền (Member Management) |
+| :---: | :---: |
+| ![Audit Log](docs/assets/screenshots/audit-log.png) | ![Member](docs/assets/screenshots/member.png) |
+| *Lịch sử truy vết mọi thao tác thay đổi, thêm sửa xóa trong Workspace* | *Thanh tìm kiếm thành viên gọn gàng, phân quyền vai trò linh hoạt* |
+
+| 👤 Hồ Sơ & Cài Đặt Cá Nhân (User Profile) | 💡 Đóng Góp Ý Kiến & Phản Hồi (User Feedback) |
+| :---: | :---: |
+| ![Profile](docs/assets/screenshots/profile.png) | ![Feedback](docs/assets/screenshots/feedback.png) |
+| *Quản lý thông tin tài khoản, cập nhật ảnh đại diện và mật khẩu* | *Widget tiếp nhận đóng góp ý kiến & phản hồi đánh giá đồ án* |
 
 ---
 

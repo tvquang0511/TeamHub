@@ -1,4 +1,4 @@
-# 🚀 TeamHub — Enterprise Realtime Kanban + Board Chat + AI Sub-task Breakdown + Async BullMQ Worker
+# TeamHub — Enterprise Realtime Kanban + Board Chat + AI Sub-task Breakdown + Async BullMQ Worker
 
 [![Live App](https://img.shields.io/badge/Frontend-Vercel%20Live-brightgreen?style=for-the-badge&logo=vercel)](https://teamhub-frontend.vercel.app)
 [![Backend API](https://img.shields.io/badge/Backend-Render%20API-blue?style=for-the-badge&logo=render)](https://teamhub-backend-api.onrender.com)

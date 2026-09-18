@@ -46,7 +46,7 @@ Dự án TeamHub được thiết kế vô cùng linh hoạt cho Nhà tuyển d�
 ### 🌐 Mode 0: Trải Nghiệm Sản Xuất Trực Tiếp Trên Cloud (Instant Live Demo - Zero Setup)
 > **Phù hợp nhất cho**: Kiểm thử ứng dụng nhanh ngay lập tức trên trình duyệt mà không cần cài đặt code.
 
-- **Ứng Dụng Trực Tiếp (Live Demo)**: **[https://teamhub.tvquang.id.vn](https://teamhub.tvquang.id.vn)**
+**Ứng Dụng Trực Tiếp (Live Demo)**: **[https://teamhub.tvquang.id.vn](https://teamhub.tvquang.id.vn)**
 
 #### 🔑 4 Tài Khoản Mẫu Nạp Sẵn Dữ Liệu Sản Xuất (Mật khẩu chung: `123456`)
 | Role | Email | Mật khẩu | Tính năng chính trải nghiệm |
@@ -151,9 +151,6 @@ flowchart TD
 ---
 
 ## 📸 Giao Diện & Trải Nghiệm Người Dùng (UI Showcase)
-
-> [!TIP]
-> **Dành cho Nhà Tuyển Dụng & Reviewer**: Dưới đây là bộ sưu tập hình ảnh chụp thực tế toàn bộ các phân hệ, tính năng và luồng làm việc chính của hệ thống TeamHub.
 
 | 🌟 Trang Giới Thiệu (Landing Page) | 🔐 Xác Thực & Đăng Nhập (Auth Dark Theme) |
 | :---: | :---: |

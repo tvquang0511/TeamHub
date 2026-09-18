@@ -3,11 +3,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { usersApi } from "../../../api/users.api";
 import { workspacesApi } from "../../../api/workspaces.api";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../components/ui/card";
+import { Card } from "../../../components/ui/card";
 import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "../../../components/ui/avatar";
-import { Search, UserPlus, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Search, UserPlus, CheckCircle2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import type { User, WorkspaceMember } from "../../../types/api";
 import { ConfirmWithRoleDialog, type Role3 } from "../../../components/shared/ConfirmWithRoleDialog";
@@ -104,101 +103,109 @@ export const AddWorkspaceMemberCard: React.FC<Props> = ({
 
   return (
     <>
-      <Card className="overflow-hidden border border-border/60 bg-gradient-to-b from-card to-card/60 shadow-md">
-        <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <UserPlus className="h-5 w-5" />
+      <Card className="overflow-hidden border border-border/70 bg-card shadow-xs rounded-xl">
+        <div className="p-3 sm:p-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Tiêu đề và icon - Gọn gàng */}
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <UserPlus className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground leading-none">Thêm thành viên mới</h3>
+                <p className="text-[11px] text-muted-foreground mt-1 hidden sm:block">
+                  Tìm kiếm theo tên hoặc email để mời tham gia
+                </p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-base font-semibold">Thêm thành viên mới</CardTitle>
-              <CardDescription className="text-xs">
-                Tìm kiếm người dùng theo tên hoặc email để mời tham gia làm việc chung
-              </CardDescription>
+
+            {/* Ô tìm kiếm đặt ngay trên hàng tiêu đề */}
+            <div className="relative w-full sm:w-72 md:w-80">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Nhập tên hoặc email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 pr-7 h-8 text-xs bg-muted/30 border-border/70 focus-visible:ring-1 focus-visible:ring-blue-500 rounded-lg"
+                disabled={!canManage}
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground hover:text-foreground h-4 w-4 rounded-full flex items-center justify-center hover:bg-muted"
+                  title="Xoá tìm kiếm"
+                >
+                  ✕
+                </button>
+              ) : null}
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-4">
+
           {!canManage ? (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-medium text-amber-800 dark:text-amber-300">
-              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600" />
+            <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs font-medium text-amber-800 dark:text-amber-300">
+              <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-amber-600" />
               Chỉ Owner hoặc Admin của Workspace mới có quyền thêm thành viên mới.
             </div>
           ) : null}
 
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold text-muted-foreground">Tìm kiếm thành viên</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Nhập tên hoặc địa chỉ email để tìm nhanh..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-background/50 border-border/80 focus:ring-2 focus:ring-blue-500/20"
-                disabled={!canManage}
-              />
-            </div>
-          </div>
-
+          {/* Kết quả tìm kiếm bung ra phía dưới khi có từ khoá */}
           {searchQuery ? (
-            <div className="overflow-hidden rounded-xl border border-border/60 bg-background shadow-inner">
-              {isSearching ? (
-                <div className="flex items-center justify-center p-6 text-xs text-muted-foreground gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                  Đang tìm kiếm người dùng...
-                </div>
-              ) : results.length > 0 ? (
-                <div className="max-h-64 divide-y divide-border/40 overflow-y-auto">
-                  {results.map((u) => {
-                    const already = existingUserIds.has(u.id);
-                    return (
-                      <button
-                        key={u.id}
-                        onClick={() => openConfirm(u)}
-                        disabled={already || addMemberMutation.isPending}
-                        className={
-                          "flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-blue-500/5 disabled:cursor-not-allowed disabled:opacity-60 " +
-                          (!canManage ? "opacity-60" : "")
-                        }
-                      >
-                        <Avatar className="h-9 w-9">
-                          {u.avatarUrl ? <AvatarImage src={u.avatarUrl} alt={u.displayName} /> : null}
-                          <AvatarFallback className="bg-gradient-to-tr from-blue-500 to-indigo-600 text-xs font-bold text-white">
-                            {getInitials(u.displayName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold text-foreground">{u.displayName}</div>
-                          <div className="truncate text-xs text-muted-foreground">{u.email}</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {already ? (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              <CheckCircle2 className="h-3 w-3" /> Đã tham gia
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors">
-                              <UserPlus className="h-3.5 w-3.5" /> Mời
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-6 text-center text-xs text-muted-foreground">
-                  Không tìm thấy người dùng nào phù hợp với từ khóa <span className="font-semibold text-foreground">"{searchQuery}"</span>
-                </div>
-              )}
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <div className="overflow-hidden rounded-lg border border-border/60 bg-background shadow-inner">
+                {isSearching ? (
+                  <div className="flex items-center justify-center p-4 text-xs text-muted-foreground gap-2">
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                    Đang tìm kiếm người dùng...
+                  </div>
+                ) : results.length > 0 ? (
+                  <div className="max-h-56 divide-y divide-border/40 overflow-y-auto">
+                    {results.map((u) => {
+                      const already = existingUserIds.has(u.id);
+                      return (
+                        <button
+                          key={u.id}
+                          onClick={() => openConfirm(u)}
+                          disabled={already || addMemberMutation.isPending}
+                          className={
+                            "flex w-full items-center gap-2.5 p-2.5 text-left transition-colors hover:bg-blue-500/5 disabled:cursor-not-allowed disabled:opacity-60 " +
+                            (!canManage ? "opacity-60" : "")
+                          }
+                        >
+                          <Avatar className="h-8 w-8">
+                            {u.avatarUrl ? <AvatarImage src={u.avatarUrl} alt={u.displayName} /> : null}
+                            <AvatarFallback className="bg-gradient-to-tr from-blue-500 to-indigo-600 text-[11px] font-bold text-white">
+                              {getInitials(u.displayName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-xs font-semibold text-foreground">{u.displayName}</div>
+                            <div className="truncate text-[11px] text-muted-foreground">{u.email}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {already ? (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <CheckCircle2 className="h-3 w-3" /> Đã tham gia
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors">
+                                <UserPlus className="h-3 w-3" /> Mời
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-xs text-muted-foreground">
+                    Không tìm thấy người dùng nào phù hợp với từ khóa <span className="font-semibold text-foreground">"{searchQuery}"</span>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Sparkles className="h-3.5 w-3.5 text-blue-500" />
-              Mẹo: Mọi người dùng đã đăng ký tài khoản trên hệ thống đều có thể được tìm thấy bằng email.
-            </div>
-          )}
-        </CardContent>
+          ) : null}
+        </div>
       </Card>
 
       <ConfirmWithRoleDialog

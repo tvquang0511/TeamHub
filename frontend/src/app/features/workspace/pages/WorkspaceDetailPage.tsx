@@ -5,13 +5,7 @@ import { workspacesApi } from "../../../api/workspaces.api";
 import { boardsApi } from "../../../api/boards.api";
 import { boardBackgroundToCss } from "../../../api/boards.api";
 import { Button } from "../../../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../../../components/ui/card";
+import { Card, CardContent } from "../../../components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +19,7 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
-import { LayoutDashboard, Users, Trash2, Plus, BarChart3, ArrowLeft, Upload } from "lucide-react";
+import { LayoutDashboard, Users, Trash2, Plus, BarChart3, ArrowLeft, Upload, Lock, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { MemberTable } from "../components/MemberTable";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
@@ -375,13 +369,13 @@ export const WorkspaceDetailPage: React.FC = () => {
           </div>
 
           {boardsLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="h-36 rounded-xl bg-muted/60 animate-pulse border border-border/40" />
-              <div className="h-36 rounded-xl bg-muted/60 animate-pulse border border-border/40" />
-              <div className="h-36 rounded-xl bg-muted/60 animate-pulse border border-border/40" />
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="h-40 rounded-xl bg-muted/60 animate-pulse border border-border/40" />
+              <div className="h-40 rounded-xl bg-muted/60 animate-pulse border border-border/40" />
+              <div className="h-40 rounded-xl bg-muted/60 animate-pulse border border-border/40" />
             </div>
           ) : boards && boards.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {boards.map((board) => (
                 (() => {
                   const canReadBoard = board.actor?.canReadBoard ?? true;
@@ -391,8 +385,8 @@ export const WorkspaceDetailPage: React.FC = () => {
                   return (
                     <Card
                       key={board.id}
-                      className={`relative cursor-pointer transition-all hover:shadow-lg ${
-                        isLockedPrivate ? "opacity-60 cursor-not-allowed" : ""
+                      className={`relative gap-0 overflow-hidden rounded-xl border border-border/80 bg-card shadow-xs transition-shadow hover:shadow-md ${
+                        isLockedPrivate ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
                       }`}
                       onClick={() => {
                         if (isLockedPrivate) {
@@ -402,47 +396,63 @@ export const WorkspaceDetailPage: React.FC = () => {
                         navigate(`/boards/${board.id}`);
                       }}
                     >
+                      {/* Banner hiển thị màu sắc tươi sáng nguyên bản của Board cùng với nút Public & Xoá ở trên đầu */}
                       <div
-                        className="h-20 w-full rounded-t-lg bg-cover bg-center"
+                        className="relative h-28 sm:h-32 w-full bg-cover bg-center"
                         style={{
                           background:
                             boardBackgroundToCss(board) ??
-                            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                            "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
                         }}
-                      />
-                      <CardHeader className="pt-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="line-clamp-1">{board.name}</CardTitle>
-                          {canDeleteBoard ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-red-500"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConfirmDeleteBoard({
-                                  open: true,
-                                  boardId: board.id,
-                                  boardName: board.name,
-                                });
-                              }}
-                              title="Xoá board"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          ) : null}
+                      >
+                        {/* Nút Public / Private ở góc trên bên trái của thẻ */}
+                        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 h-7 rounded-full px-2.5 text-xs font-medium bg-black/45 text-white backdrop-blur-md border border-white/20 shadow-xs select-none">
+                          {board.privacy === "PRIVATE" ? (
+                            <>
+                              <Lock className="h-3.5 w-3.5 text-amber-300 shrink-0" />
+                              <span className="leading-none">Private</span>
+                            </>
+                          ) : (
+                            <>
+                              <Globe className="h-3.5 w-3.5 text-sky-300 shrink-0" />
+                              <span className="leading-none">Public</span>
+                            </>
+                          )}
                         </div>
-                        {board.description && (
-                          <CardDescription className="line-clamp-2">
+
+                        {/* Nút Xóa đỏ ở góc trên bên phải của thẻ */}
+                        {canDeleteBoard ? (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2.5 right-2.5 h-7 w-7 rounded-lg bg-red-600 hover:bg-red-700 text-white shadow-md shadow-black/25 transition-transform active:scale-90"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDeleteBoard({
+                                open: true,
+                                boardId: board.id,
+                                boardName: board.name,
+                              });
+                            }}
+                            title="Xoá board"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
+                      </div>
+
+                      {/* Phần màu trắng trong thẻ - căn chỉnh cân đối, đều đặn trên dưới */}
+                      <div className="px-4 py-3 sm:py-3.5 flex flex-col justify-center min-h-[58px]">
+                        <div className="text-sm sm:text-base font-semibold text-foreground line-clamp-1 leading-snug">
+                          {board.name}
+                        </div>
+                        {board.description ? (
+                          <div className="line-clamp-1 text-xs text-muted-foreground mt-1 leading-normal">
                             {board.description}
-                          </CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-xs text-muted-foreground">
-                          {board.privacy === "PRIVATE" ? "🔒 Private" : "🌐 Workspace Public"}
-                        </div>
-                      </CardContent>
+                          </div>
+                        ) : null}
+                      </div>
                     </Card>
                   );
                 })()

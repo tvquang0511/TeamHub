@@ -23,7 +23,7 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
 import { Badge } from "../../../components/ui/badge";
-import { Plus, Briefcase, ChevronRight, Sparkles } from "lucide-react";
+import { Plus, Briefcase, ChevronRight } from "lucide-react";
 // toast placeholder (wire real toast later)
 
 import { WorkspaceListSkeleton } from "../../../components/shared/WorkspaceListSkeleton";
@@ -71,10 +71,6 @@ export const WorkspaceListPage: React.FC = () => {
     <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-8 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b pb-6">
         <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 mb-2">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Không gian Làm việc Nhóm</span>
-          </div>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
             Danh sách Workspace của bạn
           </h1>

@@ -14,7 +14,8 @@ Các câu trả lời dưới đây bám theo code và tài liệu hiện có c�
 8. [BullMQ và worker](./08-queues-worker.md)
 9. [Object storage](./09-object-storage.md)
 10. [AI breakdown](./10-ai.md)
-11. [Tình huống production](./11-scenarios.md)
+11. [Security và production](./11-security-production.md)
+12. [Câu hỏi tình huống](./12-scenarios.md)
 
 ## Lưu ý khi trả lời
 

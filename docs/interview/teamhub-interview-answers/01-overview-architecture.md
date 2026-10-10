@@ -1,33 +1,41 @@
-# 01 — Tổng quan và kiến trúc
+# 01 — Tổng quan đồ án
 
-## TeamHub giải quyết vấn đề gì?
+## 1. TeamHub giải quyết vấn đề gì? Đối tượng người dùng là ai?
 
-TeamHub là ứng dụng quản lý công việc nhóm theo Kanban: workspace chứa board, board có list và card. Người dùng có thể giao việc, gắn nhãn, bình luận, đính kèm file, chat theo board và nhận nhắc hạn. Mục tiêu là gom luồng làm việc của một nhóm nhỏ vào một nơi, đồng thời cập nhật thay đổi gần thời gian thực.
+TeamHub là công cụ quản lý công việc nhóm theo Kanban. Một nhóm tạo workspace, trong đó có nhiều board, mỗi board có list và card. Card có người phụ trách, hạn, label, checklist, bình luận, file đính kèm và lịch sử hoạt động. Người dùng mục tiêu là nhóm học tập, nhóm làm đồ án và nhóm phát triển nhỏ cần theo dõi công việc ở một nơi.
 
-## Kiến trúc tổng quan như thế nào?
+## 2. Vì sao chọn Kanban thay vì chỉ làm todo-list?
 
-- Frontend: React 19, Vite, TypeScript, Tailwind và TanStack Query.
-- API: Express + TypeScript, Prisma và PostgreSQL; Socket.IO chạy cùng HTTP server.
-- Hạ tầng phụ trợ: Redis cho cache và BullMQ; MinIO/S3 cho file.
-- Worker: tiến trình Node độc lập nhận job email, reminder, analytics và cleanup blob.
-- Nginx/Docker Compose phục vụ môi trường local theo một origin.
+Todo-list thường chỉ là danh sách cá nhân. Kanban biểu diễn luồng công việc theo các cột như To do, Doing, Done; nhờ đó cả nhóm nhìn thấy trạng thái, WIP và điểm nghẽn. Kanban cũng tự nhiên hơn cho các tính năng kéo thả, phân quyền board, activity log, analytics và realtime collaboration.
 
-## Đây có phải microservices không?
+## 3. Kiến trúc tổng quan gồm những service/layer nào?
 
-Chính xác hơn đây là **modular monolith**: các domain như auth, boards, cards, chat là module trong cùng backend API và dùng chung PostgreSQL. Worker được tách process để chạy tác vụ nền. Cách này đơn giản hơn microservices thật, dễ deploy và debug cho quy mô đồ án; khi cần scale độc lập có thể tách các domain nóng sau.
+Frontend dùng React/Vite/TypeScript, giao tiếp với Express REST API và Socket.IO. Backend tổ chức theo router → controller → service → repository/Prisma. PostgreSQL là nguồn dữ liệu chính; Redis dùng cho cache, rate limit và BullMQ. Worker Node tách tiến trình xử lý email, reminder, analytics và blob cleanup. File đi vào S3-compatible storage như MinIO qua presigned URL. Nginx/Docker Compose hỗ trợ chạy local cùng origin.
 
-## Luồng tạo một card mới?
+## 4. Luồng dữ liệu khi người dùng tạo card mới là gì?
 
-Frontend gọi REST API với access token. Router/controller validate input, service xác nhận người dùng thuộc workspace và là board member có quyền ghi, repository ghi card vào PostgreSQL. Service ghi activity, invalidate/bump cache phù hợp và phát event realtime cho board. Frontend người khác nhận event rồi cập nhật UI/cache.
+Frontend gửi request kèm access token. Router/controller parse và validate body; service lấy `userId` từ JWT, kiểm tra workspace/board membership và quyền ghi; repository tạo card trong PostgreSQL với position phù hợp. Sau đó service ghi activity, xóa cache card hoặc bump board cache version và phát event realtime cho room board. Các client đang mở board nhận event, cập nhật cache/UI; API response vẫn là kết quả xác nhận chính thức cho client tạo card.
 
-## Vì sao chọn PostgreSQL thay vì MongoDB?
+## 5. Bạn tự làm những phần nào? Phần nào khó nhất?
 
-Nghiệp vụ có nhiều quan hệ và ràng buộc: user–workspace–board–card, membership, role, checklist, attachment. PostgreSQL giúp dùng foreign key, unique constraint, transaction và index rõ ràng. Dữ liệu Kanban cũng cần thứ tự, báo cáo và query quan hệ; relational database phù hợp hơn.
+Một câu trả lời trung thực có thể là: “Em thiết kế và triển khai frontend React, REST API Express/Prisma, database schema, auth JWT, realtime chat/board, Redis cache, worker BullMQ và MinIO ở mức đồ án. Phần khó nhất là các luồng có nhiều hệ thống cùng tham gia: kéo thả realtime, invalidate cache đúng, và upload direct-to-storage nhưng vẫn không tạo file rác. Em giải bằng cách giữ PostgreSQL là source of truth, mọi quyền kiểm tra ở backend, còn Redis/Socket/worker chỉ là các lớp hỗ trợ.” Chỉ giữ các phần bạn thực sự đã làm khi trả lời.
 
-## Điểm kỹ thuật đáng kể nhất?
+## 6. Nếu chỉ có 2 phút giới thiệu sản phẩm, bạn nói gì?
 
-Ba điểm là realtime có kiểm soát quyền bằng Socket.IO room, drag-and-drop với `Decimal position` để tránh đánh số lại toàn bộ list, và pipeline file direct upload S3 kèm worker dọn orphan blob. Các phần này giải quyết trực tiếp tính tương tác, hiệu năng ghi và vận hành storage.
+“TeamHub là web app quản lý công việc nhóm theo Kanban, giống một phiên bản Trello tập trung vào teamwork realtime. Người dùng quản lý workspace, board, list và card; card có assignee, checklist, comment, label, due date và attachment. Về kỹ thuật, frontend là React + TypeScript, backend là Express + Prisma/PostgreSQL. Socket.IO cập nhật chat và board gần realtime; Redis dùng cache và BullMQ, còn worker tách riêng xử lý email reminder, analytics và dọn file rác S3. Em quan tâm nhất đến tính đúng đắn: backend luôn kiểm tra membership, database giữ constraint, cache có TTL/version invalidation và task nền có retry.”
 
-## Nếu phát triển tiếp, ưu tiên gì?
+## 7. Dự án khác Trello/Jira ở mức kỹ thuật thế nào?
 
-Ưu tiên observability (structured logs, metrics, alert), test end-to-end và tải, rate limit hoàn chỉnh, Socket.IO Redis adapter khi chạy nhiều API instance, và phân trang/virtualization cho board lớn. Đây là cải tiến theo rủi ro vận hành trước, không vội tách microservice.
+TeamHub không cạnh tranh độ đầy đủ tính năng với sản phẩm thương mại. Điểm nhấn kỹ thuật là tự xây dựng end-to-end các vấn đề thường gặp: realtime board chat, fractional indexing cho drag-and-drop, direct S3 upload qua presigned URL, queue/worker cho side effect, role-based authorization và versioned Redis cache. Jira/Trello production có quy mô, observability, SLA và ecosystem lớn hơn nhiều.
+
+## 8. Vì sao chọn React + Vite, Express + TypeScript, PostgreSQL và Prisma?
+
+React phù hợp UI nhiều component và state; Vite cho dev server/build nhanh. Express tối giản, dễ tổ chức API và Socket.IO cùng Node process. TypeScript giảm lỗi contract ở cả hai phía. PostgreSQL phù hợp dữ liệu quan hệ và transaction; Prisma tạo type-safe client, migration/schema tập trung và giảm boilerplate query. Trade-off là Prisma có abstraction cost và Express cần tự chọn convention/middleware.
+
+## 9. Đây là microservices hay modular monolith?
+
+Đây là **modular monolith cho API cộng với worker tách process**, chưa phải microservices hoàn chỉnh. Các module auth, boards, cards, chat vẫn deploy trong một backend service và dùng chung PostgreSQL. Cách này phù hợp đồ án vì đơn giản hơn cho deploy, transaction và debug. Worker tách riêng vì workload nền có lifecycle/scale khác request HTTP.
+
+## 10. Nếu triển khai thật, bạn ưu tiên cải tiến gì?
+
+Ưu tiên observability trước: structured log, metrics, tracing, alert cho API/DB/Redis/queue. Tiếp theo là test E2E, load test, rate limit hoàn chỉnh, backup/restore drill và CI/CD. Khi scale ngang realtime, thêm Socket.IO Redis adapter; khi board rất lớn, thêm pagination/virtualization. Em không vội tách microservice vì chưa có metric chứng minh đó là bottleneck.

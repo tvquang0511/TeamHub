@@ -1,5 +1,7 @@
 # Component Diagram — TeamHub
 
+![Component Diagram](../assets/diagrams/component-diagram.png)
+
 ```plantuml
 @startuml
 skinparam componentStyle rectangle

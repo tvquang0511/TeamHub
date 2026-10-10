@@ -1,5 +1,7 @@
 # System Architecture Diagram — TeamHub (MVP + Nâng cao)
 
+![System Architecture](../assets/diagrams/system-architecture.png)
+
 ```plantuml
 @startuml
 skinparam linetype ortho

@@ -9,7 +9,7 @@ Chào mừng bạn đến với trung tâm tài liệu kỹ thuật của dự �
 ```
 docs/
 ├── 🎓 modules/               # Bóc tách 8 Module nghiệp vụ cốt lõi (Trọng tâm Backend)
-├── 🚀 stack/redis/           # Chuyên đề chuyên sâu 5 bài học về Redis
+├── 🚀 stack/                 # 5 Chuyên đề công nghệ chuyên sâu (Redis, Postgres, Docker, Socket.IO, S3)
 ├── 🏛️ architecture/adr/       # Bộ 4 quyết định thiết kế kiến trúc chuẩn (ADRs)
 ├── 📐 diagrams/              # Sơ đồ PlantUML & Sơ đồ kiến trúc tổng thể
 ├── 🔌 api/                   # Danh mục toàn bộ REST API Endpoints & Mã lỗi
@@ -36,14 +36,30 @@ docs/
 
 ---
 
-## 🚀 2. Chuyên Đề Công Nghệ Hạ Tầng: Redis (`docs/stack/redis/`)
+## 🚀 2. Chuyên Đề Công Nghệ Hạ Tầng (`docs/stack/`)
 
-*Xem chi tiết mục lục tại [docs/stack/redis/README.md](./stack/redis/README.md)*
-
+### 🔴 Redis Stack (`docs/stack/redis/`) — *[Xem mục lục](./stack/redis/README.md)*
 * [01 - Tổng Quan & Bản Chất Cốt Lõi Của Redis](./stack/redis/01-overview-and-fundamentals.md)
 * [02 - Kỹ Thuật Caching & Version-Stamping Chuyên Sâu](./stack/redis/02-caching-deep-dive.md)
 * [03 - Hàng Đợi Nhiệm Vụ (BullMQ & Worker Service)](./stack/redis/03-bullmq-job-queues.md)
 * [04 - Kiểm Soát Lưu Lượng & Chống Tấn Công (Rate Limiting)](./stack/redis/04-rate-limiting.md)
+
+### 🐘 PostgreSQL & Prisma ORM Stack (`docs/stack/postgres-prisma/`) — *[Xem mục lục](./stack/postgres-prisma/README.md)*
+* [01 - Bản Chất Cốt Lõi Của PostgreSQL (RDBMS & ACID Engine)](./stack/postgres-prisma/01-postgres-fundamentals.md)
+* [02 - Thiết Kế Schema & Tối Ưu Hóa Chỉ Mục (Indexing Strategy)](./stack/postgres-prisma/02-schema-design-and-indexes.md)
+* [03 - Prisma ORM Chuyên Sâu (Rust Query Engine & N+1 Prevention)](./stack/postgres-prisma/03-prisma-orm-deep-dive.md)
+
+### 🐳 Docker & Container Infrastructure (`docs/stack/docker/`) — *[Xem mục lục](./stack/docker/README.md)*
+* [01 - Bản Chất Container & Điều Phối Docker Compose](./stack/docker/01-containerization-and-compose.md)
+* [02 - Mạng Nội Bộ & Bền Vững Dữ Liệu (Docker Networking & Volumes)](./stack/docker/02-networking-and-volumes.md)
+
+### ⚡ WebSocket & Socket.IO Realtime (`docs/stack/socket-io/`) — *[Xem mục lục](./stack/socket-io/README.md)*
+* [01 - Sự Tiến Hóa Của Giao Thức Thời Gian Thực (From Polling to WebSocket)](./stack/socket-io/01-websocket-protocols.md)
+* [02 - Kiến Trúc Socket.IO Chuyên Sâu (Heartbeat, Rooms & Scaling)](./stack/socket-io/02-socketio-architecture.md)
+
+### 🗄️ Object Storage: MinIO & AWS S3 (`docs/stack/object-storage/`) — *[Xem mục lục](./stack/object-storage/README.md)*
+* [01 - Bản Chất Object Storage (S3 & MinIO Architecture)](./stack/object-storage/01-object-storage-fundamentals.md)
+* [02 - Chữ Ký Số SigV4 & Cơ Chế Presigned URLs Chuyên Sâu](./stack/object-storage/02-presigned-urls-and-sigv4.md)
 
 ---
 
